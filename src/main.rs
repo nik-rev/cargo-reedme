@@ -3,24 +3,34 @@
 //! macro: [`get_readme_path`]
 //!
 //! ```
-//!  hello world
+//! hello world
+//! ```
+//!
+//!     hello world
+//!
+//! ```py
+//! hello world
+//! ```
+//!
+//! ```ignore
+//! python
 //! ```
 
-use std::{
-    env,
-    io::{BufReader, Cursor},
-    path::PathBuf,
-};
+mod intralinks;
 
-use camino::{Utf8Path, Utf8PathBuf};
-use cargo_metadata::{Package, camino::Utf8Ancestors};
+use std::io::Cursor;
+
+use camino::Utf8PathBuf;
+use cargo_metadata::Package;
 use clap::Parser;
-use eyre::{Context, ContextCompat, Result, eyre};
+use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
-use pulldown_cmark::{Options, TextMergeStream};
+use pulldown_cmark::{BrokenLink, BrokenLinkCallback};
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
+
+use crate::intralinks::{create_intralink_resolver, is_rust_code_block, items_info};
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -56,45 +66,104 @@ fn main() -> Result<()> {
 }
 
 fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
-    // let config = serde_json::from_value::<Option<PackageMetadata>>(pkg.metadata.clone())
-    //     .unwrap()
-    //     .cargo_reedme;
+    let config = serde_json::from_value::<Option<PackageMetadata>>(pkg.metadata.clone())
+        .unwrap_or_default()
+        .unwrap_or_default()
+        .cargo_reedme
+        .unwrap_or_default();
 
     let rustdoc_json =
         extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
 
     let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
+    let intralink_resolver = create_intralink_resolver(pkg, &config, &rustdoc_json);
+
+    /// Broken link callback that does nothing.
+    #[derive(Debug)]
+    pub struct ResolveIntraDocLinks<'a> {
+        intralink_resolver: intralinks::IntralinkResolver<'a>,
+    }
+
+    impl<'input> BrokenLinkCallback<'input> for ResolveIntraDocLinks<'_> {
+        fn handle_broken_link(
+            &mut self,
+            link: BrokenLink<'input>,
+        ) -> Option<(
+            pulldown_cmark::CowStr<'input>,
+            pulldown_cmark::CowStr<'input>,
+        )> {
+            let link = intralinks::Link {
+                raw_link: link.reference.to_string(),
+            };
+            if let Some(url) = self.intralink_resolver.resolve_link(&link) {
+                let url = match link.link_fragment() {
+                    None => url.to_owned(),
+                    Some(fragment) => format!("{url}#{fragment}"),
+                };
+                Some((url.into(), "".into()))
+            } else {
+                None
+            }
+        }
+    }
 
     let markdown = root.docs.as_ref().unwrap();
-    let cmark = pulldown_cmark::Parser::new_ext(markdown, pulldown_cmark::Options::all());
+    let cmark = pulldown_cmark::Parser::new_with_broken_link_callback(
+        markdown,
+        pulldown_cmark::Options::all(),
+        Some(ResolveIntraDocLinks { intralink_resolver }),
+    );
     let cmark = pulldown_cmark::TextMergeStream::new(cmark);
-    let cmark = cmark.map(|event| match dbg!(event) {
-        pulldown_cmark::Event::Start(tag) => match tag {
-            pulldown_cmark::Tag::CodeBlock(code_block_kind) => {
-                // dbg!(&code_block_kind);
 
-                // eprintln!("---{}---", &markdown[range]);
+    #[derive(Default)]
+    struct State {
+        is_rust_codeblock: bool,
+    }
 
-                pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind))
+    let cmark = cmark.scan(State::default(), |state, event| match &event {
+        pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
+            match code_block_kind {
+                pulldown_cmark::CodeBlockKind::Indented => state.is_rust_codeblock = true,
+                pulldown_cmark::CodeBlockKind::Fenced(cow_str) => {
+                    state.is_rust_codeblock = is_rust_code_block(cow_str);
+                }
+            };
+
+            if state.is_rust_codeblock {
+                // Change language to rust
+                Some(pulldown_cmark::Event::Start(
+                    pulldown_cmark::Tag::CodeBlock(pulldown_cmark::CodeBlockKind::Fenced(
+                        "rust".into(),
+                    )),
+                ))
+            } else {
+                // Keep code block as-is
+                Some(event)
             }
-            // link pulldown_cmark::Tag::Link {
-            //     link_type,
-            //     dest_url,
-            //     title,
-            //     id,
-            // } => {
-
-            // },
-            tag => pulldown_cmark::Event::Start(tag),
-        },
-        event => event,
+        }
+        // pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+        //     link_type,
+        //     dest_url,
+        //     title,
+        //     id,
+        // }) => root.links.get(k),
+        pulldown_cmark::Event::Text(text) if state.is_rust_codeblock => {
+            state.is_rust_codeblock = false;
+            Some(pulldown_cmark::Event::Text("transformed".into()))
+        }
+        _ => {
+            state.is_rust_codeblock = false;
+            Some(event)
+        }
     });
 
     let mut output_markdown = String::new();
     let _ = pulldown_cmark_to_cmark::cmark(cmark, &mut output_markdown)
         .context("failed to write markdown");
 
-    let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
+    println!("{output_markdown}");
+
+    // let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
     Ok(())
 }
@@ -159,10 +228,12 @@ fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
     Ok(readme_path)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 struct PackageMetadata {
     cargo_reedme: Option<Config>,
 }
 
-#[derive(Serialize, Deserialize)]
-struct Config {}
+#[derive(Serialize, Deserialize, Default)]
+struct Config {
+    docs_rs: intralinks::IntralinksDocsRsConfig,
+}
