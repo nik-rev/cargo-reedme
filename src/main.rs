@@ -1,3 +1,5 @@
+//! yes, this is **very cool** crate
+
 use std::{
     env,
     io::{BufReader, Cursor},
@@ -53,6 +55,10 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
 
     let rustdoc_json =
         extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
+
+    let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
+
+    println!("{}", root.docs.as_ref().unwrap());
 
     let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
