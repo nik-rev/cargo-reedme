@@ -1,6 +1,9 @@
 //! yes, this is **very cool** crate
 //!
-//! macro: [`get_readme_path`]
+//! macro:
+//!
+//! - [`main`]
+//! - [get_readme_path](main)
 //!
 //! ```
 //! hello world
@@ -30,7 +33,7 @@ use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
 
-use crate::intralinks::{create_intralink_resolver, is_rust_code_block, items_info};
+use crate::intralinks::{Link, create_intralink_resolver, is_rust_code_block, items_info};
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -81,7 +84,7 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
     /// Broken link callback that does nothing.
     #[derive(Debug)]
     pub struct ResolveIntraDocLinks<'a> {
-        intralink_resolver: intralinks::IntralinkResolver<'a>,
+        intralink_resolver: &'a intralinks::IntralinkResolver<'a>,
     }
 
     impl<'input> BrokenLinkCallback<'input> for ResolveIntraDocLinks<'_> {
@@ -111,7 +114,9 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
     let cmark = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         pulldown_cmark::Options::all(),
-        Some(ResolveIntraDocLinks { intralink_resolver }),
+        Some(ResolveIntraDocLinks {
+            intralink_resolver: &intralink_resolver,
+        }),
     );
     let cmark = pulldown_cmark::TextMergeStream::new(cmark);
 
@@ -141,12 +146,27 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
                 Some(event)
             }
         }
-        // pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-        //     link_type,
-        //     dest_url,
-        //     title,
-        //     id,
-        // }) => root.links.get(k),
+        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+            link_type,
+            dest_url,
+            title,
+            id,
+        }) => {
+            let new_dest = intralink_resolver
+                .resolve_link(&Link {
+                    raw_link: dest_url.to_string(),
+                })
+                .unwrap_or(dest_url);
+
+            let a = pulldown_cmark::Tag::Link {
+                link_type: *link_type,
+                dest_url: new_dest.to_string().into(),
+                title: title.to_string().into(),
+                id: id.to_string().into(),
+            };
+
+            Some(pulldown_cmark::Event::Start(a))
+        }
         pulldown_cmark::Event::Text(text) if state.is_rust_codeblock => {
             state.is_rust_codeblock = false;
             Some(pulldown_cmark::Event::Text("transformed".into()))
@@ -212,6 +232,7 @@ fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
 }
 
 /// For the given Cargo package, gets the path to the package's README.md file
+#[cfg(false)]
 fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
     let readme_path = match pkg.readme() {
         Some(path) => path,
