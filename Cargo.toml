@@ -10,3 +10,8 @@ clap-cargo = { version = "0.18.3", features = ["cargo_metadata"] }
 camino = { version = "1.2.2", features = ["serde1"] }
 color-eyre = "0.6.5"
 eyre = "0.6.12"
+rustdoc-json = "0.9.8"
+fs-err = "3.2.2"
+serde_json = "1.0.149"
+serde = { version = "1.0.228", features = ["derive"] }
+rustdoc-types = "0.57.0"
