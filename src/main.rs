@@ -146,12 +146,14 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
                 Some(event)
             }
         }
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-            link_type,
-            dest_url,
-            title,
-            id,
-        }) => {
+        pulldown_cmark::Event::Start(
+            x @ pulldown_cmark::Tag::Link {
+                link_type,
+                dest_url,
+                title,
+                id,
+            },
+        ) => {
             let new_dest = intralink_resolver
                 .resolve_link(&Link {
                     raw_link: dest_url.to_string(),

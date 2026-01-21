@@ -41,16 +41,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::Config;
 
-pub fn is_rust_code_block(tags: &str) -> bool {
-    tags.split(',').all(|tag| match tag {
-        "should_panic" | "no_run" | "ignore" | "allow_fail" | "rust" | "test_harness"
-        | "compile_fail" | "" => true,
-        tag if tag.starts_with("ignore-") => true,
-        tag if tag.starts_with("edition") => true,
-        _ => false,
-    })
-}
-
 pub fn create_intralink_resolver<'a>(
     pkg: &'a Package,
     config: &'a Config,
@@ -654,5 +644,63 @@ fn get_item_info<'a>(
 
             ItemInfo::new(item.crate_id, path, item_kind, parent_kind)
         }),
+    }
+}
+
+/// If this markdown fence language can be considered to be a "rust" language
+///
+/// All attributes: https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#attributes
+pub fn is_rust_code_block(tags: &str) -> bool {
+    tags.split(',').all(|tag| {
+        tag.is_empty()
+            || matches!(
+                tag,
+                "should_panic"
+                    | "no_run"
+                    | "ignore"
+                    | "allow_fail"
+                    | "rust"
+                    | "rs"
+                    | "test_harness"
+                    | "standalone_crate"
+                    | "compile_fail"
+            )
+            || tag.starts_with("ignore-")
+            || tag.starts_with("edition")
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_rust_code_block() {
+        let pass = [
+            "ignore",
+            "should_panic",
+            "no_run",
+            "compile_fail",
+            "edition2018",
+            "rust",
+            "rs",
+            "standalone_crate",
+            "ignore-x86_64",
+            "ignore-x86_64,ignore-windows",
+            "ignore,ignore-x86_64",
+        ]
+        .into_iter()
+        .all(super::is_rust_code_block);
+
+        assert!(pass);
+    }
+
+    #[test]
+    fn is_rust_code_block_fail() {
+        let fail = ["py", "js", "ts", "toml"]
+            .into_iter()
+            .all(|s| !super::is_rust_code_block(s));
+
+        assert!(fail);
     }
 }
