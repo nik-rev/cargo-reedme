@@ -1,0 +1,12 @@
+[package]
+name = "cargo-reedme"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cargo_metadata = "0.23.1"
+clap = { version = "4.5.54", features = ["derive", "unstable-markdown", "wrap_help"] }
+clap-cargo = { version = "0.18.3", features = ["cargo_metadata"] }
+camino = { version = "1.2.2", features = ["serde1"] }
+color-eyre = "0.6.5"
+eyre = "0.6.12"
