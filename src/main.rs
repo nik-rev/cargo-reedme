@@ -1,4 +1,10 @@
 //! yes, this is **very cool** crate
+//!
+//! macro: [`get_readme_path`]
+//!
+//! ```
+//!  hello world
+//! ```
 
 use std::{
     env,
@@ -11,6 +17,7 @@ use cargo_metadata::{Package, camino::Utf8Ancestors};
 use clap::Parser;
 use eyre::{Context, ContextCompat, Result, eyre};
 use fs_err as fs;
+use pulldown_cmark::{Options, TextMergeStream};
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
@@ -58,7 +65,34 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
 
     let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
 
-    println!("{}", root.docs.as_ref().unwrap());
+    let markdown = root.docs.as_ref().unwrap();
+    let cmark = pulldown_cmark::Parser::new_ext(markdown, pulldown_cmark::Options::all());
+    let cmark = pulldown_cmark::TextMergeStream::new(cmark);
+    let cmark = cmark.map(|event| match dbg!(event) {
+        pulldown_cmark::Event::Start(tag) => match tag {
+            pulldown_cmark::Tag::CodeBlock(code_block_kind) => {
+                // dbg!(&code_block_kind);
+
+                // eprintln!("---{}---", &markdown[range]);
+
+                pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind))
+            }
+            // link pulldown_cmark::Tag::Link {
+            //     link_type,
+            //     dest_url,
+            //     title,
+            //     id,
+            // } => {
+
+            // },
+            tag => pulldown_cmark::Event::Start(tag),
+        },
+        event => event,
+    });
+
+    let mut output_markdown = String::new();
+    let _ = pulldown_cmark_to_cmark::cmark(cmark, &mut output_markdown)
+        .context("failed to write markdown");
 
     let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
