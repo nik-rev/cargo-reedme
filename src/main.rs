@@ -9,7 +9,9 @@ use cargo_metadata::{Package, camino::Utf8Ancestors};
 use clap::Parser;
 use eyre::{Context, ContextCompat, Result, eyre};
 use fs_err as fs;
+use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
+use serde::{Deserialize, Serialize};
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -38,21 +40,33 @@ fn main() -> Result<()> {
 
     for pkg in pkgs {
         resolve_package(&cli, pkg)
-            .with_context(|| format!("failed to resolve package `{}`", pkg.name))?;
+            .with_context(|| format!("failed to create README for package `{}`", pkg.name))?;
     }
-
-    // println!("Hello, world!");
 
     Ok(())
 }
 
 fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
+    // let config = serde_json::from_value::<Option<PackageMetadata>>(pkg.metadata.clone())
+    //     .unwrap()
+    //     .cargo_reedme;
+
     let rustdoc_json =
         extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
 
     let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
     Ok(())
+}
+
+fn extract_package_target(pkg: &Package) -> Result<PackageTarget> {
+    let target = pkg.targets.first().context("no cargo target")?;
+    let package_target = if target.is_kind(cargo_metadata::TargetKind::Bin) {
+        PackageTarget::Bin(target.name.clone())
+    } else {
+        PackageTarget::Lib
+    };
+    Ok(package_target)
 }
 
 /// Run Rustdoc on the package, generate the JSON into a file
@@ -68,12 +82,19 @@ fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
         .features(pkg.features.keys())
         .quiet(true)
         .color(rustdoc_json::Color::Never)
-        .package_target(rustdoc_json::PackageTarget::Lib);
+        .package_target(extract_package_target(pkg).context("failed to extract package target")?);
 
     let mut stderr = Vec::new();
     let rustdoc_json_path = builder
         .build_with_captured_output(std::io::sink(), &mut stderr)
-        .context("failed to run rustdoc")?;
+        .with_context(|| {
+            format!(
+                "rustdoc stderr: {}",
+                String::from_utf8(stderr)
+                    .expect("rustdoc outputs valid utf-8")
+                    .trim()
+            )
+        })?;
 
     let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
     let mut rustdoc_json = Cursor::new(rustdoc_json);
@@ -97,3 +118,11 @@ fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
 
     Ok(readme_path)
 }
+
+#[derive(Serialize, Deserialize)]
+struct PackageMetadata {
+    cargo_reedme: Option<Config>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Config {}
