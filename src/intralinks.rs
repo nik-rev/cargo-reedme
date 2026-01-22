@@ -48,7 +48,7 @@ pub fn create_intralink_resolver<'a>(
 ) -> IntralinkResolver<'a> {
     let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
 
-    let items_info = items_info(&rustdoc_json);
+    let items_info = items_info(rustdoc_json);
     let links_items_id = &root.links;
 
     let mut intralink_resolver = IntralinkResolver::new(&pkg.name, &config.docs_rs);
@@ -70,12 +70,6 @@ pub fn create_intralink_resolver<'a>(
 pub struct IntralinksDocsRsConfig {
     pub docs_rs_base_url: Option<String>,
     pub docs_rs_version: Option<String>,
-}
-
-#[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct IntralinksConfig {
-    pub docs_rs: IntralinksDocsRsConfig,
-    pub strip_links: Option<bool>,
 }
 
 #[derive(Debug)]
@@ -218,12 +212,6 @@ impl<'a> IntralinkResolver<'a> {
     pub fn resolve_link(&self, link: &Link) -> Option<&str> {
         self.link_url.get(link).map(String::as_str)
     }
-
-    pub fn is_intralink(link: &Link) -> bool {
-        let has_lone_colon = || link.raw_link.replace("::", "").contains(':');
-
-        !link.symbol().is_empty() && !link.raw_link.contains('/') && !has_lone_colon()
-    }
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -253,10 +241,6 @@ impl Link {
                 )
             }
         }
-    }
-
-    pub fn symbol(&self) -> &str {
-        self.split_link_fragment().0
     }
 
     pub fn link_fragment(&self) -> Option<&str> {
@@ -387,7 +371,7 @@ pub struct ItemInfo<'a> {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum ItemContext {
+pub enum ItemContext {
     Normal,
     Impl,
     Trait,
@@ -644,63 +628,5 @@ fn get_item_info<'a>(
 
             ItemInfo::new(item.crate_id, path, item_kind, parent_kind)
         }),
-    }
-}
-
-/// If this markdown fence language can be considered to be a "rust" language
-///
-/// All attributes: https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#attributes
-pub fn is_rust_code_block(tags: &str) -> bool {
-    tags.split(',').all(|tag| {
-        tag.is_empty()
-            || matches!(
-                tag,
-                "should_panic"
-                    | "no_run"
-                    | "ignore"
-                    | "allow_fail"
-                    | "rust"
-                    | "rs"
-                    | "test_harness"
-                    | "standalone_crate"
-                    | "compile_fail"
-            )
-            || tag.starts_with("ignore-")
-            || tag.starts_with("edition")
-    })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn is_rust_code_block() {
-        let pass = [
-            "ignore",
-            "should_panic",
-            "no_run",
-            "compile_fail",
-            "edition2018",
-            "rust",
-            "rs",
-            "standalone_crate",
-            "ignore-x86_64",
-            "ignore-x86_64,ignore-windows",
-            "ignore,ignore-x86_64",
-        ]
-        .into_iter()
-        .all(super::is_rust_code_block);
-
-        assert!(pass);
-    }
-
-    #[test]
-    fn is_rust_code_block_fail() {
-        let fail = ["py", "js", "ts", "toml"]
-            .into_iter()
-            .all(|s| !super::is_rust_code_block(s));
-
-        assert!(fail);
     }
 }
