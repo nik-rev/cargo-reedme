@@ -21,6 +21,7 @@
 
 mod intralinks;
 mod markdown;
+mod replace_content;
 
 use std::io::Cursor;
 
@@ -84,7 +85,7 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
     let markdown = root.docs.as_ref().unwrap();
     let output_markdown = markdown::resolve_markdown(markdown, intralink_resolver);
 
-    println!("{output_markdown}");
+    // println!("{output_markdown}");
 
     // let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
