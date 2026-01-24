@@ -4,6 +4,19 @@
 //! - [`B`][]
 //! - [another][C]
 //! - [again](D)
+//!
+//! Smart punctuation test:
+//!
+//! foo -- bar
+//!
+//! foo --- bar
+//!
+//! foo ... bar
+//! foo .. bar
+//!
+//! foo "quote" bar
+//!
+//! foo 'quote' bar
 
 pub struct A;
 pub struct B;

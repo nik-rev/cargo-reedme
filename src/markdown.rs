@@ -13,21 +13,9 @@ use crate::{intralinks::Links, replace_content::ReplaceContent};
 pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
-        pulldown_cmark::Options::all(),
+        pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION,
         Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
-            let url = match broken_link.link_type {
-                // Both are identical:
-                //
-                // - Shortcut link like [foo]
-                // - Collpased link like [foo][]
-                //
-                // "foo" is the reference and wasn't defined anywhere in the document
-                LinkType::Shortcut | LinkType::Collapsed => links.get(&*broken_link.reference)?,
-                // Reference like like [foo][bar], with `bar` being the "reference"
-                // that has not been defined anywhere in the Markdown document
-                LinkType::Reference => links.get(&*broken_link.reference)?,
-                _ => return None,
-            };
+            let url = links.get(&*broken_link.reference)?;
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
                 None => CowStr::Borrowed(url),
                 Some(fragment) => format!("{url}#{fragment}").into(),
@@ -37,6 +25,13 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     )
     .into_offset_iter()
     .filter_map(|(event, span)| match event {
+        // Replace original text with processed text via ENABLE_SMART_PUNCTUATION
+        //
+        // This means replacing -- with —, --- with —, ... with …, "quote" with “quote”, and 'quote' with ‘quote’.
+        pulldown_cmark::Event::Text(text) => Some(ReplaceContent {
+            range: span,
+            content: text,
+        }),
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
@@ -109,7 +104,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
             Some(ReplaceContent {
                 range: span,
-                content: format!("{code_fence}rust\n{code_block_content}\n{code_fence}"),
+                content: format!("{code_fence}rust\n{code_block_content}\n{code_fence}").into(),
             })
         }
         // This was a broken link, but we fixed it with our broken link callback
@@ -135,7 +130,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
             Some(ReplaceContent {
                 range: span.clone().start..end,
-                content: format!("[{link_content}]({dest_url})", link_content = id),
+                content: format!("[{link_content}]({dest_url})", link_content = id).into(),
             })
         }
         // Re-write inline links: [text](destination "title")

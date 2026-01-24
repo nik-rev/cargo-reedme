@@ -1,18 +1,19 @@
 use std::ops::Range;
 
+use pulldown_cmark::CowStr;
 use tracing::{info, trace};
 
 /// Replace a part of the string with something else
-pub struct ReplaceContent {
+pub struct ReplaceContent<'a> {
     /// Location of text to replace
     ///
     /// Range can be empty to insert text
     pub range: Range<usize>,
     /// What to replace that text with
-    pub content: String,
+    pub content: CowStr<'a>,
 }
 
-impl ReplaceContent {
+impl ReplaceContent<'_> {
     /// Applies all `replacements` to the given `string`
     pub fn replace_all(string: String, replacements: impl IntoIterator<Item = Self>) -> String {
         trace!(content = %string);
@@ -58,7 +59,7 @@ mod tests {
 
             ReplaceContent {
                 range,
-                content: with.to_string(),
+                content: with.to_string().into(),
             }
         });
 
