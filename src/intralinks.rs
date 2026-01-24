@@ -66,7 +66,7 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
         .get(&krate.root)
         .expect("root crate is a valid item");
 
-    let items_info = items_info(krate);
+    let items_info = collect_all_items_info(krate);
 
     let mut links = HashMap::new();
 
@@ -177,9 +177,9 @@ impl ItemKind {
         f.write_fmt(fmt)
     }
 
-    fn from_rustdoc_item_kind(
+    fn from_rustdoc_item_parent(
         kind: rustdoc_types::ItemKind,
-        item_context: ItemContext,
+        item_context: Option<ItemParent>,
     ) -> ItemKind {
         match kind {
             rustdoc_types::ItemKind::Module => ItemKind::Module,
@@ -191,9 +191,9 @@ impl ItemKind {
             rustdoc_types::ItemKind::Enum => ItemKind::Enum,
             rustdoc_types::ItemKind::Variant => ItemKind::Variant,
             rustdoc_types::ItemKind::Function => match item_context {
-                ItemContext::Normal => ItemKind::Function,
-                ItemContext::Impl => ItemKind::Method,
-                ItemContext::Trait => ItemKind::TyMethod,
+                Some(ItemParent::Impl) => ItemKind::Method,
+                Some(ItemParent::Trait) => ItemKind::TyMethod,
+                None => ItemKind::Function,
             },
             rustdoc_types::ItemKind::TypeAlias => ItemKind::TypeAlias,
             rustdoc_types::ItemKind::Constant => ItemKind::Constant,
@@ -213,7 +213,7 @@ impl ItemKind {
         }
     }
 
-    fn of_item(item: &Item, item_context: ItemContext) -> ItemKind {
+    fn of_item(item: &Item, item_parent: Option<ItemParent>) -> ItemKind {
         match item.inner {
             ItemEnum::Module(_) => ItemKind::Module,
             ItemEnum::ExternCrate { .. } => ItemKind::ExternCrate,
@@ -223,10 +223,10 @@ impl ItemKind {
             ItemEnum::StructField(_) => ItemKind::StructField,
             ItemEnum::Enum(_) => ItemKind::Enum,
             ItemEnum::Variant(_) => ItemKind::Variant,
-            ItemEnum::Function(_) => match item_context {
-                ItemContext::Normal => ItemKind::Function,
-                ItemContext::Impl => ItemKind::Method,
-                ItemContext::Trait => ItemKind::TyMethod,
+            ItemEnum::Function(_) => match item_parent {
+                Some(ItemParent::Impl) => ItemKind::Method,
+                Some(ItemParent::Trait) => ItemKind::TyMethod,
+                None => ItemKind::Function,
             },
             ItemEnum::Trait(_) => ItemKind::Trait,
             ItemEnum::TraitAlias(_) => ItemKind::TraitAlias,
@@ -256,17 +256,27 @@ impl ItemKind {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum ItemContext {
-    Normal,
+enum ItemParent {
     Impl,
     Trait,
 }
 
+/// Information about a single item
+///
+/// This information is used to compute the HTML URL to the
+/// item's documentation
 #[derive(Debug, Clone)]
 struct ItemInfo<'a> {
+    /// The crate that this item comes from
     crate_id: u32,
+    /// Path to the item.
+    ///
+    /// For [`std::clone::Clone`], this will be ["std", "clone", "Clone"]
     path: ItemPath<'a>,
+    /// Kind of item (e.g. function, method, module..)
     kind: ItemKind,
+    /// Kind of item's parent. This is only `Some` if the
+    /// item has a parent, for example: methods's parent is their impl block
     parent_kind: Option<ItemKind>,
 }
 
@@ -274,12 +284,12 @@ impl<'a> ItemInfo<'a> {
     fn new(
         item_summary: &'a ItemSummary,
         parent_kind: Option<ItemKind>,
-        item_context: ItemContext,
+        item_parent: Option<ItemParent>,
     ) -> ItemInfo<'a> {
         ItemInfo {
             crate_id: item_summary.crate_id,
             path: ItemPath::new(&item_summary.path),
-            kind: ItemKind::from_rustdoc_item_kind(item_summary.kind, item_context),
+            kind: ItemKind::from_rustdoc_item_parent(item_summary.kind, item_parent),
             parent_kind,
         }
     }
@@ -290,7 +300,7 @@ impl<'a> ItemInfo<'a> {
         self.crate_id == 0
     }
 
-    /// Creates a relative URL that can refer to this item
+    /// Creates HTML URL to this item's documentation
     fn url(
         &self,
         f: &mut fmt::Formatter,
@@ -425,19 +435,15 @@ struct ItemPath<'a> {
     segments: Cow<'a, [String]>,
 }
 
-fn items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
+/// Collects information about every item from the crate, which
+/// can then be used to generate a URL to the item's page
+fn collect_all_items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
     let mut items_info: HashMap<Id, ItemInfo<'_>> = HashMap::with_capacity(krate.index.len());
 
     for (&item_id, item_summary) in &krate.paths {
-        let item_info = ItemInfo::new(item_summary, None, ItemContext::Normal);
+        let item_info = ItemInfo::new(item_summary, None, None);
 
-        transitive_items(
-            item_id,
-            &item_info,
-            ItemContext::Normal,
-            krate,
-            &mut items_info,
-        );
+        transitive_items(item_id, &item_info, None, krate, &mut items_info);
     }
 
     items_info
@@ -446,7 +452,7 @@ fn items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
 fn transitive_items<'a>(
     item_id: Id,
     item_info: &ItemInfo<'a>,
-    item_context: ItemContext,
+    item_parent: Option<ItemParent>,
     krate: &'a Crate,
     items_info: &mut HashMap<Id, ItemInfo<'a>>,
 ) {
@@ -465,56 +471,44 @@ fn transitive_items<'a>(
 
     let Some(item) = krate.index.get(&item_id) else {
         // This item is not in the index for some reason...
+        error!("item ID not found in the crate index: `{item_id:?}`");
         return;
     };
 
-    let inner_item_context = match item.inner {
-        ItemEnum::Trait(_) => ItemContext::Trait,
-        ItemEnum::Impl(_) => ItemContext::Impl,
-        _ => item_context,
+    let item_parent = match item.inner {
+        ItemEnum::Trait(_) => Some(ItemParent::Trait),
+        ItemEnum::Impl(_) => Some(ItemParent::Impl),
+        _ => item_parent,
     };
 
-    for inner_item_id in child_item_ids(item) {
-        // The inner_item_parent_kind is not just `item_info.kind` because we need to skip
-        // kinds like `impl` blocks.
-        let inner_item_parent_kind = match item.name {
+    for item_id in child_item_ids(item) {
+        // Not just `item_info.kind` because we need to skip kinds like `impl` blocks.
+        let item_parent_kind = match item.name {
             Some(_) => Some(item_info.kind),
             None => item_info.parent_kind,
         };
 
-        let inner_item_info = {
-            let parent_path: &ItemPath<'a> = &item_info.path;
-            match krate.paths.get(&inner_item_id) {
-                Some(item_summary) => Some(ItemInfo::new(
-                    item_summary,
-                    inner_item_parent_kind,
-                    inner_item_context,
-                )),
-                None => krate.index.get(&inner_item_id).map(|item| {
-                    let path = match item.name.as_ref() {
-                        None => parent_path.clone(),
-                        Some(name) => parent_path.add(name.clone()),
-                    };
-                    let item_kind = ItemKind::of_item(item, inner_item_context);
+        let parent_path: &ItemPath<'a> = &item_info.path;
+        let item_info = match krate.paths.get(&item_id) {
+            Some(item_summary) => Some(ItemInfo::new(item_summary, item_parent_kind, item_parent)),
+            None => krate.index.get(&item_id).map(|item| {
+                let path = match item.name.as_ref() {
+                    None => parent_path.clone(),
+                    Some(name) => parent_path.add(name.clone()),
+                };
+                let item_kind = ItemKind::of_item(item, item_parent);
 
-                    ItemInfo {
-                        crate_id: item.crate_id,
-                        path,
-                        kind: item_kind,
-                        parent_kind: inner_item_parent_kind,
-                    }
-                }),
-            }
+                ItemInfo {
+                    crate_id: item.crate_id,
+                    path,
+                    kind: item_kind,
+                    parent_kind: item_parent_kind,
+                }
+            }),
         };
 
-        if let Some(inner_item_info) = inner_item_info {
-            transitive_items(
-                inner_item_id,
-                &inner_item_info,
-                inner_item_context,
-                krate,
-                items_info,
-            );
+        if let Some(inner_item_info) = item_info {
+            transitive_items(item_id, &inner_item_info, item_parent, krate, items_info);
         }
     }
 }
