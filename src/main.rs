@@ -53,6 +53,15 @@ struct Cli {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive("cargo_reedme=".parse().unwrap()),
+        )
+        .without_time()
+        .init();
+
     let cli = Cli::parse();
     let mut metadata_cmd = cli.manifest.metadata();
     cli.features.forward_metadata(&mut metadata_cmd);
@@ -84,8 +93,6 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
 
     let markdown = root.docs.as_ref().unwrap();
     let output_markdown = markdown::resolve_markdown(markdown, intralink_resolver);
-
-    // println!("{output_markdown}");
 
     // let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 

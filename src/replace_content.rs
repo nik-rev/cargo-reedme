@@ -1,5 +1,7 @@
 use std::ops::Range;
 
+use tracing::{info, trace};
+
 /// Replace a part of the string with something else
 pub struct ReplaceContent {
     /// Location of text to replace
@@ -13,6 +15,8 @@ pub struct ReplaceContent {
 impl ReplaceContent {
     /// Applies all `replacements` to the given `string`
     pub fn replace_all(string: String, replacements: impl IntoIterator<Item = Self>) -> String {
+        trace!(content = %string);
+
         replacements
             .into_iter()
             .fold((0isize, string), |(offset, mut string), replace| {
@@ -20,6 +24,8 @@ impl ReplaceContent {
                 let end = replace.range.end.strict_add_signed(offset);
 
                 string.replace_range(start..end, &replace.content);
+
+                info!(replacing = %&string[start..end], with = %replace.content);
 
                 let offset_current = replace.content.len() as isize - (end - start) as isize;
 

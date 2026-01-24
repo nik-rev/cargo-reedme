@@ -151,12 +151,7 @@ pub fn resolve_markdown(
         }
         _ => None,
     });
-    let content = ReplaceContent::replace_all(markdown.to_string(), replacements);
-
-    let mut output_markdown = String::new();
-    // let _ = pulldown_cmark_to_cmark::cmark(events, &mut output_markdown)
-    //     .context("failed to write markdown");
-    output_markdown
+    ReplaceContent::replace_all(markdown.to_string(), replacements)
 }
 
 pub fn process_rust_code_block(code_block: &str) -> String {
