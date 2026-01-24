@@ -29,6 +29,7 @@
 //! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //! SOFTWARE.
 
+use core::fmt;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
 use cargo_metadata::Package;
@@ -44,15 +45,17 @@ use crate::Config;
 pub fn create_intralink_resolver<'a>(
     pkg: &'a Package,
     config: &'a Config,
-    rustdoc_json: &'a Crate,
+    krate: &'a Crate,
 ) -> IntralinkResolver<'a> {
-    let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
+    let root = krate
+        .index
+        .get(&krate.root)
+        .expect("root crate is a valid item");
 
-    let items_info = items_info(rustdoc_json);
-    let links_items_id = &root.links;
+    let items_info = items_info(krate);
 
     let mut intralink_resolver = IntralinkResolver::new(&pkg.name, &config.docs_rs);
-    for (link, item_id) in links_items_id {
+    for (link, item_id) in &root.links {
         let link = Link {
             raw_link: link.clone(),
         };
@@ -61,7 +64,7 @@ pub fn create_intralink_resolver<'a>(
             continue;
         };
 
-        intralink_resolver.add(&link, item_info, &rustdoc_json.external_crates);
+        intralink_resolver.add(&link, item_info, &krate.external_crates);
     }
     intralink_resolver
 }
@@ -88,53 +91,6 @@ impl<'a> IntralinkResolver<'a> {
         }
     }
 
-    pub fn url_segment(kind: ItemKind, name: &str) -> String {
-        match kind {
-            ItemKind::Module => format!("{name}/"),
-            ItemKind::Struct => format!("struct.{name}.html"),
-            ItemKind::StructField => format!("#structfield.{name}"),
-            ItemKind::Union => format!("union.{name}.html"),
-            ItemKind::Enum => format!("enum.{name}.html"),
-            ItemKind::Variant => format!("#variant.{name}"),
-            ItemKind::Function => format!("fn.{name}.html"),
-            ItemKind::Method => format!("#method.{name}"),
-            ItemKind::TyMethod => format!("#tymethod.{name}"),
-            ItemKind::TypeAlias => format!("type.{name}.html"),
-            ItemKind::Constant => format!("const.{name}.html"),
-            ItemKind::Trait => format!("trait.{name}.html"),
-            ItemKind::TraitAlias => format!("traitalias.{name}.html"),
-            ItemKind::Static => format!("static.{name}.html"),
-            ItemKind::Macro => format!("macro.{name}.html"),
-            ItemKind::ProcAttribute => format!("attr.{name}.html"),
-            ItemKind::ProcDerive => format!("derive.{name}.html"),
-            ItemKind::AssocConst => {
-                format!("#associatedconstant.{name}")
-            }
-            ItemKind::AssocType => format!("#associatedtype.{name}"),
-            ItemKind::Primitive => format!("primitive.{name}.html"),
-
-            ItemKind::Keyword
-            | ItemKind::ExternCrate
-            | ItemKind::Use
-            | ItemKind::Impl
-            | ItemKind::ExternType
-            | ItemKind::Attribute => {
-                unreachable!("items of kind {:?} cannot be intralinked to", kind);
-            }
-        }
-    }
-
-    fn is_stdlib_crate(external_crate: &ExternalCrate) -> bool {
-        external_crate
-            .html_root_url
-            .as_deref()
-            .is_some_and(|base_url| base_url.starts_with("https://doc.rust-lang.org/"))
-    }
-
-    fn make_url(base_url: &str, package_name: &str, version: &str, url_path: &str) -> String {
-        format!("{base_url}/{package_name}/{version}/{url_path}")
-    }
-
     pub fn add(
         &mut self,
         link: &Link,
@@ -147,17 +103,42 @@ impl<'a> IntralinkResolver<'a> {
             .as_deref()
             .unwrap_or("https://docs.rs");
 
-        let path_segment_kind = |i: usize| match item_info.path.len() - i {
-            1 => item_info.kind,
-            2 => item_info.parent_kind.unwrap_or(ItemKind::Module),
-            _ => ItemKind::Module,
-        };
         let url_path = item_info
             .path
-            .segments()
+            .segments
+            .iter()
             .enumerate()
-            .map(|(i, segment)| (segment, path_segment_kind(i)))
-            .map(|(segment, item_kind)| IntralinkResolver::url_segment(item_kind, segment))
+            .map(|(segments_before, segment)| {
+                // How many segments needed to complete the path?
+                //
+                //  foo::bar
+                //          ^ 0
+                //  foo::bar
+                //      ^ 1
+                //  foo::bar
+                // ^ 2
+                let segments_remaining = item_info.path.segments.len() - 1 - segments_before;
+
+                let item_kind = match segments_remaining {
+                    // Reached the final component of the path
+                    //
+                    // foo::current
+                    //      ^^^^^^^ we are here
+                    0 => item_info.kind,
+                    // 2nd component of the path
+                    //
+                    // foo::bar::current
+                    //      ^^^ we are here
+                    1 => item_info.parent_kind.unwrap_or(ItemKind::Module),
+                    // Other components of the path
+                    //
+                    // foo::bar::current
+                    // ^^^ we are here
+                    _ => ItemKind::Module,
+                };
+
+                fmt::from_fn(move |f| item_kind.url_segment(segment, f))
+            })
             .join("");
 
         let url = match item_info.crate_id {
@@ -166,7 +147,7 @@ impl<'a> IntralinkResolver<'a> {
                 let version = self.config.docs_rs_version.as_deref().unwrap_or("latest");
                 let package_name = &self.package_name;
 
-                Self::make_url(docs_rs_base_url, package_name, version, &url_path)
+                make_url(docs_rs_base_url, package_name, version, &url_path)
             }
             // External crate
             _ => {
@@ -176,7 +157,7 @@ impl<'a> IntralinkResolver<'a> {
 
                 match external_crate.html_root_url.as_deref() {
                     Some(base_url) => {
-                        let base_url = match Self::is_stdlib_crate(external_crate) {
+                        let base_url = match is_stdlib_crate(external_crate) {
                             true => {
                                 // TODO Once we are able to use the stable version we can remove this
                                 //      (https://github.com/rust-lang/rust/issues/76578).
@@ -200,7 +181,7 @@ impl<'a> IntralinkResolver<'a> {
                         //      redirect to https://docs.rs/tower-service/latest/tower_service/).
                         // TODO We shouldn't hardcode "latest" here: we should get that information from
                         //      the version rustdoc determined the crate was using.
-                        Self::make_url(docs_rs_base_url, crate_name, "latest", &url_path)
+                        make_url(docs_rs_base_url, crate_name, "latest", &url_path)
                     }
                 }
             }
@@ -251,6 +232,17 @@ impl Link {
     }
 }
 
+fn is_stdlib_crate(external_crate: &ExternalCrate) -> bool {
+    external_crate
+        .html_root_url
+        .as_deref()
+        .is_some_and(|base_url| base_url.starts_with("https://doc.rust-lang.org/"))
+}
+
+fn make_url(base_url: &str, package_name: &str, version: &str, url_path: &str) -> String {
+    format!("{base_url}/{package_name}/{version}/{url_path}")
+}
+
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum ItemKind {
     Module,
@@ -284,6 +276,42 @@ pub enum ItemKind {
 }
 
 impl ItemKind {
+    pub fn url_segment(self, name: &str, f: &mut fmt::Formatter) -> fmt::Result {
+        let fmt = match self {
+            Self::Module => format_args!("{name}/"),
+            Self::Struct => format_args!("struct.{name}.html"),
+            Self::StructField => format_args!("#structfield.{name}"),
+            Self::Union => format_args!("union.{name}.html"),
+            Self::Enum => format_args!("enum.{name}.html"),
+            Self::Variant => format_args!("#variant.{name}"),
+            Self::Function => format_args!("fn.{name}.html"),
+            Self::Method => format_args!("#method.{name}"),
+            Self::TyMethod => format_args!("#tymethod.{name}"),
+            Self::TypeAlias => format_args!("type.{name}.html"),
+            Self::Constant => format_args!("const.{name}.html"),
+            Self::Trait => format_args!("trait.{name}.html"),
+            Self::TraitAlias => format_args!("traitalias.{name}.html"),
+            Self::Static => format_args!("static.{name}.html"),
+            Self::Macro => format_args!("macro.{name}.html"),
+            Self::ProcAttribute => format_args!("attr.{name}.html"),
+            Self::ProcDerive => format_args!("derive.{name}.html"),
+            Self::AssocConst => format_args!("#associatedconstant.{name}"),
+            Self::AssocType => format_args!("#associatedtype.{name}"),
+            Self::Primitive => format_args!("primitive.{name}.html"),
+
+            Self::Keyword
+            | Self::ExternCrate
+            | Self::Use
+            | Self::Impl
+            | Self::ExternType
+            | Self::Attribute => {
+                unreachable!("items of kind {self:?} cannot be intralinked to");
+            }
+        };
+
+        f.write_fmt(fmt)
+    }
+
     fn from_rustdoc_item_kind(
         kind: rustdoc_types::ItemKind,
         item_context: ItemContext,
@@ -362,6 +390,13 @@ impl ItemKind {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum ItemContext {
+    Normal,
+    Impl,
+    Trait,
+}
+
 #[derive(Debug, Clone)]
 pub struct ItemInfo<'a> {
     pub crate_id: u32,
@@ -370,75 +405,24 @@ pub struct ItemInfo<'a> {
     pub parent_kind: Option<ItemKind>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum ItemContext {
-    Normal,
-    Impl,
-    Trait,
-}
-
 impl<'a> ItemInfo<'a> {
     pub fn new(
-        crate_id: u32,
-        path: ItemPath<'a>,
-        kind: ItemKind,
-        parent_kind: Option<ItemKind>,
-    ) -> ItemInfo<'a> {
-        ItemInfo {
-            crate_id,
-            path,
-            kind,
-            parent_kind,
-        }
-    }
-
-    pub fn from(
         item_summary: &'a ItemSummary,
         parent_kind: Option<ItemKind>,
         item_context: ItemContext,
     ) -> ItemInfo<'a> {
-        ItemInfo::new(
-            item_summary.crate_id,
-            ItemPath::new(&item_summary.path),
-            ItemKind::from_rustdoc_item_kind(item_summary.kind, item_context),
+        ItemInfo {
+            crate_id: item_summary.crate_id,
+            path: ItemPath::new(&item_summary.path),
+            kind: ItemKind::from_rustdoc_item_kind(item_summary.kind, item_context),
             parent_kind,
-        )
-    }
-
-    /// Merges all the information of both items.
-    pub fn merge(&self, other: &ItemInfo<'a>) -> Option<ItemInfo<'a>> {
-        if self.crate_id != other.crate_id {
-            return None;
         }
-        if self.path != other.path {
-            return None;
-        }
-        if self.kind != other.kind {
-            return None;
-        }
-
-        if self
-            .parent_kind
-            .zip(other.parent_kind)
-            .is_some_and(|(s, o)| s != o)
-        {
-            return None;
-        }
-
-        let merged = ItemInfo {
-            crate_id: self.crate_id,
-            path: self.path.clone(),
-            kind: self.kind,
-            parent_kind: self.parent_kind.or(other.parent_kind),
-        };
-
-        Some(merged)
     }
 }
 
 impl<'a> ItemPath<'a> {
     fn new(segments: &'a [String]) -> ItemPath<'a> {
-        assert!(!segments.is_empty(), "path item must not be empty");
+        debug_assert!(!segments.is_empty(), "path item must not be empty");
 
         ItemPath {
             segments: Cow::Borrowed(segments),
@@ -453,14 +437,6 @@ impl<'a> ItemPath<'a> {
         ItemPath {
             segments: Cow::Owned(segments),
         }
-    }
-
-    pub fn segments(&self) -> impl Iterator<Item = &str> {
-        self.segments.iter().map(String::as_str)
-    }
-
-    pub fn len(&self) -> usize {
-        self.segments.len()
     }
 }
 
@@ -481,18 +457,17 @@ pub struct ItemPath<'a> {
     pub segments: Cow<'a, [String]>,
 }
 
-pub fn items_info(rustdoc_crate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
-    let mut items_info: HashMap<Id, ItemInfo<'_>> =
-        HashMap::with_capacity(rustdoc_crate.index.len());
+pub fn items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
+    let mut items_info: HashMap<Id, ItemInfo<'_>> = HashMap::with_capacity(krate.index.len());
 
-    for (&item_id, item_summary) in &rustdoc_crate.paths {
-        let item_info = ItemInfo::from(item_summary, None, ItemContext::Normal);
+    for (&item_id, item_summary) in &krate.paths {
+        let item_info = ItemInfo::new(item_summary, None, ItemContext::Normal);
 
         transitive_items(
             item_id,
             &item_info,
             ItemContext::Normal,
-            rustdoc_crate,
+            krate,
             &mut items_info,
         );
     }
@@ -504,21 +479,23 @@ fn transitive_items<'a>(
     item_id: Id,
     item_info: &ItemInfo<'a>,
     item_context: ItemContext,
-    rustdoc_crate: &'a Crate,
+    krate: &'a Crate,
     items_info: &mut HashMap<Id, ItemInfo<'a>>,
 ) {
     if item_info.kind != ItemKind::Impl {
         items_info
             .entry(item_id)
             .and_modify(|existing_item_info| {
-                *existing_item_info = existing_item_info
-                    .merge(item_info)
-                    .expect("unmergeable item info");
+                if let Some(parent_kind) = item_info.parent_kind
+                    && existing_item_info.parent_kind.is_none()
+                {
+                    existing_item_info.parent_kind = Some(parent_kind);
+                }
             })
             .or_insert_with(|| item_info.clone());
     }
 
-    let Some(item) = rustdoc_crate.index.get(&item_id) else {
+    let Some(item) = krate.index.get(&item_id) else {
         // This item is not in the index for some reason...
         return;
     };
@@ -537,20 +514,37 @@ fn transitive_items<'a>(
             None => item_info.parent_kind,
         };
 
-        let inner_item_info = get_item_info(
-            inner_item_id,
-            &item_info.path,
-            inner_item_parent_kind,
-            inner_item_context,
-            rustdoc_crate,
-        );
+        let inner_item_info = {
+            let parent_path: &ItemPath<'a> = &item_info.path;
+            match krate.paths.get(&inner_item_id) {
+                Some(item_summary) => Some(ItemInfo::new(
+                    item_summary,
+                    inner_item_parent_kind,
+                    inner_item_context,
+                )),
+                None => krate.index.get(&inner_item_id).map(|item| {
+                    let path = match item.name.as_ref() {
+                        None => parent_path.clone(),
+                        Some(name) => parent_path.add(name.clone()),
+                    };
+                    let item_kind = ItemKind::of_item(item, inner_item_context);
+
+                    ItemInfo {
+                        crate_id: item.crate_id,
+                        path,
+                        kind: item_kind,
+                        parent_kind: inner_item_parent_kind,
+                    }
+                }),
+            }
+        };
 
         if let Some(inner_item_info) = inner_item_info {
             transitive_items(
                 inner_item_id,
                 &inner_item_info,
                 inner_item_context,
-                rustdoc_crate,
+                krate,
                 items_info,
             );
         }
@@ -560,20 +554,21 @@ fn transitive_items<'a>(
 fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
     match &item.inner {
         ItemEnum::Struct(Struct { kind, impls, .. }) => {
-            let fields_ids: Box<dyn Iterator<Item = Id>> = match kind {
+            let fields: Box<dyn Iterator<Item = Id>> = match kind {
                 StructKind::Unit => Box::new(std::iter::empty()),
-                StructKind::Tuple(ids) => Box::new(ids.iter().copied().flatten()),
+                StructKind::Tuple(fields) => Box::new(fields.iter().copied().flatten()),
                 StructKind::Plain { fields, .. } => Box::new(fields.iter().copied()),
             };
 
-            Box::new(fields_ids.chain(impls.iter().copied()))
+            Box::new(fields.chain(impls.iter().copied()))
         }
         ItemEnum::Impl(Impl {
             trait_: Some(_), ..
         }) => Box::new(std::iter::empty()),
         ItemEnum::Impl(Impl {
-            items: item_ids,
+            trait_: None,
             for_,
+            items: item_ids,
             ..
         }) => match for_ {
             Type::ResolvedPath(_) => Box::new(item_ids.iter().copied()),
@@ -586,11 +581,7 @@ fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
             variants, impls, ..
         }) => Box::new(variants.iter().chain(impls.iter()).copied()),
         ItemEnum::Primitive(Primitive { impls, .. }) => Box::new(impls.iter().copied()),
-        ItemEnum::Trait(Trait { items, .. }) => {
-            // We ignore the implementations of the trait as their items are not part of the trait
-            // itself.
-            Box::new(items.iter().copied())
-        }
+        ItemEnum::Trait(Trait { items, .. }) => Box::new(items.iter().copied()),
 
         ItemEnum::Function(_)
         | ItemEnum::ExternCrate { .. }
@@ -607,26 +598,5 @@ fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
         | ItemEnum::ExternType
         | ItemEnum::TraitAlias(_)
         | ItemEnum::TypeAlias(_) => Box::new(std::iter::empty()),
-    }
-}
-
-fn get_item_info<'a>(
-    item_id: Id,
-    parent_path: &ItemPath<'a>,
-    parent_kind: Option<ItemKind>,
-    item_context: ItemContext,
-    rustdoc_crate: &'a Crate,
-) -> Option<ItemInfo<'a>> {
-    match rustdoc_crate.paths.get(&item_id) {
-        Some(item_summary) => Some(ItemInfo::from(item_summary, parent_kind, item_context)),
-        None => rustdoc_crate.index.get(&item_id).map(|item| {
-            let path = match item.name.as_ref() {
-                None => parent_path.clone(),
-                Some(name) => parent_path.add(name.clone()),
-            };
-            let item_kind = ItemKind::of_item(item, item_context);
-
-            ItemInfo::new(item.crate_id, path, item_kind, parent_kind)
-        }),
     }
 }
