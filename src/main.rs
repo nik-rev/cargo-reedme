@@ -1,24 +1,76 @@
 //! yes, this is **very cool** crate
 //!
-//! macro:
-//!
-//! - [`main`]
-//! - [get_readme_path](main)
-//!
-//! ```
-//! hello world
-//! ```
-//!
-//!     hello world
-//!
-//! ```py
-//! hello world
-//! ```
-//!
-//! ```ignore
-//! python
-//! # hidden line
-//! ```
+//! - [`A`]
+//! - [`B`][]
+//! - [another][C]
+//! - [again](D)
+
+pub struct A;
+pub struct B;
+pub struct C;
+pub struct D;
+
+mod x {
+    //! - [get_readme_path](<hello main>        "world"     )
+    //!
+    //! ```
+    //! hello world
+    //! ```
+    //!
+    //!     hello world
+    //!
+    //! ```py
+    //! hello world
+    //! ```
+    //!
+    //! ```ignore
+    //! python
+    //! # hidden line
+    //! ```
+    //!
+    //! []
+    //!
+    //! [`<Hello as Clone>::clone`]
+    //!
+    //! [Hello.a]
+    //!
+    //! [Hello::a]
+    //!
+    //! Rustdoc specific extensions:
+    //!
+    //! [Copy]
+    //!
+    //! [`Copy`]
+    //!
+    //! <code>::core::marker::[Copy]</code>
+    //!
+    //! Inline link:
+    //!
+    //! [item](Copy)
+    //!
+    //! Reference link:
+    //!
+    //! [the text][item]
+    //!
+    //! Collapsed reference link:
+    //!
+    //! [item][]
+    //!
+    //! Shortcut reference link:
+    //!
+    //! [item]
+    //!
+    //! [item]: Copy
+}
+pub struct Hello {
+    a: u32,
+}
+
+impl Clone for Hello {
+    fn clone(&self) -> Self {
+        Self { a: self.a.clone() }
+    }
+}
 
 mod intralinks;
 mod markdown;
@@ -104,29 +156,6 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
     // let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
 
     Ok(())
-}
-
-/// Broken link callback that does nothing.
-#[derive(Debug)]
-pub struct ResolveLinks<'a> {
-    links: &'a Links<'a>,
-}
-
-impl<'input> BrokenLinkCallback<'input> for ResolveLinks<'_> {
-    fn handle_broken_link(
-        &mut self,
-        link: BrokenLink<'input>,
-    ) -> Option<(
-        pulldown_cmark::CowStr<'input>,
-        pulldown_cmark::CowStr<'input>,
-    )> {
-        let url = self.links.get(&*link.reference)?;
-        let url = match crate::intralinks::link_fragment(&link.reference) {
-            None => url.to_string().into(),
-            Some(fragment) => format!("{url}#{fragment}").into(),
-        };
-        Some((url, "".into()))
-    }
 }
 
 fn extract_package_target(pkg: &Package) -> Result<PackageTarget> {

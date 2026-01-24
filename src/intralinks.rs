@@ -38,7 +38,7 @@ use rustdoc_types::{
     Crate, Enum, ExternalCrate, Id, Impl, Item, ItemEnum, ItemSummary, MacroKind, Primitive,
     ProcMacro, Struct, StructKind, Trait, Type, Union,
 };
-use tracing::error;
+use tracing::{error, trace};
 
 use crate::{Config, IntralinksDocsRsConfig};
 
@@ -471,7 +471,7 @@ fn transitive_items<'a>(
 
     let Some(item) = krate.index.get(&item_id) else {
         // This item is not in the index for some reason...
-        error!("item ID not found in the crate index: `{item_id:?}`");
+        trace!("item ID not found in the crate index: `{item_id:?}`");
         return;
     };
 

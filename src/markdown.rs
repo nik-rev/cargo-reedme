@@ -1,5 +1,5 @@
 use core::fmt;
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Range};
 
 use itertools::Itertools;
 use pulldown_cmark::LinkType;
@@ -16,7 +16,19 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         markdown,
         pulldown_cmark::Options::all(),
         Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
-            let url = links.get(&*broken_link.reference)?;
+            let url = match broken_link.link_type {
+                // Both are identical:
+                //
+                // - Shortcut link like [foo]
+                // - Collpased link like [foo][]
+                //
+                // "foo" is the reference and wasn't defined anywhere in the document
+                LinkType::Shortcut | LinkType::Collapsed => links.get(&*broken_link.reference)?,
+                // Reference like like [foo][bar], with `bar` being the "reference"
+                // that has not been defined anywhere in the Markdown document
+                LinkType::Reference => links.get(&*broken_link.reference)?,
+                _ => return None,
+            };
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
                 None => url.to_string().into(),
                 Some(fragment) => format!("{url}#{fragment}").into(),
@@ -101,60 +113,137 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
                 content: code_block,
             })
         }
+        // This was a broken link, but we fixed it with the broken link callback
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
             link_type,
             dest_url,
             title,
             id,
-        }) => {
-            match link_type {
-                // Only rewrite inline links of the form [text](destination)
-                LinkType::Inline => {}
-                // This was a broken link, but we fixed it
-                LinkType::ShortcutUnknown => {
-                    debug_assert!(title.is_empty());
+        }) if matches!(
+            link_type,
+            LinkType::ShortcutUnknown | LinkType::CollapsedUnknown | LinkType::ReferenceUnknown
+        ) =>
+        {
+            debug_assert!(title.is_empty(), "we never insert a title");
 
-                    return Some(ReplaceContent {
-                        range: span.clone(),
-                        content: format!("[{link_content}]({dest_url})", link_content = id),
-                    });
-                }
-                _ => return None,
-            }
+            eprintln!("{}", &markdown[span.clone()]);
 
-            // Present only for other link types.
-            debug_assert!(id.is_empty());
-
-            // [text](destination)
-            // ^^^^^^^^^^^^^^^^^^^
-            let markdown_link = &markdown[span.clone()];
-
-            // [text](destination)
-            //  ^^^^
-            let link_content = &markdown_link[1..markdown_link.len()
-                - ')'.len_utf8()
-                - dest_url.len()
-                - '('.len_utf8()
-                - ']'.len_utf8()];
-
-            let new_destination = links.get(&*dest_url)?;
+            let end = if matches!(link_type, LinkType::CollapsedUnknown) {
+                // add +2 to also replace the [] at the end. without this,
+                // we will generate "[foo](bar)[]" for "[foo][]" if [foo] links to "bar"
+                span.clone().end + 2
+            } else {
+                span.clone().end
+            };
 
             Some(ReplaceContent {
-                range: span.clone(),
-                content: format!(
-                    "[{link_content}]({new_destination}{})",
-                    fmt::from_fn(|f| {
-                        if title.is_empty() {
-                            Ok(())
-                        } else {
-                            f.write_fmt(format_args!(r#" "{title}""#))
-                        }
-                    })
-                ),
+                range: span.clone().start..end,
+                content: format!("[{link_content}]({dest_url})", link_content = id),
             })
+        }
+        // Re-write inline links: [text](destination "title")
+        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+            link_type: LinkType::Inline,
+            dest_url,
+            title,
+            id,
+        }) => {
+            None
+
+            // // Present only for other link types.
+            // debug_assert!(id.is_empty());
+
+            // // [text](destination "title")
+            // // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            // let markdown_link = &markdown[span.clone()];
+
+            // // Skip past link section
+
+            // let mut nesting_level = 1;
+            // let link_chars = markdown_link.char_indices();
+            // // skip the first "["
+            // let mut link_chars = link_chars.skip(1);
+            // // whether the current character is escaped
+            // let mut escaped = false;
+            // let mut in_quotes = false;
+
+            // let destination_start = loop {
+            //     let Some((i, ch)) = link_chars.next() else {
+            //         // invalid markdown!
+            //         continue;
+            //     };
+
+            //     match ch {
+            //         '[' if !escaped => {
+            //             nesting_level += 1;
+            //         }
+            //         ']' if !escaped => {
+            //             nesting_level -= 1;
+
+            //             // reached end
+            //             if nesting_level == 0 {
+            //                 break i + ']'.len_utf8() + '('.len_utf8();
+            //             }
+            //         }
+            //         '"' if !escaped => {}
+            //         '\\' if !escaped => {
+            //             // will be set to "false" on the next iteration
+            //             escaped = true;
+            //             continue;
+            //         }
+            //         _ => {}
+            //     }
+
+            //     escaped = false;
+            // };
+
+            // // [text](destination "title")
+            // //        ^^^^^^^^^^^^^^^^^^^^
+            // let destination_start_index = markdown_link
+            //     .find("](")
+            //     .expect("invalid markdown link; parser would fail")
+            //     + ']'.len_utf8()
+            //     + '('.len_utf8();
+
+            // // [text](destination  "title"  )
+            // //                              ^
+            // let link_end_index = markdown_link
+            //     .rfind(')')
+            //     .expect("invalid markdown link; parser would fail");
+
+            // let mut destination_end_index = link_end_index;
+
+            // let mut chars = markdown_link[destination_start_index..link_end_index]
+            //     .char_indices()
+            //     .rev()
+            //     .peekable();
+
+            // while let Some((i, ch)) = chars.next() {
+            //     match ch {
+            //         ' ' => {}
+            //         // This is a ", NOT an escaped \"
+            //         //
+            //         // Important since \" is actually part of the title itself.
+            //         '"' if chars.peek().expect("invalid markdown").1 != '\\' => {}
+            //         _ => break,
+            //     }
+            // }
+
+            // // Adjust it to be relative to the entire markdown input
+
+            // let destination_start_index = destination_start_index + span.start;
+            // let destination_end_index = destination_end_index + span.start;
+
+            // let new_destination = links.get(&*dest_url)?;
+
+            // Some(ReplaceContent {
+            //     range: destination_start_index..destination_end_index,
+            //     content: new_destination.to_string(),
+            // })
         }
         _ => None,
     });
+
     ReplaceContent::replace_all(markdown.to_string(), replacements)
 }
 
@@ -181,6 +270,11 @@ pub fn is_rust_code_block(tags: &str) -> bool {
     })
 }
 
+/// Locates position of link destination in the markdown link
+fn locate_link_destination(link: &str) -> Range<usize> {
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
     use docstr::docstr;
@@ -199,6 +293,115 @@ mod tests {
         }};
     }
 
+    // #[test]
+    // fn link_destination() {
+    //     let a = docstr! {
+    //         /// [link](/uri "title")"
+    //         ///        ^^^^
+    //         ///
+    //         /// [link](/uri "title")
+    //         ///        ^^^^
+    //         ///
+    //         /// [link](/uri)
+    //         ///        ^^^^
+    //         ///
+    //         /// [](./target.md)
+    //         ///    ^^^^^^^^^^^
+    //         ///
+    //         /// [link]()
+    //         ///       ^
+    //         ///
+    //         /// [link](<>)
+    //         ///        ^
+    //         ///
+    //         /// []()
+    //         ///   ^
+    //         ///
+    //         /// [link](/my uri)
+    //         ///        ^^^^^^^
+    //         ///
+    //         /// [link](</my uri>)
+    //         ///        ^^^^^^^^^
+    //         ///
+    //         /// [a](<b)c>)
+    //         ///     ^^^^^
+    //         ///
+    //         /// [link](\(foo\))
+    //         ///        ^^^^^^^
+    //         ///
+    //         /// [link](foo(and(bar)))
+    //         ///        ^^^^^^^^^^^^^^
+    //         ///
+    //         /// [link](foo\(and\(bar\))
+    //         ///        ^^^^^^^^^^^^^^^^
+    //         ///
+    //         /// [link](<foo(and(bar)>)
+    //         ///        ^^^^^^^^^^^^^^
+    //         ///
+    //         /// r"[link](foo\)\:)";
+    //         ///
+    //         /// // Titles may be in single quotes, double quotes, or parentheses:
+    //         ///
+    //         /// r#"[link](/url "title")"#;
+    //         /// "[link](/url 'title')";
+    //         /// "[link](/url (title))";
+    //     };
+
+    //     // Parentheses and other symbols can also be escaped, as usual in Markdown:
+    //     r"[link](foo\)\:)";
+    //     // Titles may be in single quotes, double quotes, or parentheses:
+    //     r#"[link](/url "title")"#;
+    //     "[link](/url 'title')";
+    //     "[link](/url (title))";
+    //     // Backslash escapes and entity and numeric character references may be used in titles:
+    //     r#"[link](/url "title \"&quot;")"#;
+    //     // quotes can be mixed
+    //     r#"[link](/url 'title "and" title')"#;
+    //     // Spaces, tabs, and up to one line ending is allowed around the destination and title:
+    //     "[link](\t/uri\n\"title\"\t)";
+    //     // The link text may contain balanced brackets, but not unbalanced ones, unless they are escaped:
+    //     "[link [foo [bar]]](/uri)";
+    //     r"[link \[bar](/uri)";
+    //     // The link text may contain inline content:
+    //     "[link *foo **bar** `#`*](/uri)";
+    //     "[![moon](moon.jpg)](/uri)";
+
+    //     ///
+    //     /// [link](foo\)\:)
+    //     ///        ^^^^^^^^
+    //     ///
+    //     /// [link](/url "title")
+    //     ///        ^^^^
+    //     ///
+    //     /// [link](/url 'title')
+    //     ///        ^^^^
+    //     ///
+    //     /// [link](/url (title))
+    //     ///        ^^^^
+    //     ///
+    //     /// [link](/url "title \"&quot;")
+    //     ///        ^^^^
+    //     ///
+    //     /// [link](/url 'title "and" title')
+    //     ///        ^^^^
+    //     ///
+    //     /// [link](	/uri
+    //     ///        "title"	)
+    //     ///        ^^^^
+    //     ///
+    //     /// [link [foo [bar]]](/uri)
+    //     ///                      ^^^^
+    //     ///
+    //     /// [link \[bar](/uri)
+    //     ///              ^^^^
+    //     ///
+    //     /// [link *foo **bar** `#`*](/uri)
+    //     ///                           ^^^^
+    //     ///
+    //     /// [![moon](moon.jpg)](/uri)
+    //     ///                     ^^^^
+    // }
+
     #[track_caller]
     fn t(input: &str, links: Links<'_>, expected: &str) {
         let out = resolve_markdown(input, links);
@@ -206,7 +409,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_broken_link() {
+    fn intra_doc_broken_link() {
         t(
             docstr! {
                 /// just a [link]
@@ -221,13 +424,13 @@ mod tests {
     }
 
     #[test]
-    fn invalid_broken_link() {
+    fn regular_broken_link() {
         t(
             docstr! {
                 /// just a [link]
             },
             links! {
-                "that does not exist" => "..."
+                "..." => "..."
             },
             docstr! {
                 /// just a [link]
@@ -236,7 +439,58 @@ mod tests {
     }
 
     #[test]
-    fn valid_inline_link() {
+    fn intra_doc_inline_link() {
+        t(
+            docstr! {
+                /// just a [link](where?)
+            },
+            links! {
+                "where?" => "to somewhere"
+            },
+            docstr! {
+                /// just a [link](to somewhere)
+            },
+        );
+
+        // Now there are 3X as many links to resolve
+        t(
+            docstr! {
+                /// just a [link](where?)
+                /// just a [link](where?)
+                /// just a [link](where?)
+            },
+            links! {
+                "where?" => "to somewhere"
+            },
+            docstr! {
+                /// just a [link](to somewhere)
+                /// just a [link](to somewhere)
+                /// just a [link](to somewhere)
+            },
+        );
+
+        // Now there are 2 different links, and 1 of them is duplicated
+        t(
+            docstr! {
+                /// just a [link](where?)
+                /// just a [url](what?)
+                /// just a [link](where?)
+            },
+            links! {
+                "where?" => "to somewhere",
+                "what?" => "because"
+            },
+            docstr! {
+                /// just a [link](to somewhere)
+                /// just a [url](what?)
+                /// just a [link](because)
+            },
+        );
+    }
+
+    /// Test link titles with different kinds of whitespace on left and right
+    #[test]
+    fn intra_doc_inline_link_title() {
         t(
             docstr! {
                 /// just a [link](where? "title")
@@ -248,25 +502,51 @@ mod tests {
                 /// just a [link](to somewhere "title")
             },
         );
-    }
 
-    #[test]
-    fn invalid_inline_link() {
+        // 3 spaces at the front
         t(
             docstr! {
-                /// just a [link](where? "title")
+                /// just a [link](where?   "title")
             },
             links! {
-                "no exist" => "..."
+                "where?" => "to somewhere"
             },
             docstr! {
-                /// just a [link](where? "title")
+                /// just a [link](to somewhere   "title")
+            },
+        );
+
+        // 2 spaces at the front and at the back
+        t(
+            docstr! {
+                /// just a [link](where?  "title"  )
+            },
+            links! {
+                "where?" => "to somewhere"
+            },
+            docstr! {
+                /// just a [link](to somewhere  "title"  )
             },
         );
     }
 
     #[test]
-    fn label() {
+    fn regular_inline_link() {
+        t(
+            docstr! {
+                /// just a [link](where?)
+            },
+            links! {
+                "..." => "..."
+            },
+            docstr! {
+                /// just a [link](where?)
+            },
+        );
+    }
+
+    #[test]
+    fn intra_doc_reference_link() {
         t(
             docstr! {
                 /// just a [link]
@@ -275,6 +555,25 @@ mod tests {
             },
             links! {
                 "somewhere" => "but where?"
+            },
+            docstr! {
+                /// just a [link]
+                ///
+                /// [link]: but where?
+            },
+        );
+    }
+
+    #[test]
+    fn regular_doc_reference_link() {
+        t(
+            docstr! {
+                /// just a [link]
+                ///
+                /// [link]: somewhere
+            },
+            links! {
+                "..." => "..."
             },
             docstr! {
                 /// just a [link]
