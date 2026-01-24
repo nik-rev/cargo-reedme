@@ -4,7 +4,6 @@ use docstr::docstr;
 use itertools::Itertools;
 use pulldown_cmark::{CowStr, LinkType, Options};
 use rangemap::RangeSet;
-use regex::Regex;
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
 
