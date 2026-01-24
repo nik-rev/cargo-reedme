@@ -17,6 +17,7 @@
 //!
 //! ```ignore
 //! python
+//! # hidden line
 //! ```
 
 mod intralinks;
@@ -48,21 +49,25 @@ struct Cli {
     workspace: clap_cargo::Workspace,
     #[command(flatten)]
     features: clap_cargo::Features,
+    #[command(flatten)]
+    verbosity: clap_verbosity_flag::Verbosity,
 }
 
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    let cli = Cli::parse();
+
     tracing_subscriber::fmt()
         .pretty()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("cargo_reedme=".parse().unwrap()),
+                .add_directive(format!("cargo_reedme={}", cli.verbosity).parse().unwrap()),
         )
         .without_time()
+        .with_target(false)
         .init();
 
-    let cli = Cli::parse();
     let mut metadata_cmd = cli.manifest.metadata();
     cli.features.forward_metadata(&mut metadata_cmd);
     let metadata = metadata_cmd

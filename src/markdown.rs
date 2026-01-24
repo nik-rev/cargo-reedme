@@ -51,7 +51,7 @@ pub fn resolve_markdown(
                 .count();
             // The code fence itself: ```
             let code_fence = "`".repeat(backtick_count);
-            let code_block_lines = markdown.lines().collect_vec();
+            let code_block_lines = markdown[span.clone()].lines().collect_vec();
 
             // Remove the first line (```compile_error) and last line (```) of the code blocks,
             // both of which are the code fences

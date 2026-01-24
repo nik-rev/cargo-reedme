@@ -23,9 +23,9 @@ impl ReplaceContent {
                 let start = replace.range.start.strict_add_signed(offset);
                 let end = replace.range.end.strict_add_signed(offset);
 
-                string.replace_range(start..end, &replace.content);
-
                 info!(replacing = %&string[start..end], with = %replace.content);
+
+                string.replace_range(start..end, &replace.content);
 
                 let offset_current = replace.content.len() as isize - (end - start) as isize;
 

@@ -21,3 +21,4 @@ itertools = "0.14.0"
 pretty_assertions = "1.4.1"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+clap-verbosity-flag = { version = "3.0.4", default-features = false, features = ["tracing"] }
