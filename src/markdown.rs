@@ -1,7 +1,10 @@
 use std::borrow::Cow;
 
+use docstr::docstr;
 use itertools::Itertools;
 use pulldown_cmark::{CowStr, LinkType, Options};
+use rangemap::RangeSet;
+use regex::Regex;
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
 
@@ -11,6 +14,11 @@ use crate::{intralinks::Links, replace_content::ReplaceContent};
 /// - Strips rustdoc-specific tags from code fences, such as "edition2024,compile_fail"
 /// - Labels code blocks without a language as "Rust"
 pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
+    let mut reference_definitions = Vec::new();
+    // When searching for reference definitions, anything we find that
+    // touches this set will be excluded because it is inside of a code block
+    let mut code_block_ranges = RangeSet::new();
+
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         markdown_options(),
@@ -27,7 +35,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     .filter_map(|(event, span)| match event {
         // Replace original text with processed text via ENABLE_SMART_PUNCTUATION
         //
-        // This means replacing -- with —, --- with —, ... with …, "quote" with “quote”, and 'quote' with ‘quote’.
+        // Replaces -- with —, --- with —, ... with …, "quote" with “quote”, and 'quote' with ‘quote’.
         pulldown_cmark::Event::Text(text) => Some(ReplaceContent {
             range: span,
             content: text,
@@ -35,6 +43,8 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
+            code_block_ranges.insert(span.clone());
+
             // Only consider code blocks that contain Rust from here on out
             match code_block_kind {
                 // Indented code blocks are ignored, for now
@@ -133,13 +143,63 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
                 content: format!("[{link_content}]({dest_url})", link_content = id).into(),
             })
         }
+        // Reference links:
+        //
+        // [link][somewhere]
+        //
+        // [somewhere]: foo
+        //
+        //
+        // Shortcut links:
+        //
+        // [link]
+        //
+        // [link]: foo
+        //
+        //
+        // Process:
+        //
+        // Since we want to output markdown that is as similar to the original input
+        // as possible, all we want to do is replace those "foo" links with the correct
+        // links obtained from the "links" map.
+        //
+        // That is tricky, because `pulldown_cmark` does not generate any events
+        // for those reference definitions. Their existance is simply erased.
+        //
+        // So what we do is mostly a hack. We remember every reference ID and its URL,
+        // then we do a 2nd search over the entire input to find all reference links.
+        //
+        // Reference links that have an entry in the map will be replaced
+        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+            link_type: LinkType::Reference | LinkType::Shortcut,
+            dest_url,
+            title,
+            id,
+        }) if !id.is_empty() => {
+            reference_definitions.push((dest_url, id));
+            None
+        }
         // Re-write inline links: [text](destination "title")
+        //
+        // This is tricky because we need to find the "destination"
+        // and replace it with the correct link, so we edit the user's
+        // input as little as possible.
+        //
+        // To do this we need to manually parse from the end of the link
+        // until the destination. The title is the one that's hardest, it can
+        // contain quotes and parentheses.
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
             link_type: LinkType::Inline,
             dest_url,
             title,
             id,
         }) => {
+            // We find span of the destination:
+            //
+            // [text](destination "title")
+            //        ^^^^^^^^^^^
+            dbg!(title, id, dest_url);
+
             None
 
             // // Present only for other link types.
@@ -234,6 +294,59 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
             // })
         }
         _ => None,
+    });
+
+    let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);
+
+    let replacements = reference_definitions.into_iter().filter_map(|(dest, id)| {
+        let new_url = links.get(&*dest)?;
+
+        let dest = regex::escape(&dest);
+        let id = regex::escape(&id);
+
+        // Regex for reference definitions.
+        //
+        // Reference definitions look like this:
+        //
+        // [id]: dest "optional title"
+        //
+        // They must be at the start of the line, they may be preceded
+        // by whitespace, they may be inside of list items and blockquotes
+        let regex = docstr! { format!
+            /// ^                         # Start of line
+            ///
+            /// \[\s>*\-+0-9.]*?          # Non-greedily match common container prefixes:
+            ///                           # spaces, blockquotes (>), or list bullets (*, -, +, 1.)
+            ///
+            /// \[(?i:{id})\]:            # The label and colon
+            ///
+            /// \s*                       # Optional whitespace before the url
+            ///
+            /// (?:<({dest})>|({dest}))   # Non-capturing group to match either <URL> or URL,
+            ///                           # capturing just the URL itself in group 1 or 2.
+        };
+        let regex = regex::RegexBuilder::new(&regex)
+            .multi_line(true)
+            .ignore_whitespace(true)
+            .build()
+            .unwrap();
+
+        // Only care about the first one, because markdown only uses the first
+        // reference link definition if multiple are present
+        let capture = regex.captures_iter(&markdown).next()?;
+
+        // Group 1 is <url>, Group 2 is the raw url
+        let match_ = capture.get(1).or_else(|| capture.get(2))?;
+
+        // This definition is part of a code block.
+        if code_block_ranges.overlaps(&match_.range()) {
+            return None;
+        }
+
+        Some(ReplaceContent {
+            range: match_.range().clone(),
+            content: CowStr::Borrowed(new_url),
+        })
     });
 
     ReplaceContent::replace_all(markdown.to_string(), replacements)

@@ -1,22 +1,12 @@
-//! yes, this is **very cool** crate
+//! check out [foo][bar]
 //!
-//! - [`A`]
-//! - [`B`][]
-//! - [another][C]
-//! - [again](D)
+//! [bar]: main
 //!
-//! Smart punctuation test:
+//! check out [quux]
 //!
-//! foo -- bar
+//! [quux]: lol
 //!
-//! foo --- bar
-//!
-//! foo ... bar
-//! foo .. bar
-//!
-//! foo "quote" bar
-//!
-//! foo 'quote' bar
+//! check out [uwu][]
 
 pub struct A;
 pub struct B;
@@ -24,6 +14,26 @@ pub struct C;
 pub struct D;
 
 mod x {
+    //! yes, this is **very cool** crate
+    //!
+    //! - [`A`]
+    //! - [`B`][]
+    //! - [another][C]
+    //! - [again](D)
+    //!
+    //! Smart punctuation test:
+    //!
+    //! foo -- bar
+    //!
+    //! foo --- bar
+    //!
+    //! foo ... bar
+    //! foo .. bar
+    //!
+    //! foo "quote" bar
+    //!
+    //! foo 'quote' bar
+    //!
     //! - [get_readme_path](<hello main>        "world"     )
     //!
     //! ```
