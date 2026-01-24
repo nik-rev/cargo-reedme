@@ -82,12 +82,9 @@ use cargo_metadata::Package;
 use clap::Parser;
 use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
-use pulldown_cmark::{BrokenLink, BrokenLinkCallback};
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
-
-use crate::intralinks::Links;
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]

@@ -1,8 +1,7 @@
-use core::fmt;
-use std::{borrow::Cow, ops::Range};
+use std::borrow::Cow;
 
 use itertools::Itertools;
-use pulldown_cmark::LinkType;
+use pulldown_cmark::{CowStr, LinkType};
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
 
@@ -30,7 +29,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
                 _ => return None,
             };
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
-                None => url.to_string().into(),
+                None => CowStr::Borrowed(url),
                 Some(fragment) => format!("{url}#{fragment}").into(),
             };
             Some((url, "".into()))
@@ -43,8 +42,9 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
             // Only consider code blocks that contain Rust from here on out
             match code_block_kind {
-                // Indented code blocks are ignored
+                // Indented code blocks are ignored, for now
                 pulldown_cmark::CodeBlockKind::Indented => return None,
+                // Fenced code blocks: ```rust
                 pulldown_cmark::CodeBlockKind::Fenced(tags) => {
                     if !is_rust_code_block(&tags) {
                         return None;
@@ -52,15 +52,17 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
                 }
             }
 
-            // How many backticks this code block has (3+)
+            // How many backticks this code block has
             //
-            // Usually 3, sometimes 4 if this code block has nested code blocks
+            // At least - and usually 3, sometimes 4+ if this code block has nested code blocks
             let backtick_count = markdown[span.clone()]
                 .chars()
                 .take_while(|ch| *ch == '`')
                 .count();
+
             // The code fence itself: ```
             let code_fence = "`".repeat(backtick_count);
+
             let code_block_lines = markdown[span.clone()].lines().collect_vec();
 
             // Remove the first line (```compile_error) and last line (```) of the code blocks,
@@ -105,15 +107,12 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
                 })
                 .join("\n");
 
-            // The full modified code block
-            let code_block = format!("{code_fence}rust\n{code_block_content}\n{code_fence}");
-
             Some(ReplaceContent {
                 range: span,
-                content: code_block,
+                content: format!("{code_fence}rust\n{code_block_content}\n{code_fence}"),
             })
         }
-        // This was a broken link, but we fixed it with the broken link callback
+        // This was a broken link, but we fixed it with our broken link callback
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
             link_type,
             dest_url,
@@ -125,8 +124,6 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         ) =>
         {
             debug_assert!(title.is_empty(), "we never insert a title");
-
-            eprintln!("{}", &markdown[span.clone()]);
 
             let end = if matches!(link_type, LinkType::CollapsedUnknown) {
                 // add +2 to also replace the [] at the end. without this,
@@ -268,11 +265,6 @@ pub fn is_rust_code_block(tags: &str) -> bool {
             || tag.starts_with("ignore-")
             || tag.starts_with("edition")
     })
-}
-
-/// Locates position of link destination in the markdown link
-fn locate_link_destination(link: &str) -> Range<usize> {
-    todo!()
 }
 
 #[cfg(test)]
