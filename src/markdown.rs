@@ -15,7 +15,14 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         pulldown_cmark::Options::all(),
-        Some(crate::ResolveLinks { links: &links }),
+        Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
+            let url = links.get(&*broken_link.reference)?;
+            let url = match crate::intralinks::link_fragment(&broken_link.reference) {
+                None => url.to_string().into(),
+                Some(fragment) => format!("{url}#{fragment}").into(),
+            };
+            Some((url, "".into()))
+        }),
     )
     .into_offset_iter()
     .filter_map(|(event, span)| match event {
