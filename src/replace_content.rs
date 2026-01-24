@@ -31,30 +31,24 @@ impl ReplaceContent {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_str_eq;
+
     use super::*;
 
-    #[test]
-    fn replace_iter() {
-        let content = "00 aaa bbb ccc dd";
-
-        let replacements = [
-            ("aaa", "11"),
-            // "aaa bbb ccc"
-            //      ^^^
-            ("bbb", "222"),
-            // "aaa bbb ccc"
-            //      ^^^
-            ("ccc", "3333"),
-        ]
-        .iter()
-        .map(|(replace, with)| {
-            let start = content
+    #[track_caller]
+    fn t<'a>(
+        input: &str,
+        replacements: impl IntoIterator<Item = (&'a str, &'a str)>,
+        result: &str,
+    ) {
+        let replacements = replacements.into_iter().map(|(replace, with)| {
+            let start = input
                 .find(replace)
                 .unwrap_or_else(|| panic!("failed to find pattern: {replace}"));
 
             let range = start..start + replace.len();
 
-            assert_eq!(*replace, &content[range.clone()], "invalid range");
+            assert_eq!(replace, &input[range.clone()], "invalid range");
 
             ReplaceContent {
                 range,
@@ -62,8 +56,41 @@ mod tests {
             }
         });
 
-        let replaced = ReplaceContent::replace_all(content.to_string(), replacements);
+        let replaced = ReplaceContent::replace_all(input.to_string(), replacements);
 
-        assert_eq!(replaced, "00 11 222 3333 dd");
+        assert_str_eq!(result, replaced, "wrong replacement");
+    }
+
+    #[test]
+    fn simple() {
+        t(
+            "00 aaa bbb ccc dd",
+            [("aaa", "11"), ("bbb", "222"), ("ccc", "3333")],
+            "00 11 222 3333 dd",
+        );
+    }
+
+    #[test]
+    fn out_of_order() {
+        // NOTE: Replacement for "ccc" comes before "aaa" in the list
+        t(
+            "aaa bbb ccc",
+            [("ccc", "333"), ("aaa", "111")],
+            "111 bbb 333",
+        );
+    }
+
+    #[test]
+    fn emojis() {
+        t(
+            "🦀 is a crab, aaa is a test",
+            [("aaa", "success")],
+            "🦀 is a crab, success is a test",
+        );
+    }
+
+    #[test]
+    fn boundaries() {
+        t("A", [("A", "Alphabet")], "Alphabet");
     }
 }
