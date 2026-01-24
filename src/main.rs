@@ -94,10 +94,10 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
         extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
 
     let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
-    let intralink_resolver = intralinks::create_links(pkg, &config, &rustdoc_json);
+    let links = intralinks::create_links(pkg, &config, &rustdoc_json);
 
     let markdown = root.docs.as_ref().unwrap();
-    let output_markdown = markdown::resolve_markdown(markdown, intralink_resolver);
+    let output_markdown = markdown::resolve_markdown(markdown, links);
 
     println!("{output_markdown}");
 

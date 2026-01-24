@@ -143,6 +143,7 @@ dependencies = [
  "clap-cargo",
  "clap-verbosity-flag",
  "color-eyre",
+ "docstr",
  "eyre",
  "fs-err",
  "itertools",
@@ -283,6 +284,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
+name = "docstr"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03f9c8f8e7c0edf9b0a5626b865628e90e6e896dc871cd65c894058f78bfef27"
+dependencies = [
+ "litrs",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -404,6 +414,12 @@ name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
+
+[[package]]
+name = "litrs"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e4cf394bcd88ba72eb3b2862e21ef6458b0e1586654e213b0176e667bb9d19e"
 
 [[package]]
 name = "log"

@@ -8,16 +8,14 @@ use crate::{intralinks::Links, replace_content::ReplaceContent};
 
 /// Given a `markdown` string:
 ///
-/// - Resolves all links in it using `intralink_resolver`
+/// - Resolves all `links` in it
 /// - Strips rustdoc-specific tags from code fences, such as "edition2024,compile_fail"
 /// - Labels code blocks without a language as "Rust"
-pub fn resolve_markdown(markdown: &str, intralink_resolver: Links<'_>) -> String {
+pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         pulldown_cmark::Options::all(),
-        Some(crate::ResolveLinks {
-            links: &intralink_resolver,
-        }),
+        Some(crate::ResolveLinks { links: &links }),
     )
     .into_offset_iter()
     .filter_map(|(event, span)| match event {
@@ -132,10 +130,7 @@ pub fn resolve_markdown(markdown: &str, intralink_resolver: Links<'_>) -> String
                 - '('.len_utf8()
                 - ']'.len_utf8()];
 
-            let new_destination = intralink_resolver
-                .get(&*dest_url)
-                .map(|x| x.as_str())
-                .unwrap_or(&dest_url);
+            let new_destination = links.get(&*dest_url)?;
 
             Some(ReplaceContent {
                 range: span.clone(),
@@ -181,6 +176,107 @@ pub fn is_rust_code_block(tags: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use docstr::docstr;
+    use pretty_assertions::assert_str_eq;
+
+    use super::*;
+
+    #[rust_analyzer::macro_style(braces)]
+    macro_rules! links {
+        ($($a:literal => $b:literal),* $(,)?) => {{
+            let mut hm = ::std::collections::HashMap::new();
+            $(
+                hm.insert($a.into(), $b.into());
+            )*
+            hm
+        }};
+    }
+
+    #[track_caller]
+    fn t(input: &str, links: Links<'_>, expected: &str) {
+        let out = resolve_markdown(input, links);
+        assert_str_eq!(out, expected);
+    }
+
+    #[test]
+    fn valid_broken_link() {
+        t(
+            docstr! {
+                /// just a [link]
+            },
+            links! {
+                "link" => "to somewhere"
+            },
+            docstr! {
+                /// just a [link](to somewhere)
+            },
+        );
+    }
+
+    #[test]
+    fn invalid_broken_link() {
+        t(
+            docstr! {
+                /// just a [link]
+            },
+            links! {
+                "that does not exist" => "..."
+            },
+            docstr! {
+                /// just a [link]
+            },
+        );
+    }
+
+    #[test]
+    fn valid_inline_link() {
+        t(
+            docstr! {
+                /// just a [link](where? "title")
+            },
+            links! {
+                "where?" => "to somewhere"
+            },
+            docstr! {
+                /// just a [link](to somewhere "title")
+            },
+        );
+    }
+
+    #[test]
+    fn invalid_inline_link() {
+        t(
+            docstr! {
+                /// just a [link](where? "title")
+            },
+            links! {
+                "no exist" => "..."
+            },
+            docstr! {
+                /// just a [link](where? "title")
+            },
+        );
+    }
+
+    #[test]
+    fn label() {
+        t(
+            docstr! {
+                /// just a [link]
+                ///
+                /// [link]: somewhere
+            },
+            links! {
+                "somewhere" => "but where?"
+            },
+            docstr! {
+                /// just a [link]
+                ///
+                /// [link]: but where?
+            },
+        );
+    }
+
     #[test]
     fn is_rust_code_block() {
         let pass = [
