@@ -1,7 +1,6 @@
 use core::fmt;
-use std::{borrow::Cow, ops::Range};
+use std::borrow::Cow;
 
-use eyre::Context as _;
 use itertools::Itertools;
 use pulldown_cmark::LinkType;
 
@@ -109,9 +108,19 @@ pub fn resolve_markdown(
             title,
             id,
         }) => {
-            // Only rewrite inline links of the form [text](destination)
-            if !matches!(link_type, LinkType::Inline) {
-                return None;
+            match link_type {
+                // Only rewrite inline links of the form [text](destination)
+                LinkType::Inline => {}
+                // This was a broken link, but we fixed it
+                LinkType::ShortcutUnknown => {
+                    debug_assert!(title.is_empty());
+
+                    return Some(ReplaceContent {
+                        range: span.clone(),
+                        content: format!("[{link_content}]({dest_url})", link_content = id),
+                    });
+                }
+                _ => return None,
             }
 
             // Present only for other link types.
@@ -152,42 +161,6 @@ pub fn resolve_markdown(
         _ => None,
     });
     ReplaceContent::replace_all(markdown.to_string(), replacements)
-}
-
-pub fn process_rust_code_block(code_block: &str) -> String {
-    let mut new_doc_str = String::new();
-    let mut first = true;
-
-    for (i, line) in code_block.split('\n').enumerate() {
-        // If we have an indent code block and we start with a comment we need to
-        // drop any indent whitespace that started this indent block, since
-        // pulldown-cmark doesn't consider it part of the code block.
-        if i == 0 && is_line_commented(line) {
-            while !new_doc_str.ends_with('\n') && !new_doc_str.is_empty() {
-                new_doc_str.pop();
-            }
-        }
-
-        if !is_line_commented(line) {
-            if !first {
-                new_doc_str.push('\n');
-            }
-
-            // Lines starting with `##` are not comments, that is a way to intentionally start a
-            // line with `#`.  See https://github.com/rust-lang/rust/pull/41785.
-            match line.trim_start().starts_with("##") {
-                true => new_doc_str.push_str(&line.replacen('#', "", 1)),
-                false => new_doc_str.push_str(line),
-            }
-
-            first = false;
-        }
-    }
-    new_doc_str
-}
-
-fn is_line_commented(line: &str) -> bool {
-    line.trim_start().starts_with("# ") || line.trim() == "#"
 }
 
 /// If this markdown fence language can be considered to be a "rust" language
