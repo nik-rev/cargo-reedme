@@ -38,15 +38,29 @@ use rustdoc_types::{
     Crate, Enum, ExternalCrate, Id, Impl, Item, ItemEnum, ItemSummary, MacroKind, Primitive,
     ProcMacro, Struct, StructKind, Trait, Type, Union,
 };
-use serde::{Deserialize, Serialize};
+use tracing::error;
 
-use crate::Config;
+use crate::{Config, IntralinksDocsRsConfig};
 
-pub fn create_intralink_resolver<'a>(
-    pkg: &'a Package,
-    config: &'a Config,
-    krate: &'a Crate,
-) -> IntralinkResolver<'a> {
+/// This maps link contents to link URLs.
+///
+/// For example, for this link:
+///
+/// ```md
+/// [clone function](core::clone::Clone::clone)
+/// ```
+///
+/// This map will contain:
+///
+/// ```ignore
+/// {
+///     "clone function": "https://doc.rust-lang.org/std/clone/trait.Clone.html#tymethod.clone"
+/// }
+/// ```
+pub type Links<'a> = HashMap<&'a str, String>;
+
+/// Creates a map from link contents to link URLs
+pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Links<'a> {
     let root = krate
         .index
         .get(&krate.root)
@@ -54,184 +68,39 @@ pub fn create_intralink_resolver<'a>(
 
     let items_info = items_info(krate);
 
-    let mut intralink_resolver = IntralinkResolver::new(&pkg.name, &config.docs_rs);
+    let mut links = HashMap::new();
+
     for (link, item_id) in &root.links {
-        let link = Link {
-            raw_link: link.clone(),
-        };
         let Some(item_info) = items_info.get(item_id) else {
-            // We will fail when we try to create the link and will emit a warning there.
+            error!(item = link, "unknown item");
             continue;
         };
 
-        intralink_resolver.add(&link, item_info, &krate.external_crates);
-    }
-    intralink_resolver
-}
+        let url =
+            fmt::from_fn(|f| item_info.url(f, &krate.external_crates, &config.docs_rs, &pkg.name))
+                .to_string();
 
-#[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct IntralinksDocsRsConfig {
-    pub docs_rs_base_url: Option<String>,
-    pub docs_rs_version: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct IntralinkResolver<'a> {
-    link_url: HashMap<Link, String>,
-    config: &'a IntralinksDocsRsConfig,
-    package_name: &'a str,
-}
-
-impl<'a> IntralinkResolver<'a> {
-    pub fn new(package_name: &'a str, config: &'a IntralinksDocsRsConfig) -> IntralinkResolver<'a> {
-        IntralinkResolver {
-            link_url: HashMap::new(),
-            package_name,
-            config,
-        }
+        links.insert(link.as_str(), url);
     }
 
-    pub fn add(
-        &mut self,
-        link: &Link,
-        item_info: &ItemInfo,
-        external_crates: &HashMap<u32, ExternalCrate>,
-    ) {
-        let docs_rs_base_url = self
-            .config
-            .docs_rs_base_url
-            .as_deref()
-            .unwrap_or("https://docs.rs");
-
-        let url_path = item_info
-            .path
-            .segments
-            .iter()
-            .enumerate()
-            .map(|(segments_before, segment)| {
-                // How many segments needed to complete the path?
-                //
-                //  foo::bar
-                //          ^ 0
-                //  foo::bar
-                //      ^ 1
-                //  foo::bar
-                // ^ 2
-                let segments_remaining = item_info.path.segments.len() - 1 - segments_before;
-
-                let item_kind = match segments_remaining {
-                    // Reached the final component of the path
-                    //
-                    // foo::current
-                    //      ^^^^^^^ we are here
-                    0 => item_info.kind,
-                    // 2nd component of the path
-                    //
-                    // foo::bar::current
-                    //      ^^^ we are here
-                    1 => item_info.parent_kind.unwrap_or(ItemKind::Module),
-                    // Other components of the path
-                    //
-                    // foo::bar::current
-                    // ^^^ we are here
-                    _ => ItemKind::Module,
-                };
-
-                fmt::from_fn(move |f| item_kind.url_segment(segment, f))
-            })
-            .join("");
-
-        let url = match item_info.crate_id {
-            // Local crate has id 0.
-            0 => {
-                let version = self.config.docs_rs_version.as_deref().unwrap_or("latest");
-                let package_name = &self.package_name;
-
-                make_url(docs_rs_base_url, package_name, version, &url_path)
-            }
-            // External crate
-            _ => {
-                let Some(external_crate) = external_crates.get(&item_info.crate_id) else {
-                    return;
-                };
-
-                match external_crate.html_root_url.as_deref() {
-                    Some(base_url) => {
-                        let base_url = match is_stdlib_crate(external_crate) {
-                            true => {
-                                // TODO Once we are able to use the stable version we can remove this
-                                //      (https://github.com/rust-lang/rust/issues/76578).
-                                base_url
-                                    .strip_suffix("/nightly/")
-                                    .map_or_else(|| base_url.to_owned(), |p| format!("{p}/stable/"))
-                            }
-                            false => base_url.to_owned(),
-                        };
-
-                        format!("{base_url}{url_path}")
-                    }
-                    None => {
-                        let crate_name = &external_crate.name;
-
-                        // TODO We are using the crate name instead of the package name: that means that
-                        //      we might generate a wrong url. In most cases the crate name matches the
-                        //      package name. When it doesn't it is often because underscores in the
-                        //      crate name becomes dashes in the package name. Fortunately `docs.rs`
-                        //      will redirect in that case (e.g. https://docs.rs/tower_service/ will
-                        //      redirect to https://docs.rs/tower-service/latest/tower_service/).
-                        // TODO We shouldn't hardcode "latest" here: we should get that information from
-                        //      the version rustdoc determined the crate was using.
-                        make_url(docs_rs_base_url, crate_name, "latest", &url_path)
-                    }
-                }
-            }
-        };
-
-        self.link_url.insert(link.clone(), url);
-    }
-
-    pub fn resolve_link(&self, link: &Link) -> Option<&str> {
-        self.link_url.get(link).map(String::as_str)
-    }
+    links
 }
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct Link {
-    pub raw_link: String,
+/// Extracts link fragment from the link
+///
+/// https://doc.rust-lang.org/std/vec/struct.Vec.html#method.push
+///                                                   ^^^^^^^^^^^
+pub fn link_fragment(link: &str) -> Option<&str> {
+    link.strip_prefix('`')
+        .unwrap_or(link)
+        .find('#')
+        .map(|i| link.split_at(i).1[1..].as_ref())
 }
 
-impl Link {
-    fn split_link_fragment(&self) -> (&str, &str) {
-        fn strip_last_backtick(strip_backtick_end: bool, s: &str) -> &str {
-            match strip_backtick_end {
-                true => s.strip_suffix('`').unwrap_or(s),
-                false => s,
-            }
-        }
-
-        let strip_backtick_end: bool = self.raw_link.starts_with('`');
-        let link = self.raw_link.strip_prefix('`').unwrap_or(&self.raw_link);
-
-        match link.find('#') {
-            None => (strip_last_backtick(strip_backtick_end, link), ""),
-            Some(i) => {
-                let (l, f) = link.split_at(i);
-                (
-                    strip_last_backtick(strip_backtick_end, l),
-                    strip_last_backtick(strip_backtick_end, &f[1..]),
-                )
-            }
-        }
-    }
-
-    pub fn link_fragment(&self) -> Option<&str> {
-        match self.split_link_fragment().1 {
-            "" => None,
-            f => Some(f),
-        }
-    }
-}
-
+/// Whether this crate is part of the standard library
+///
+/// This is `true` for the `std`, `core`, `alloc` and `proc_macro` crates,
+/// as well as internal crates such as `std_detect` or `test`
 fn is_stdlib_crate(external_crate: &ExternalCrate) -> bool {
     external_crate
         .html_root_url
@@ -239,12 +108,8 @@ fn is_stdlib_crate(external_crate: &ExternalCrate) -> bool {
         .is_some_and(|base_url| base_url.starts_with("https://doc.rust-lang.org/"))
 }
 
-fn make_url(base_url: &str, package_name: &str, version: &str, url_path: &str) -> String {
-    format!("{base_url}/{package_name}/{version}/{url_path}")
-}
-
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum ItemKind {
+enum ItemKind {
     Module,
     ExternCrate,
     Use,
@@ -276,7 +141,7 @@ pub enum ItemKind {
 }
 
 impl ItemKind {
-    pub fn url_segment(self, name: &str, f: &mut fmt::Formatter) -> fmt::Result {
+    fn url_segment(self, name: &str, f: &mut fmt::Formatter) -> fmt::Result {
         let fmt = match self {
             Self::Module => format_args!("{name}/"),
             Self::Struct => format_args!("struct.{name}.html"),
@@ -391,22 +256,22 @@ impl ItemKind {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum ItemContext {
+enum ItemContext {
     Normal,
     Impl,
     Trait,
 }
 
 #[derive(Debug, Clone)]
-pub struct ItemInfo<'a> {
-    pub crate_id: u32,
-    pub path: ItemPath<'a>,
-    pub kind: ItemKind,
-    pub parent_kind: Option<ItemKind>,
+struct ItemInfo<'a> {
+    crate_id: u32,
+    path: ItemPath<'a>,
+    kind: ItemKind,
+    parent_kind: Option<ItemKind>,
 }
 
 impl<'a> ItemInfo<'a> {
-    pub fn new(
+    fn new(
         item_summary: &'a ItemSummary,
         parent_kind: Option<ItemKind>,
         item_context: ItemContext,
@@ -417,6 +282,109 @@ impl<'a> ItemInfo<'a> {
             kind: ItemKind::from_rustdoc_item_kind(item_summary.kind, item_context),
             parent_kind,
         }
+    }
+
+    /// If this item comes from the current crate, NOT any external crates
+    fn is_from_current_crate(&self) -> bool {
+        // Local crate has id 0.
+        self.crate_id == 0
+    }
+
+    /// Creates a relative URL that can refer to this item
+    fn url(
+        &self,
+        f: &mut fmt::Formatter,
+        external_crates: &HashMap<u32, ExternalCrate>,
+        config: &IntralinksDocsRsConfig,
+        package_name: &str,
+    ) -> fmt::Result {
+        let base_url = config.base_url.as_deref().unwrap_or("https://docs.rs");
+
+        if self.is_from_current_crate() {
+            let version = config.docs_rs_version.as_deref().unwrap_or("latest");
+
+            f.write_fmt(format_args!("{base_url}/{package_name}/{version}/"))?;
+            self.url_path(f)?;
+        }
+        // External crate
+        else if let Some(external_crate) = external_crates.get(&self.crate_id) {
+            match external_crate.html_root_url.as_deref() {
+                Some(base_url) => {
+                    if is_stdlib_crate(external_crate) {
+                        // TODO Once we are able to use the stable version we can remove this
+                        //      (https://github.com/rust-lang/rust/issues/76578).
+                        if let Some(base_url) = base_url.strip_suffix("/nightly/") {
+                            f.write_fmt(format_args!("{base_url}/stable/"))?;
+                        } else {
+                            f.write_str(base_url)?;
+                        }
+                    } else {
+                        f.write_str(base_url)?;
+                    }
+                    self.url_path(f)?;
+                }
+                None => {
+                    // TODO We are using the crate name instead of the package name: that means that
+                    //      we might generate a wrong url. In most cases the crate name matches the
+                    //      package name. When it doesn't it is often because underscores in the
+                    //      crate name becomes dashes in the package name. Fortunately `docs.rs`
+                    //      will redirect in that case (e.g. https://docs.rs/tower_service/ will
+                    //      redirect to https://docs.rs/tower-service/latest/tower_service/).
+                    // TODO We shouldn't hardcode "latest" here: we should get that information from
+                    //      the version rustdoc determined the crate was using.
+                    let version: &str = "latest";
+                    f.write_fmt(format_args!(
+                        "{base_url}/{}/{version}/",
+                        external_crate.name
+                    ))?;
+                    self.url_path(f)?;
+                }
+            }
+        } else {
+            error!(
+                item = ?self,
+                "failed to determine which crate this item belongs to",
+            );
+        };
+
+        Ok(())
+    }
+
+    /// Path to this item in the URL
+    fn url_path(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (segments_before, segment) in self.path.segments.iter().enumerate() {
+            // How many segments needed to complete the path?
+            //
+            //  foo::bar
+            //          ^ 0
+            //  foo::bar
+            //      ^ 1
+            //  foo::bar
+            // ^ 2
+            let segments_remaining = self.path.segments.len() - 1 - segments_before;
+
+            let item_kind = match segments_remaining {
+                // Reached the final component of the path
+                //
+                // foo::current
+                //      ^^^^^^^ we are here
+                0 => self.kind,
+                // 2nd component of the path
+                //
+                // foo::bar::current
+                //      ^^^ we are here
+                1 => self.parent_kind.unwrap_or(ItemKind::Module),
+                // Other components of the path
+                //
+                // foo::bar::current
+                // ^^^ we are here
+                _ => ItemKind::Module,
+            };
+
+            item_kind.url_segment(segment, f)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -453,11 +421,11 @@ impl Display for ItemPath<'_> {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct ItemPath<'a> {
-    pub segments: Cow<'a, [String]>,
+struct ItemPath<'a> {
+    segments: Cow<'a, [String]>,
 }
 
-pub fn items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
+fn items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
     let mut items_info: HashMap<Id, ItemInfo<'_>> = HashMap::with_capacity(krate.index.len());
 
     for (&item_id, item_summary) in &krate.paths {

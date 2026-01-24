@@ -4,25 +4,19 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use pulldown_cmark::LinkType;
 
-use crate::{
-    intralinks::{self, Link},
-    replace_content::ReplaceContent,
-};
+use crate::{intralinks::Links, replace_content::ReplaceContent};
 
 /// Given a `markdown` string:
 ///
 /// - Resolves all links in it using `intralink_resolver`
 /// - Strips rustdoc-specific tags from code fences, such as "edition2024,compile_fail"
 /// - Labels code blocks without a language as "Rust"
-pub fn resolve_markdown(
-    markdown: &str,
-    intralink_resolver: intralinks::IntralinkResolver<'_>,
-) -> String {
+pub fn resolve_markdown(markdown: &str, intralink_resolver: Links<'_>) -> String {
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         pulldown_cmark::Options::all(),
-        Some(crate::ResolveIntraDocLinks {
-            intralink_resolver: &intralink_resolver,
+        Some(crate::ResolveLinks {
+            links: &intralink_resolver,
         }),
     )
     .into_offset_iter()
@@ -139,9 +133,8 @@ pub fn resolve_markdown(
                 - ']'.len_utf8()];
 
             let new_destination = intralink_resolver
-                .resolve_link(&Link {
-                    raw_link: dest_url.to_string(),
-                })
+                .get(&*dest_url)
+                .map(|x| x.as_str())
                 .unwrap_or(&dest_url);
 
             Some(ReplaceContent {

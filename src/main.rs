@@ -35,7 +35,7 @@ use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
 
-use crate::intralinks::create_intralink_resolver;
+use crate::intralinks::Links;
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -94,7 +94,7 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
         extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
 
     let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
-    let intralink_resolver = create_intralink_resolver(pkg, &config, &rustdoc_json);
+    let intralink_resolver = intralinks::create_links(pkg, &config, &rustdoc_json);
 
     let markdown = root.docs.as_ref().unwrap();
     let output_markdown = markdown::resolve_markdown(markdown, intralink_resolver);
@@ -108,11 +108,11 @@ fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
 
 /// Broken link callback that does nothing.
 #[derive(Debug)]
-pub struct ResolveIntraDocLinks<'a> {
-    intralink_resolver: &'a intralinks::IntralinkResolver<'a>,
+pub struct ResolveLinks<'a> {
+    links: &'a Links<'a>,
 }
 
-impl<'input> BrokenLinkCallback<'input> for ResolveIntraDocLinks<'_> {
+impl<'input> BrokenLinkCallback<'input> for ResolveLinks<'_> {
     fn handle_broken_link(
         &mut self,
         link: BrokenLink<'input>,
@@ -120,18 +120,12 @@ impl<'input> BrokenLinkCallback<'input> for ResolveIntraDocLinks<'_> {
         pulldown_cmark::CowStr<'input>,
         pulldown_cmark::CowStr<'input>,
     )> {
-        let link = intralinks::Link {
-            raw_link: link.reference.to_string(),
+        let url = self.links.get(&*link.reference)?;
+        let url = match crate::intralinks::link_fragment(&link.reference) {
+            None => url.to_string().into(),
+            Some(fragment) => format!("{url}#{fragment}").into(),
         };
-        if let Some(url) = self.intralink_resolver.resolve_link(&link) {
-            let url = match link.link_fragment() {
-                None => url.to_owned(),
-                Some(fragment) => format!("{url}#{fragment}"),
-            };
-            Some((url.into(), "".into()))
-        } else {
-            None
-        }
+        Some((url, "".into()))
     }
 }
 
@@ -203,5 +197,11 @@ struct PackageMetadata {
 
 #[derive(Serialize, Deserialize, Default)]
 struct Config {
-    docs_rs: intralinks::IntralinksDocsRsConfig,
+    docs_rs: IntralinksDocsRsConfig,
+}
+
+#[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct IntralinksDocsRsConfig {
+    base_url: Option<String>,
+    docs_rs_version: Option<String>,
 }
