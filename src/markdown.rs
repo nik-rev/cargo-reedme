@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use itertools::Itertools;
-use pulldown_cmark::{CowStr, LinkType};
+use pulldown_cmark::{CowStr, LinkType, Options};
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
 
@@ -13,7 +13,7 @@ use crate::{intralinks::Links, replace_content::ReplaceContent};
 pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
-        pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION,
+        markdown_options(),
         Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
             let url = links.get(&*broken_link.reference)?;
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
@@ -242,7 +242,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 /// If this markdown fence language can be considered to be a "rust" language
 ///
 /// All attributes: https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#attributes
-pub fn is_rust_code_block(tags: &str) -> bool {
+fn is_rust_code_block(tags: &str) -> bool {
     tags.split(',').all(|tag| {
         tag.is_empty()
             || matches!(
@@ -260,6 +260,15 @@ pub fn is_rust_code_block(tags: &str) -> bool {
             || tag.starts_with("ignore-")
             || tag.starts_with("edition")
     })
+}
+
+/// Keep same options as what rustdoc enables: <https://github.com/rust-lang/rust/blob/021fc25b7a48f6051bee1e1f06c7a277e4de1cc9/src/librustdoc/html/markdown.rs#L68-L74>
+fn markdown_options() -> Options {
+    Options::ENABLE_TABLES
+        | Options::ENABLE_FOOTNOTES
+        | Options::ENABLE_STRIKETHROUGH
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_SMART_PUNCTUATION
 }
 
 #[cfg(test)]
