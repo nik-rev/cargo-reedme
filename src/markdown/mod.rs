@@ -1,11 +1,12 @@
 use std::borrow::Cow;
 
-use docstr::docstr;
 use itertools::Itertools;
 use pulldown_cmark::{CowStr, LinkType, Options};
 use rangemap::RangeSet;
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
+
+mod locate_reference_link;
 
 /// Given a `markdown` string:
 ///
@@ -299,51 +300,10 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
     let replacements = reference_definitions.into_iter().filter_map(|(dest, id)| {
         let new_url = links.get(&*dest)?;
-
-        let dest = regex::escape(&dest);
-        let id = regex::escape(&id);
-
-        // Regex for reference definitions.
-        //
-        // Reference definitions look like this:
-        //
-        // [id]: dest "optional title"
-        //
-        // They must be at the start of the line, they may be preceded
-        // by whitespace, they may be inside of list items and blockquotes
-        let regex = docstr! { format!
-            /// ^                         # Start of line
-            ///
-            /// \[\s>*\-+0-9.]*?          # Non-greedily match common container prefixes:
-            ///                           # spaces, blockquotes (>), or list bullets (*, -, +, 1.)
-            ///
-            /// \[(?i:{id})\]:            # The label and colon
-            ///
-            /// \s*                       # Optional whitespace before the url
-            ///
-            /// (?:<({dest})>|({dest}))   # Non-capturing group to match either <URL> or URL,
-            ///                           # capturing just the URL itself in group 1 or 2.
-        };
-        let regex = regex::RegexBuilder::new(&regex)
-            .multi_line(true)
-            .ignore_whitespace(true)
-            .build()
-            .unwrap();
-
-        // Only care about the first one, because markdown only uses the first
-        // reference link definition if multiple are present
-        let capture = regex.captures_iter(&markdown).next()?;
-
-        // Group 1 is <url>, Group 2 is the raw url
-        let match_ = capture.get(1).or_else(|| capture.get(2))?;
-
-        // This definition is part of a code block.
-        if code_block_ranges.overlaps(&match_.range()) {
-            return None;
-        }
-
+        let match_ =
+            locate_reference_link::locate_reference_link(&markdown, dest, id, &code_block_ranges)?;
         Some(ReplaceContent {
-            range: match_.range().clone(),
+            range: match_,
             content: CowStr::Borrowed(new_url),
         })
     });
