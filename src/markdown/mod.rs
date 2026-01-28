@@ -1,3 +1,5 @@
+#![allow(unstable_name_collisions)]
+
 use std::borrow::Cow;
 
 use itertools::Itertools;
@@ -6,7 +8,7 @@ use rangemap::RangeSet;
 
 use crate::{intralinks::Links, replace_content::ReplaceContent};
 
-mod locate_reference_link;
+mod locate;
 
 /// Given a `markdown` string:
 ///
@@ -300,8 +302,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
     let replacements = reference_definitions.into_iter().filter_map(|(dest, id)| {
         let new_url = links.get(&*dest)?;
-        let match_ =
-            locate_reference_link::locate_reference_link(&markdown, dest, id, &code_block_ranges)?;
+        let match_ = locate::reference_link_definition(&markdown, dest, id, &code_block_ranges)?;
         Some(ReplaceContent {
             range: match_,
             content: CowStr::Borrowed(new_url),

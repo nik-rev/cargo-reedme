@@ -12,13 +12,13 @@ use rangemap::RangeSet;
 /// With an id of `"rust_compiler"` and a destination of `"https://github.com/rust-lang/rust"`,
 /// and the following markdown input -- span of the highlighted section is returned:
 ///
-/// ```md
+/// ```markdown
 /// The Rust compiler can be [found][rust compiler] on GitHub
 ///
 /// [rust compiler]: <https://github.com/rust-lang/rust> "link title"
 ///                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /// ```
-pub fn locate_reference_link<'a>(
+pub fn reference_link_definition<'a>(
     markdown: &'a str,
     link_destination: CowStr<'_>,
     link_id: CowStr<'_>,
@@ -105,7 +105,8 @@ mod tests {
             })
             .collect();
 
-        let url_span = locate_reference_link(&md, url.clone().into(), id.into().into(), &ranges);
+        let url_span =
+            reference_link_definition(&md, url.clone().into(), id.into().into(), &ranges);
 
         match link_location {
             Status::Found => {

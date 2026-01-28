@@ -27,3 +27,5 @@ regex = "1.12.2"
 docstr = "0.4.6"
 
 [dev-dependencies]
+anstream = "0.6.21"
+simply_colored = "0.1.4"
