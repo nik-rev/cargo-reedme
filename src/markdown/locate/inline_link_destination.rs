@@ -86,8 +86,25 @@ pub fn inline_link_destination(input: &str) -> Option<Range<usize>> {
             }
             // a sequence of zero or more characters between matching parentheses ((...)), including a ( or ) character only if it is backslash-escaped
             ')' => {
-                title_end = *i + 1;
+                let i = *i;
                 chars.next();
+
+                if chars.peek().is_some_and(|(_, ch)| *ch == '\\') {
+                    // An escaped parentheses
+                    //
+                    // this is part of the link destination, actually:
+                    //
+                    // [link](\(foo\))
+                    //              ^
+                    //
+                    // we don't want to stop there. teh link destination is:
+                    //
+                    // [link](\(foo\))
+                    //        ^^^^^^^
+                    continue;
+                }
+
+                title_end = i + 1;
 
                 if let Some(i) = locate_matching_opening_parentheses(&mut chars) {
                     break i;
