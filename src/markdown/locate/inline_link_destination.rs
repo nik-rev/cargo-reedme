@@ -1,5 +1,3 @@
-use docstr::docstr;
-use itertools::Itertools;
 use std::ops::Range;
 
 /// Returns span of link destination in the `input`, which must be a markdown [inline  link]
@@ -107,7 +105,24 @@ pub fn inline_link_destination(input: &str) -> Option<Range<usize>> {
                 title_end = i + 1;
 
                 if let Some(i) = locate_matching_opening_parentheses(&mut chars) {
-                    break i;
+                    if chars.peek().is_none_or(|(_, ch)| !ch.is_whitespace()) {
+                        // The next character is not whitespace, so this must not be the link title -
+                        // instead, this is part of the link destination
+                        //
+                        // For example:
+                        //
+                        // [link](foo(and(bar)))
+                        //                    ^ we are here
+                        //           ^ matching parentheses
+                        //
+                        // All of this is the destination:
+                        //
+                        // [link](foo(and(bar)))
+                        //        ^^^^^^^^^^^^^
+                        continue;
+                    } else {
+                        break i;
+                    }
                 };
             }
             ch if ch.is_whitespace() => {
@@ -293,6 +308,8 @@ fn locate_matching_opening_parentheses(
 #[cfg(test)]
 mod tests {
     use anstream::eprintln;
+    use docstr::docstr;
+    use itertools::Itertools as _;
     use pretty_assertions::assert_str_eq;
     use simply_colored::*;
 

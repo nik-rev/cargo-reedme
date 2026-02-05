@@ -18,8 +18,8 @@ use rangemap::RangeSet;
 /// [rust compiler]: <https://github.com/rust-lang/rust> "link title"
 ///                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /// ```
-pub fn reference_link_definition<'a>(
-    markdown: &'a str,
+pub fn reference_link_definition(
+    markdown: &str,
     link_destination: CowStr<'_>,
     link_id: CowStr<'_>,
     code_blocks: &RangeSet<usize>,
