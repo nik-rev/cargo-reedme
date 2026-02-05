@@ -348,26 +348,26 @@ mod tests {
     /// The title, the link text and even the destination may be omitted:
     #[test]
     fn omitted_parts() {
-        // t(docstr! {
-        //    /// [link](/uri)
-        //    ///        ^^^^
-        // });
-        // t(docstr! {
-        //    /// [](./target.md)
-        //    ///    ^^^^^^^^^^^
-        // });
+        t(docstr! {
+           /// [link](/uri)
+           ///        ^^^^
+        });
+        t(docstr! {
+           /// [](./target.md)
+           ///    ^^^^^^^^^^^
+        });
         t(docstr! {
            /// [link]()
            ///        |
         });
-        // t(docstr! {
-        //    /// [link](<>)
-        //    ///         |
-        // });
-        // t(docstr! {
-        //    /// []()
-        //    ///    |
-        // });
+        t(docstr! {
+           /// [link](<>)
+           ///         |
+        });
+        t(docstr! {
+           /// []()
+           ///    |
+        });
     }
 
     #[test]
