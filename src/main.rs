@@ -7,11 +7,35 @@ use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
-use serde::{Deserialize, Serialize};
 
+use crate::config::Config;
+
+mod config;
 mod intralinks;
 mod markdown;
 mod replace_content;
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+
+    let cli = Cli::parse();
+
+    init_logging(cli.verbosity);
+
+    // Writes README.md files for each Cargo package
+    for_each_package(&cli, |pkg, workspace_metadata| {
+        let readme = generate_readme_for_package(&cli, pkg, workspace_metadata)
+            .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
+
+        let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
+
+        fs::write(readme_path, readme).context("failed to write `README.md` file")?;
+
+        Ok(())
+    })?;
+
+    Ok(())
+}
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -27,22 +51,6 @@ struct Cli {
     features: clap_cargo::Features,
     #[command(flatten)]
     verbosity: clap_verbosity_flag::Verbosity,
-}
-
-fn main() -> Result<()> {
-    color_eyre::install()?;
-
-    let cli = Cli::parse();
-
-    init_logging(cli.verbosity);
-
-    // Go over all the Cargo packages, and create individual README.md files
-    for_each_package(&cli, |pkg, workspace_metadata| {
-        resolve_package(&cli, pkg, workspace_metadata)
-            .with_context(|| format!("failed to create README for package `{}`", pkg.name))
-    })?;
-
-    Ok(())
 }
 
 /// Calls the given function for each Cargo package in the workspace
@@ -91,7 +99,12 @@ fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
         .init();
 }
 
-fn resolve_package(cli: &Cli, pkg: &Package, workspace_config: &Config) -> Result<()> {
+/// For a given Cargo package, returns contents of generated README.md
+fn generate_readme_for_package(
+    cli: &Cli,
+    pkg: &Package,
+    workspace_config: &Config,
+) -> Result<String> {
     // Read configuration as specified in [package.metadata.cargo-reedme]
     let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
     // Inherit values from [workspace.metadata.cargo-reedme]
@@ -108,14 +121,10 @@ fn resolve_package(cli: &Cli, pkg: &Package, workspace_config: &Config) -> Resul
     let links = intralinks::create_links(pkg, &config, &krate);
 
     // All links in the markdown are rewritten to consider the link map, e.g. [main function](https://example.com)
-    let output_markdown =
-        markdown::resolve_markdown(root.docs.as_deref().unwrap_or_default(), links);
-
-    let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
-
-    fs::write(readme_path, output_markdown).context("failed to write `README.md` file")?;
-
-    Ok(())
+    Ok(markdown::resolve_markdown(
+        root.docs.as_deref().unwrap_or_default(),
+        links,
+    ))
 }
 
 fn extract_package_target(pkg: &Package) -> Result<PackageTarget> {
@@ -176,45 +185,4 @@ fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
     };
 
     Ok(readme_path)
-}
-
-/// This is the `[package.metadata.cargo-reedme]` and `[workspace.package.metadata.cargo-reedme]`
-#[derive(Serialize, Deserialize, Default, Clone)]
-struct Config {
-    #[serde(default)]
-    docs_rs: IntralinksDocsRsConfig,
-}
-
-impl Config {
-    /// Extracts configuration from the `[workspace.metadata]` or `[package.metadata]` sections in `Cargo.toml`
-    fn from_cargo_metadata(metadata: serde_json::Value) -> Self {
-        #[derive(Serialize, Deserialize, Default)]
-        #[serde(rename_all = "kebab-case")]
-        struct PackageMetadata {
-            cargo_reedme: Option<Config>,
-        }
-
-        serde_json::from_value::<Option<PackageMetadata>>(metadata.clone())
-            .unwrap_or_default()
-            .unwrap_or_default()
-            .cargo_reedme
-            .unwrap_or_default()
-    }
-
-    /// Merges contents of `[package.metadata]` with `[workspace.metadata]`,
-    /// package metadata takes priority
-    fn inherit_workspace_metadata(&mut self, workspace_config: Self) {
-        if let Some(base_url) = workspace_config.docs_rs.base_url {
-            self.docs_rs.base_url = Some(base_url);
-        }
-        if let Some(version) = workspace_config.docs_rs.version {
-            self.docs_rs.version = Some(version);
-        }
-    }
-}
-
-#[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct IntralinksDocsRsConfig {
-    base_url: Option<String>,
-    version: Option<String>,
 }

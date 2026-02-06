@@ -40,7 +40,7 @@ use rustdoc_types::{
 };
 use tracing::{error, trace};
 
-use crate::{Config, IntralinksDocsRsConfig};
+use crate::{Config, config::IntralinksDocsRsConfig};
 
 /// This maps link contents to link URLs.
 ///
