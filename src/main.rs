@@ -7,6 +7,7 @@
 //! [quux]: lol
 //!
 //! check out [uwu][]
+#![allow(clippy::let_and_return)]
 
 pub struct A;
 pub struct B;

@@ -35,13 +35,6 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     )
     .into_offset_iter()
     .filter_map(|(event, span)| match event {
-        // Replace original text with processed text via ENABLE_SMART_PUNCTUATION
-        //
-        // Replaces -- with —, --- with —, ... with …, "quote" with “quote”, and 'quote' with ‘quote’.
-        pulldown_cmark::Event::Text(text) => Some(ReplaceContent {
-            range: span,
-            content: text,
-        }),
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
@@ -193,107 +186,26 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
             link_type: LinkType::Inline,
             dest_url,
-            title,
-            id,
+            ..
         }) => {
-            // We find span of the destination:
-            //
             // [text](destination "title")
-            //        ^^^^^^^^^^^
-            dbg!(title, id, dest_url);
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            let markdown_link = &markdown[span.clone()];
 
-            None
+            let Some(destination_range) = locate::inline_link_destination(markdown_link) else {
+                // Link destination parsing failed for one reason or another
+                return None;
+            };
 
-            // // Present only for other link types.
-            // debug_assert!(id.is_empty());
+            let new_destination = links.get(&*dest_url)?;
 
-            // // [text](destination "title")
-            // // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            // let markdown_link = &markdown[span.clone()];
+            let destination_range =
+                span.start + destination_range.start..span.start + destination_range.end;
 
-            // // Skip past link section
-
-            // let mut nesting_level = 1;
-            // let link_chars = markdown_link.char_indices();
-            // // skip the first "["
-            // let mut link_chars = link_chars.skip(1);
-            // // whether the current character is escaped
-            // let mut escaped = false;
-            // let mut in_quotes = false;
-
-            // let destination_start = loop {
-            //     let Some((i, ch)) = link_chars.next() else {
-            //         // invalid markdown!
-            //         continue;
-            //     };
-
-            //     match ch {
-            //         '[' if !escaped => {
-            //             nesting_level += 1;
-            //         }
-            //         ']' if !escaped => {
-            //             nesting_level -= 1;
-
-            //             // reached end
-            //             if nesting_level == 0 {
-            //                 break i + ']'.len_utf8() + '('.len_utf8();
-            //             }
-            //         }
-            //         '"' if !escaped => {}
-            //         '\\' if !escaped => {
-            //             // will be set to "false" on the next iteration
-            //             escaped = true;
-            //             continue;
-            //         }
-            //         _ => {}
-            //     }
-
-            //     escaped = false;
-            // };
-
-            // // [text](destination "title")
-            // //        ^^^^^^^^^^^^^^^^^^^^
-            // let destination_start_index = markdown_link
-            //     .find("](")
-            //     .expect("invalid markdown link; parser would fail")
-            //     + ']'.len_utf8()
-            //     + '('.len_utf8();
-
-            // // [text](destination  "title"  )
-            // //                              ^
-            // let link_end_index = markdown_link
-            //     .rfind(')')
-            //     .expect("invalid markdown link; parser would fail");
-
-            // let mut destination_end_index = link_end_index;
-
-            // let mut chars = markdown_link[destination_start_index..link_end_index]
-            //     .char_indices()
-            //     .rev()
-            //     .peekable();
-
-            // while let Some((i, ch)) = chars.next() {
-            //     match ch {
-            //         ' ' => {}
-            //         // This is a ", NOT an escaped \"
-            //         //
-            //         // Important since \" is actually part of the title itself.
-            //         '"' if chars.peek().expect("invalid markdown").1 != '\\' => {}
-            //         _ => break,
-            //     }
-            // }
-
-            // // Adjust it to be relative to the entire markdown input
-
-            // let destination_start_index = destination_start_index + span.start;
-            // let destination_end_index = destination_end_index + span.start;
-
-            // let new_destination = links.get(&*dest_url)?;
-
-            // Some(ReplaceContent {
-            //     range: destination_start_index..destination_end_index,
-            //     content: new_destination.to_string(),
-            // })
+            Some(ReplaceContent {
+                range: destination_range,
+                content: new_destination.to_string().into(),
+            })
         }
         _ => None,
     });
@@ -362,119 +274,17 @@ mod tests {
         }};
     }
 
-    // #[test]
-    // fn link_destination() {
-    //     let a = docstr! {
-    //         /// [link](/uri "title")"
-    //         ///        ^^^^
-    //         ///
-    //         /// [link](/uri "title")
-    //         ///        ^^^^
-    //         ///
-    //         /// [link](/uri)
-    //         ///        ^^^^
-    //         ///
-    //         /// [](./target.md)
-    //         ///    ^^^^^^^^^^^
-    //         ///
-    //         /// [link]()
-    //         ///       ^
-    //         ///
-    //         /// [link](<>)
-    //         ///        ^
-    //         ///
-    //         /// []()
-    //         ///   ^
-    //         ///
-    //         /// [link](/my uri)
-    //         ///        ^^^^^^^
-    //         ///
-    //         /// [link](</my uri>)
-    //         ///        ^^^^^^^^^
-    //         ///
-    //         /// [a](<b)c>)
-    //         ///     ^^^^^
-    //         ///
-    //         /// [link](\(foo\))
-    //         ///        ^^^^^^^
-    //         ///
-    //         /// [link](foo(and(bar)))
-    //         ///        ^^^^^^^^^^^^^^
-    //         ///
-    //         /// [link](foo\(and\(bar\))
-    //         ///        ^^^^^^^^^^^^^^^^
-    //         ///
-    //         /// [link](<foo(and(bar)>)
-    //         ///        ^^^^^^^^^^^^^^
-    //         ///
-    //         /// r"[link](foo\)\:)";
-    //         ///
-    //         /// // Titles may be in single quotes, double quotes, or parentheses:
-    //         ///
-    //         /// r#"[link](/url "title")"#;
-    //         /// "[link](/url 'title')";
-    //         /// "[link](/url (title))";
-    //     };
-
-    //     // Parentheses and other symbols can also be escaped, as usual in Markdown:
-    //     r"[link](foo\)\:)";
-    //     // Titles may be in single quotes, double quotes, or parentheses:
-    //     r#"[link](/url "title")"#;
-    //     "[link](/url 'title')";
-    //     "[link](/url (title))";
-    //     // Backslash escapes and entity and numeric character references may be used in titles:
-    //     r#"[link](/url "title \"&quot;")"#;
-    //     // quotes can be mixed
-    //     r#"[link](/url 'title "and" title')"#;
-    //     // Spaces, tabs, and up to one line ending is allowed around the destination and title:
-    //     "[link](\t/uri\n\"title\"\t)";
-    //     // The link text may contain balanced brackets, but not unbalanced ones, unless they are escaped:
-    //     "[link [foo [bar]]](/uri)";
-    //     r"[link \[bar](/uri)";
-    //     // The link text may contain inline content:
-    //     "[link *foo **bar** `#`*](/uri)";
-    //     "[![moon](moon.jpg)](/uri)";
-
-    //     ///
-    //     /// [link](foo\)\:)
-    //     ///        ^^^^^^^^
-    //     ///
-    //     /// [link](/url "title")
-    //     ///        ^^^^
-    //     ///
-    //     /// [link](/url 'title')
-    //     ///        ^^^^
-    //     ///
-    //     /// [link](/url (title))
-    //     ///        ^^^^
-    //     ///
-    //     /// [link](/url "title \"&quot;")
-    //     ///        ^^^^
-    //     ///
-    //     /// [link](/url 'title "and" title')
-    //     ///        ^^^^
-    //     ///
-    //     /// [link](	/uri
-    //     ///        "title"	)
-    //     ///        ^^^^
-    //     ///
-    //     /// [link [foo [bar]]](/uri)
-    //     ///                      ^^^^
-    //     ///
-    //     /// [link \[bar](/uri)
-    //     ///              ^^^^
-    //     ///
-    //     /// [link *foo **bar** `#`*](/uri)
-    //     ///                           ^^^^
-    //     ///
-    //     /// [![moon](moon.jpg)](/uri)
-    //     ///                     ^^^^
-    // }
-
     #[track_caller]
     fn t(input: &str, links: Links<'_>, expected: &str) {
+        println!("{input}");
         let out = resolve_markdown(input, links);
+        println!("{out}");
         assert_str_eq!(out, expected);
+    }
+
+    #[track_caller]
+    fn unchanged(input: &str, links: Links<'_>) {
+        t(input, links, input)
     }
 
     #[test]
@@ -551,8 +361,8 @@ mod tests {
             },
             docstr! {
                 /// just a [link](to somewhere)
-                /// just a [url](what?)
-                /// just a [link](because)
+                /// just a [url](because)
+                /// just a [link](to somewhere)
             },
         );
     }
@@ -635,7 +445,7 @@ mod tests {
 
     #[test]
     fn regular_doc_reference_link() {
-        t(
+        unchanged(
             docstr! {
                 /// just a [link]
                 ///
@@ -643,11 +453,6 @@ mod tests {
             },
             links! {
                 "..." => "..."
-            },
-            docstr! {
-                /// just a [link]
-                ///
-                /// [link]: but where?
             },
         );
     }

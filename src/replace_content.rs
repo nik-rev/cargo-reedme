@@ -4,6 +4,7 @@ use pulldown_cmark::CowStr;
 use tracing::{info, trace};
 
 /// Replace a part of the string with something else
+#[derive(Debug)]
 pub struct ReplaceContent<'a> {
     /// Location of text to replace
     ///
