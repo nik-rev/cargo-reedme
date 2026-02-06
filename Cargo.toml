@@ -25,6 +25,7 @@ clap-verbosity-flag = { version = "3.0.4", default-features = false, features = 
 rangemap = "1.7.1"
 regex = "1.12.2"
 docstr = "0.4.6"
+rayon = "1.11.0"
 
 [dev-dependencies]
 anstream = "0.6.21"

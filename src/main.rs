@@ -5,6 +5,7 @@ use cargo_metadata::Package;
 use clap::Parser;
 use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
+use rayon::prelude::*;
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 
@@ -55,7 +56,7 @@ struct Cli {
 }
 
 /// Calls the given function for each Cargo package in the workspace
-fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()>) -> Result<()> {
+fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Sync) -> Result<()> {
     let mut metadata_cmd = cli.manifest.metadata();
 
     // Takes into account selected features via --feature
@@ -68,19 +69,18 @@ fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()>) -> R
     // This takes into account selected packages such as via --package
     let (pkgs, _excluded_packages) = cli.workspace.partition_packages(&metadata);
 
-    // Let's report each individual error rather than just the first one
-    let mut errs = Vec::new();
-
     // Config from [workspace.metadata.cargo-reedme]
     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
 
-    for pkg in pkgs {
-        match f(pkg, &config) {
-            Ok(()) => (),
-            Err(err) => errs.push(err),
-        };
-    }
+    let mut errs: Vec<_> = pkgs
+        .into_par_iter()
+        .filter_map(|pkg| f(pkg, &config).err())
+        .collect();
 
+    // Errors are sorted by their display, so we show the same errors at the same time
+    errs.sort_by_key(|x| x.to_string());
+
+    // Let's report each individual error rather than just the first one
     for err in errs {
         eprintln!("{err}");
     }
