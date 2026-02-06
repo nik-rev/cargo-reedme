@@ -32,7 +32,7 @@
 use core::fmt;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
-use cargo_metadata::Package;
+use cargo_metadata::{Package, semver::Version};
 use itertools::Itertools;
 use rustdoc_types::{
     Crate, Enum, ExternalCrate, Id, Impl, Item, ItemEnum, ItemSummary, MacroKind, Primitive,
@@ -76,9 +76,16 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
             continue;
         };
 
-        let url =
-            fmt::from_fn(|f| item_info.url(f, &krate.external_crates, &config.docs_rs, &pkg.name))
-                .to_string();
+        let url = fmt::from_fn(|f| {
+            item_info.url(
+                f,
+                &krate.external_crates,
+                &config.docs_rs,
+                &pkg.name,
+                &pkg.version,
+            )
+        })
+        .to_string();
 
         links.insert(link.as_str(), url);
     }
@@ -307,13 +314,12 @@ impl<'a> ItemInfo<'a> {
         external_crates: &HashMap<u32, ExternalCrate>,
         config: &IntralinksDocsRsConfig,
         package_name: &str,
+        package_version: &Version,
     ) -> fmt::Result {
         let base_url = config.base_url.as_deref().unwrap_or("https://docs.rs");
 
         if self.is_from_current_crate() {
-            let version = config.version.as_deref().unwrap_or("latest");
-
-            f.write_fmt(format_args!("{base_url}/{package_name}/{version}/"))?;
+            f.write_fmt(format_args!("{base_url}/{package_name}/{package_version}/"))?;
             self.url_path(f)?;
         }
         // External crate

@@ -22,6 +22,8 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     // touches this set will be excluded because it is inside of a code block
     let mut code_block_ranges = RangeSet::new();
 
+    dbg!(&links);
+
     // Pass 1/3
     //
     // Resolves regular links (such as inline links), broken links, code blocks
@@ -29,12 +31,12 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         markdown,
         markdown_options(),
         Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
-            let url = links.get(&*broken_link.reference)?;
+            let url = links.get(dbg!(&*broken_link.reference))?;
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
                 None => CowStr::Borrowed(url),
                 Some(fragment) => format!("{url}#{fragment}").into(),
             };
-            Some((url, "".into()))
+            Some((dbg!(url), "".into()))
         }),
     )
     .into_offset_iter()
