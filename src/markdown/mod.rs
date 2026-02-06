@@ -276,9 +276,7 @@ mod tests {
 
     #[track_caller]
     fn t(input: &str, links: Links<'_>, expected: &str) {
-        println!("{input}");
         let out = resolve_markdown(input, links);
-        println!("{out}");
         assert_str_eq!(out, expected);
     }
 
