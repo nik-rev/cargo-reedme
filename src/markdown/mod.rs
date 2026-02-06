@@ -14,6 +14,7 @@ mod locate;
 ///
 /// - Resolves all `links` in it
 /// - Strips rustdoc-specific tags from code fences, such as "edition2024,compile_fail"
+/// - Makes text have "smart punctuation", since rustdoc does the same
 /// - Labels code blocks without a language as "Rust"
 pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     let mut reference_definitions = Vec::new();
@@ -21,6 +22,9 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     // touches this set will be excluded because it is inside of a code block
     let mut code_block_ranges = RangeSet::new();
 
+    // Pass 1/3
+    //
+    // Resolves regular links (such as inline links), broken links, code blocks
     let replacements = pulldown_cmark::Parser::new_with_broken_link_callback(
         markdown,
         markdown_options(),
@@ -212,6 +216,17 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
     let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);
 
+    // Pass 2/3
+    //
+    // Replace reference link definitions with the correct location
+    //
+    // [clone method]: Clone::clone
+    //                 ^^^^^^^^^^^^
+    //
+    // becomes:
+    //
+    // [clone method]: https://doc.rust-lang.org/std/clone/trait.Clone.html#tymethod.clone
+    //                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     let replacements = reference_definitions.into_iter().filter_map(|(dest, id)| {
         let new_url = links.get(&*dest)?;
         let match_ = locate::reference_link_definition(&markdown, dest, id, &code_block_ranges)?;
@@ -221,7 +236,31 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         })
     });
 
-    ReplaceContent::replace_all(markdown.to_string(), replacements)
+    let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);
+
+    // Pass 3/3
+    //
+    // Replace original text with processed text via ENABLE_SMART_PUNCTUATION
+    //
+    // Replaces -- with —, --- with —, ... with …, "quote" with “quote”, and 'quote' with ‘quote’.
+    //
+    // This is done as a separate pass to not mess up regular link replacements
+    let replacements = pulldown_cmark::Parser::new_ext(&markdown, markdown_options())
+        .into_offset_iter()
+        .filter_map(|(event, span)| {
+            if let pulldown_cmark::Event::Text(text) = event {
+                Some(ReplaceContent {
+                    range: span,
+                    content: text,
+                })
+            } else {
+                None
+            }
+        });
+
+    let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);
+
+    markdown
 }
 
 /// If this markdown fence language can be considered to be a "rust" language
@@ -292,10 +331,10 @@ mod tests {
                 /// just a [link]
             },
             links! {
-                "link" => "to somewhere"
+                "link" => "to_somewhere"
             },
             docstr! {
-                /// just a [link](to somewhere)
+                /// just a [link](to_somewhere)
             },
         );
     }
@@ -373,10 +412,10 @@ mod tests {
                 /// just a [link](where? "title")
             },
             links! {
-                "where?" => "to somewhere"
+                "where?" => "to_somewhere"
             },
             docstr! {
-                /// just a [link](to somewhere "title")
+                /// just a [link](to_somewhere "title")
             },
         );
 
@@ -386,10 +425,10 @@ mod tests {
                 /// just a [link](where?   "title")
             },
             links! {
-                "where?" => "to somewhere"
+                "where?" => "to_somewhere"
             },
             docstr! {
-                /// just a [link](to somewhere   "title")
+                /// just a [link](to_somewhere   "title")
             },
         );
 
@@ -399,10 +438,10 @@ mod tests {
                 /// just a [link](where?  "title"  )
             },
             links! {
-                "where?" => "to somewhere"
+                "where?" => "to_somewhere"
             },
             docstr! {
-                /// just a [link](to somewhere  "title"  )
+                /// just a [link](to_somewhere  "title"  )
             },
         );
     }
