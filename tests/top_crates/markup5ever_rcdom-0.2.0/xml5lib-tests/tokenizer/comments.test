@@ -1,0 +1,274 @@
+{"tests": [
+
+
+{"description":"Comment",
+"input":"<!--comment-->",
+"output":[["Comment", "comment"]]
+},
+
+{"description":"--Comment",
+"input":"<!----comment -->",
+"output":[["Comment", "--comment "]]
+},
+
+{"description":"--Comment-",
+"input":"<!----comment--->",
+"output":[["Comment", "--comment-"]]
+},
+
+{"description":"Error comment --!>",
+"input":"<!----!>",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment",
+"input":"<!----!",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment 2",
+"input":"<!----",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment 3",
+"input":"<!--->",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment 4",
+"input":"<!-----",
+"output":["ParseError", ["Comment", "-"]]
+},
+
+{"description":"EOF inside comment 5",
+"input":"<!-->",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment 6",
+"input":"<!--",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"EOF inside comment 7",
+"input":"<!--x",
+"output":["ParseError", ["Comment", "x"]]
+},
+
+{"description":"EOF inside comment 8",
+"input":"<!--<",
+"output":["ParseError", ["Comment", "<"]]
+},
+
+{"description":"EOF inside comment 9",
+"input":"<!--<!",
+"output":["ParseError", ["Comment", "<!"]]
+},
+
+{"description":"EOF inside comment 10",
+"input":"<!--<!-",
+"output":["ParseError", ["Comment", "<!"]]
+},
+
+{"description":"EOF inside comment 11",
+"input":"<!--<!--",
+"output":["ParseError", ["Comment", "<!"]]
+},
+
+{"description":"EOF inside comment 12",
+"input":"<!--<!--!",
+"output":["ParseError", "ParseError", ["Comment", "<!"]]
+},
+
+{"description":"<!-- inside comment",
+"input":"<!--<!--!>",
+"output":["ParseError", "ParseError", ["Comment", "<!"]]
+},
+
+{"description":"<!-- inside comment 2",
+"input":"<!--<!---",
+"output":["ParseError", "ParseError", ["Comment", "<!-"]]
+},
+
+{"description":"<!-- inside comment 3",
+"input":"<!--<!--->",
+"output":["ParseError", ["Comment", "<!-"]]
+},
+
+{"description":"<!-- inside comment 4",
+"input":"<!--<!--x",
+"output":["ParseError", "ParseError", ["Comment", "<!--x"]]
+},
+
+{"description":"<!-- inside comment 5",
+"input":"<!--<!--x-",
+"output":["ParseError", "ParseError", ["Comment", "<!--x"]]
+},
+
+{"description":"<!-- inside comment 6",
+"input":"<!--<!--x--",
+"output":["ParseError", "ParseError", ["Comment", "<!--x"]]
+},
+
+{"description":"<!-- inside comment 7",
+"input":"<!--<!--x-->",
+"output":["ParseError", ["Comment", "<!--x"]]
+},
+
+{"description":"<!-- inside comment 8",
+"input":"<!--<!-x",
+"output":["ParseError", ["Comment", "<!-x"]]
+},
+
+{"description":"<!-- inside comment 9",
+"input":"<!--<!-x-",
+"output":["ParseError", ["Comment", "<!-x"]]
+},
+
+{"description":"<!-- inside comment 10",
+"input":"<!--<!-x--",
+"output":["ParseError", ["Comment", "<!-x"]]
+},
+
+{"description":"<!-- inside comment 11",
+"input":"<!--<!x",
+"output":["ParseError", ["Comment", "<!x"]]
+},
+
+{"description":"<!-- inside comment 12",
+"input":"<!--<!x-",
+"output":["ParseError", ["Comment", "<!x"]]
+},
+
+{"description":"<!-- inside comment 13",
+"input":"<!--<!x--",
+"output":["ParseError", ["Comment", "<!x"]]
+},
+
+{"description":"<!-- inside comment 14",
+"input":"<!--<<!--x-->",
+"output":["ParseError", ["Comment", "<<!--x"]]
+},
+
+{"description":"<!-- inside comment 15",
+"input":"<!--<!<!--x-->",
+"output":["ParseError", ["Comment", "<!<!--x"]]
+},
+
+{"description":"<!-- inside comment 16",
+"input":"<!--<!-<!--x-->",
+"output":["ParseError", ["Comment", "<!-<!--x"]]
+},
+
+{"description":"EOF inside comment 13",
+"input":"<!----!->",
+"output":["ParseError", ["Comment", "--!->"]]
+},
+
+{"description":"EOF inside comment 14",
+"input":"<!----!x>",
+"output":["ParseError", ["Comment", "--!x>"]]
+},
+
+{"description":"EOF inside comment 15",
+"input":"<!-----x>",
+"output":["ParseError", ["Comment", "---x>"]]
+},
+
+{"description":"Tiny Bogus Comment",
+"input":"<!>",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"<head> in Comment",
+"input":"<!--<head>-->",
+"output":[["Comment", "<head>"]]
+},
+
+{"description":"Short Bogus Comment",
+"input":"<!-->",
+"output":["ParseError", ["Comment", ""]]
+},
+
+{"description":"Short Bogus Comment2",
+"input":"<!-->test",
+"output":["ParseError", ["Comment", ""], ["Character", "test"]]
+},
+
+{"description":"Comments 1",
+"input":"<!----!-->",
+"output":[["Comment", "--!"]]
+},
+
+{"description":"Comments 2",
+"input":"<!----!x-->",
+"output":[["Comment", "--!x"]]
+},
+
+{"description":"Comments 3",
+"input":"<!----->",
+"output":[["Comment", "-"]]
+},
+
+{"description":"Comments 4",
+"input":"<!-----x-->",
+"output":[["Comment", "---x"]]
+},
+
+{"description":"Comments 5",
+"input":"<!--x-->",
+"output":[["Comment", "x"]]
+},
+
+{"description":"Comments 6",
+"input":"<!--<!-x-->",
+"output":[["Comment", "<!-x"]]
+},
+
+{"description":"Comments 7",
+"input":"<!--<!x-->",
+"output":[["Comment", "<!x"]]
+},
+
+{"description":"Comments 8",
+"input":"<!--<<!x-->",
+"output":[["Comment", "<<!x"]]
+},
+
+{"description":"Comments 9",
+"input":"<!--<<!-x-->",
+"output":[["Comment", "<<!-x"]]
+},
+
+{"description":"Comments 10",
+"input":"<!--<x-->",
+"output":[["Comment", "<x"]]
+},
+
+{"description":"Comments 11",
+"input":"<!--<>-->",
+"output":[["Comment", "<>"]]
+},
+
+{"description":"Comments 12",
+"input":"<!--<-->",
+"output":[["Comment", "<"]]
+},
+
+{"description":"Comments 13",
+"input":"<!--<--->",
+"output":[["Comment", "<-"]]
+},
+
+{"description":"Comments 13",
+"input":"<!--<!-->",
+"output":[["Comment", "<!"]]
+},
+
+{"description":"Comments long",
+"input":"<!---->",
+"output":[["Comment", ""]]
+}
+
+]}

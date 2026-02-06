@@ -1,0 +1,56 @@
+---
+name: Lint Jobs
+
+on:
+  push:
+    branches:
+      - main
+      - devel
+  pull_request:
+    branches:
+      - main
+      - devel
+
+jobs:
+  rust-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+
+      - name: Run cargo check
+        run: cargo check
+
+      - name: Run rustfmt
+        run: cargo +nightly fmt -- --check
+
+      - name: Run Clippy
+        run: rustup component add --toolchain 1.75-x86_64-unknown-linux-gnu clippy && cargo +1.75 clippy --all-features
+        env:
+          RUSTFLAGS: -D warnings
+
+  changelog-lint:
+    name: Changelog Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Markdown Linting Action
+        uses: avto-dev/markdown-lint@v1
+        with:
+          rules: /lint/rules/changelog.js
+          config: --config /lint/config/changelog.yml
+          args: "CHANGELOG.md"
+
+  docs-lint:
+    name: Docs Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Markdown Linting Action
+        uses: avto-dev/markdown-lint@v1
+        with:
+          args: "**.md"
+          ignore: "CHANGELOG.md"

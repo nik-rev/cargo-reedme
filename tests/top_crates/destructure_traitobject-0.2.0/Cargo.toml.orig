@@ -1,0 +1,15 @@
+[package]
+
+name = "destructure_traitobject"
+version = "0.2.0"
+authors = [
+  "Jonathan Reem <jonathan.reem@gmail.com>",
+  "Steven Fackler <sfackler@gmail.com>",
+  "Alexander Regueiro <alexreg@me.com>",
+  "Philip Peterson <philip.c.peterson@gmail.com>"
+]
+repository = "https://github.com/philip-peterson/destructure_traitobject.git"
+description = "Unsafe helpers for working with raw trait objects. (Forked from traitobject)"
+readme = "README.md"
+license = "MIT/Apache-2.0"
+

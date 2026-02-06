@@ -1,0 +1,11 @@
+[package]
+name = "mock_instant"
+version = "0.6.0"
+authors = [ "museun <museun@outlook.com>" ]
+edition = "2021"
+license = "0BSD"
+readme = "README.md"
+keywords = [ "mock", "test", "time", "instant" ]
+description = "a simple way to mock an std::time::Instant"
+documentation = "https://docs.rs/mock_instant"
+repository = "https://github.com/museun/mock_instant"

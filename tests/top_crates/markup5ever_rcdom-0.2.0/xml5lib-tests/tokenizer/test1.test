@@ -1,0 +1,162 @@
+{"tests": [
+
+{"description":"Tags test",
+"input":"<z></z></><a/>",
+"output":[["StartTag", "z", {}], ["EndTag", "z"], ["ShortTag", ""], ["EmptyTag", "a", {}]]
+},
+
+{"description":"Test longer tags",
+"input":"<az></xyz>",
+"output":[["StartTag", "az",{}],["EndTag", "xyz"]]
+},
+
+{"description":"Attributes DoubleQuoted",
+"input":"<a ax=\"test\">",
+"output":[["StartTag", "a", {"ax":"test"}]]},
+
+{"description":"Attributes SingleQuoted",
+"input":"<b ay='test'>",
+"output":[["StartTag", "b", {"ay":"test"}]]},
+
+{"description":"Attributes UnQuoted",
+"input":"<c az=test>",
+"output":[["StartTag", "c", {"az":"test"}]]},
+
+{"description":"Start tag multiple attributes",
+"input":"<c a=test1 b='test2' c=\"test3\">",
+"output":[["StartTag", "c", {"a":"test1", "b":"test2", "c":"test3"}]]},
+
+{"description":"Empty Tag multiple attributes",
+"input":"<c a=test1 b='test2' c=\"test3\"/>",
+"output":[["EmptyTag", "c", {"a":"test1", "b":"test2", "c":"test3"}]]
+},
+
+{"description":"Tag state Error >",
+"input":"<>",
+"output":["ParseError", ["Character", "<>"]]
+},
+
+{"description":"Tag state Error :",
+"input":"<:",
+"output":["ParseError", ["Character", "<:"]
+]},
+
+{"description":"Tag state Error <",
+"input":"<<",
+"output":["ParseError", ["Character", "<"], "ParseError", ["Character", "<"]]
+},
+
+{"description":"Tag state Error ' '",
+"input":"< ",
+"output":["ParseError", ["Character", "< "]]
+},
+
+{"description":"Tag state Error '\\t'",
+"input":"<\t",
+"output":["ParseError", ["Character", "<\t"]]
+},
+
+{"description":"Tag state Error '\\n'",
+"input":"<\n",
+"output":["ParseError", ["Character", "<\n"]]
+},
+
+{"description":"End tag state Error '\\t'",
+"input":"</\t",
+"output":["ParseError", ["Character", "</\t"]]
+},
+
+{"description":"End tag state Error '\\n'",
+"input":"</\n",
+"output":["ParseError", ["Character", "</\n"]]
+},
+
+{"description":"End tag state Error '\\n'",
+"input":"</ ",
+"output":["ParseError", ["Character", "</ "]]
+},
+
+{"description":"End tag state Error '<'",
+"input":"</<",
+"output":["ParseError", ["Character", "</"], "ParseError", ["Character", "<"]]
+},
+
+{"description":"End tag name after state",
+"input":"</a >",
+"output":[["EndTag", "a"]]
+},
+
+{"description":"Start tag spaces in attribute",
+"input":"<b ay = 'test'>",
+"output":[["StartTag", "b", {"ay":"test"}]]
+},
+
+{"description":"Start tag with empty attribute",
+"input":"<b ay>",
+"output":[["StartTag", "b", {"ay":""}]]
+},
+
+{"description":"Start tag with empty attributes",
+"input":"<b ay az>",
+"output":[["StartTag", "b", {"ay":"", "az":""}]]
+},
+
+{"description":"Empty tag with empty attribute",
+"input":"<b ay/>",
+"output":[["EmptyTag", "b", {"ay":""}]]
+},
+
+
+
+{"description":"End tag name after state with attr",
+"input":"</a f='x'>",
+"output":["ParseError", "ParseError", "ParseError", "ParseError", "ParseError", ["EndTag", "a"]]
+},
+
+{"description":"PI tag",
+"input":"<?xslt ma?>",
+"output":[["PI", "xslt", "ma"]]
+},
+
+{"description":"PI tag",
+"input":"<?xslt \t\n m?>",
+"output":[["PI", "xslt", "m"]]
+},
+
+{"description":"PI tag with '?' in target",
+"input":"<??xml \t\n m?>",
+"output":[["PI", "?xml", "m"]]
+},
+
+{"description":"PI tag with '?' in PiAfter state",
+"input":"<?xml \t\n m?>",
+"output":[["PI", "xml", "m"]]
+},
+
+{"description":"PI tag with char in PiAfter state",
+"input":"<?xml \t\n ?m?>",
+"output":[["PI", "xml", "m"]]
+},
+
+
+{"description":"CDATA state",
+"input":"<![CDATA[&amping]]>",
+"output":[["Character", "&amping"]]
+},
+
+{"description":"CDATA state",
+"input":"<![CDATA[&amping ]]]>",
+"output":[["Character", "&amping ]"]]
+},
+
+{"description":"CDATA bracket text state",
+"input":"<![CDATA[bracket ]after]]>",
+"output":[["Character", "bracket ]after"]]
+},
+
+{"description":"CDATA state",
+"input":"<![CDATA[&amping]] ]]>",
+"output":[["Character", "&amping]] "]]
+}
+
+]}

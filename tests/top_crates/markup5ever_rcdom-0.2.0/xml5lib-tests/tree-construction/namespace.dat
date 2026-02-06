@@ -1,0 +1,119 @@
+#data
+<a xmlns = "www.example.org"></a>
+#document
+| <{www.example.org}a>
+
+#data
+<a xmlns:xml = "www.example.org"></a>
+#document
+| <a>
+
+#data
+<a xmlns:n1="www.example.org/n1"><n1:a/></a>
+#document
+| <a>
+|   <{www.example.org/n1}n1:a>
+
+#data
+<a><b xmlns:n1="www.example.org/n1"><n1:c></a>
+#document
+| <a>
+|   <b>
+|     <{www.example.org/n1}n1:c>
+
+#data
+<a><b xmlns:n1="www.example.org/n1"/><n1:c></a>
+#document
+| <a>
+|   <b>
+|   <n1:c>
+
+#data
+<a><b xmlns:n1="www.example.org/n1"><x/></b><n1:c></a>
+#document
+| <a>
+|   <b>
+|     <x>
+|   <n1:c>
+
+#data
+<a><b xmlns:n1="www.example.org/n1"><n1:x><n1:b/></n1:x></b><n1:c></a>
+#document
+| <a>
+|   <b>
+|     <{www.example.org/n1}n1:x>
+|       <{www.example.org/n1}n1:b>
+|   <n1:c>
+
+#data
+<a><b xmlns:n1="www.example.org/n1"><n1:x xmlns:n1="www.example.org/n_1"><n1:b/></n1:x></b><n1:c></a>
+#document
+| <a>
+|   <b>
+|     <{www.example.org/n_1}n1:x>
+|       <{www.example.org/n_1}n1:b>
+|   <n1:c>
+
+#data
+<a><b xmlns:n1="x"><n1:x xmlns:n1=""><n1:b><n1:b2 xmlns:n1="y"/></n1:b></n1:x><n1:c><n1:c2/></n1:c></b></a>
+#document
+| <a>
+|   <b>
+|     <n1:x>
+|       <n1:b>
+|         <{y}n1:b2>
+|     <{x}n1:c>
+|       <{x}n1:c2>
+
+#data
+<a xmlns="student" id="3"><b name="No NS"></a>
+#document
+| <{student}a>
+|   id="3"
+|   <{student}b>
+|     name="No NS"
+
+#data
+<a xmlns:n1="www.example.org" n1:x="val" />
+#document
+| <a>
+|   {www.example.org}n1:x="val"
+
+#data
+<a xmlns:n1="www.example.org" xmlns:n2="www.example.org" n1:x="val" n2:x="dupl"/>
+#document
+| <a>
+|   {www.example.org}n1:x="val"
+
+#data
+<a xmlns:n1="www.example.org" xmlns:n2="www.example.org"><bad a="1" a= "2"/><bad n1:a="1" n2:a="2"/></a>
+#document
+| <a>
+|   <bad>
+|     a="1"
+|   <bad>
+|     {www.example.org}n1:a="1"
+
+#data
+<a xmlns:n1="www.example.org" xmlns="www.example.org"><ok a="1" b="2"/><ok a="1" n1:a="2"/></a>
+#document
+| <{www.example.org}a>
+|   <{www.example.org}ok>
+|     a="1"
+|     b="2"
+|   <{www.example.org}ok>
+|     a="1"
+|     {www.example.org}n1:a="2"
+
+#data
+<a xmlns="www.example.org"><h><ok a="1"/></h><m><v n="v1"></v><v n="v2"></v></m></a>
+#document
+| <{www.example.org}a>
+|   <{www.example.org}h>
+|     <{www.example.org}ok>
+|       a="1"
+|   <{www.example.org}m>
+|     <{www.example.org}v>
+|       n="v1"
+|     <{www.example.org}v>
+|       n="v2"
