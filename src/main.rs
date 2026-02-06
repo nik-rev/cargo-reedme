@@ -1,107 +1,6 @@
-//! check out [foo][bar]
-//!
-//! [bar]: main
-//!
-//! check out [quux]
-//!
-//! [quux]: lol
-//!
-//! check out [uwu][]
-#![allow(clippy::let_and_return)]
-
-pub struct A;
-pub struct B;
-pub struct C;
-pub struct D;
-
-mod x {
-    //! yes, this is **very cool** crate
-    //!
-    //! - [`A`]
-    //! - [`B`][]
-    //! - [another][C]
-    //! - [again](D)
-    //!
-    //! Smart punctuation test:
-    //!
-    //! foo -- bar
-    //!
-    //! foo --- bar
-    //!
-    //! foo ... bar
-    //! foo .. bar
-    //!
-    //! foo "quote" bar
-    //!
-    //! foo 'quote' bar
-    //!
-    //! - [get_readme_path](<hello main>        "world"     )
-    //!
-    //! ```
-    //! hello world
-    //! ```
-    //!
-    //!     hello world
-    //!
-    //! ```py
-    //! hello world
-    //! ```
-    //!
-    //! ```ignore
-    //! python
-    //! # hidden line
-    //! ```
-    //!
-    //! []
-    //!
-    //! [`<Hello as Clone>::clone`]
-    //!
-    //! [Hello.a]
-    //!
-    //! [Hello::a]
-    //!
-    //! Rustdoc specific extensions:
-    //!
-    //! [Copy]
-    //!
-    //! [`Copy`]
-    //!
-    //! <code>::core::marker::[Copy]</code>
-    //!
-    //! Inline link:
-    //!
-    //! [item](Copy)
-    //!
-    //! Reference link:
-    //!
-    //! [the text][item]
-    //!
-    //! Collapsed reference link:
-    //!
-    //! [item][]
-    //!
-    //! Shortcut reference link:
-    //!
-    //! [item]
-    //!
-    //! [item]: Copy
-}
-pub struct Hello {
-    a: u32,
-}
-
-impl Clone for Hello {
-    fn clone(&self) -> Self {
-        Self { a: self.a.clone() }
-    }
-}
-
-mod intralinks;
-mod markdown;
-mod replace_content;
-
 use std::io::Cursor;
 
+use camino::Utf8PathBuf;
 use cargo_metadata::Package;
 use clap::Parser;
 use eyre::{Context, ContextCompat, Result};
@@ -109,6 +8,10 @@ use fs_err as fs;
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
 use serde::{Deserialize, Serialize};
+
+mod intralinks;
+mod markdown;
+mod replace_content;
 
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
@@ -131,50 +34,86 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    tracing_subscriber::fmt()
-        .pretty()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(format!("cargo_reedme={}", cli.verbosity).parse().unwrap()),
-        )
-        .without_time()
-        .with_target(false)
-        .init();
+    init_logging(cli.verbosity);
 
+    // Go over all the Cargo packages, and create individual README.md files
+    for_each_package(&cli, |pkg, workspace_metadata| {
+        resolve_package(&cli, pkg, workspace_metadata)
+            .with_context(|| format!("failed to create README for package `{}`", pkg.name))
+    })?;
+
+    Ok(())
+}
+
+/// Calls the given function for each Cargo package in the workspace
+fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()>) -> Result<()> {
     let mut metadata_cmd = cli.manifest.metadata();
+
+    // Takes into account selected features via --feature
     cli.features.forward_metadata(&mut metadata_cmd);
+
     let metadata = metadata_cmd
         .exec()
         .context("failed to obtain Cargo metadata")?;
+
+    // This takes into account selected packages such as via --package
     let (pkgs, _excluded_packages) = cli.workspace.partition_packages(&metadata);
 
+    // Let's report each individual error rather than just the first one
+    let mut errs = Vec::new();
+
+    // Config from [workspace.metadata.cargo-reedme]
+    let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
+
     for pkg in pkgs {
-        resolve_package(&cli, pkg)
-            .with_context(|| format!("failed to create README for package `{}`", pkg.name))?;
+        match f(pkg, &config) {
+            Ok(()) => (),
+            Err(err) => errs.push(err),
+        };
+    }
+
+    for err in errs {
+        eprintln!("{err}");
     }
 
     Ok(())
 }
 
-fn resolve_package(cli: &Cli, pkg: &Package) -> Result<()> {
-    let config = serde_json::from_value::<Option<PackageMetadata>>(pkg.metadata.clone())
-        .unwrap_or_default()
-        .unwrap_or_default()
-        .cargo_reedme
-        .unwrap_or_default();
+fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive(format!("cargo_reedme={verbosity}").parse().unwrap()),
+        )
+        .without_time()
+        .with_target(false)
+        .init();
+}
 
-    let rustdoc_json =
-        extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
+fn resolve_package(cli: &Cli, pkg: &Package, workspace_config: &Config) -> Result<()> {
+    // Read configuration as specified in [package.metadata.cargo-reedme]
+    let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
+    // Inherit values from [workspace.metadata.cargo-reedme]
+    config.inherit_workspace_metadata(workspace_config.clone());
 
-    let root = rustdoc_json.index.get(&rustdoc_json.root).unwrap();
-    let links = intralinks::create_links(pkg, &config, &rustdoc_json);
+    let krate = extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
 
-    let markdown = root.docs.as_ref().unwrap();
-    let output_markdown = markdown::resolve_markdown(markdown, links);
+    let root = krate
+        .index
+        .get(&krate.root)
+        .expect("rustdoc's root item is a valid item");
 
-    println!("{output_markdown}");
+    // Get the link map, which for [main function](main) creates: { "main": "https://example.com" }
+    let links = intralinks::create_links(pkg, &config, &krate);
 
-    // let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
+    // All links in the markdown are rewritten to consider the link map, e.g. [main function](https://example.com)
+    let output_markdown =
+        markdown::resolve_markdown(root.docs.as_deref().unwrap_or_default(), links);
+
+    let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
+
+    fs::write(readme_path, output_markdown).context("failed to write `README.md` file")?;
 
     Ok(())
 }
@@ -223,7 +162,6 @@ fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
 }
 
 /// For the given Cargo package, gets the path to the package's README.md file
-#[cfg(false)]
 fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
     let readme_path = match pkg.readme() {
         Some(path) => path,
@@ -240,18 +178,43 @@ fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
     Ok(readme_path)
 }
 
-#[derive(Serialize, Deserialize, Default)]
-struct PackageMetadata {
-    cargo_reedme: Option<Config>,
+/// This is the `[package.metadata.cargo-reedme]` and `[workspace.package.metadata.cargo-reedme]`
+#[derive(Serialize, Deserialize, Default, Clone)]
+struct Config {
+    #[serde(default)]
+    docs_rs: IntralinksDocsRsConfig,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-struct Config {
-    docs_rs: IntralinksDocsRsConfig,
+impl Config {
+    /// Extracts configuration from the `[workspace.metadata]` or `[package.metadata]` sections in `Cargo.toml`
+    fn from_cargo_metadata(metadata: serde_json::Value) -> Self {
+        #[derive(Serialize, Deserialize, Default)]
+        #[serde(rename_all = "kebab-case")]
+        struct PackageMetadata {
+            cargo_reedme: Option<Config>,
+        }
+
+        serde_json::from_value::<Option<PackageMetadata>>(metadata.clone())
+            .unwrap_or_default()
+            .unwrap_or_default()
+            .cargo_reedme
+            .unwrap_or_default()
+    }
+
+    /// Merges contents of `[package.metadata]` with `[workspace.metadata]`,
+    /// package metadata takes priority
+    fn inherit_workspace_metadata(&mut self, workspace_config: Self) {
+        if let Some(base_url) = workspace_config.docs_rs.base_url {
+            self.docs_rs.base_url = Some(base_url);
+        }
+        if let Some(version) = workspace_config.docs_rs.version {
+            self.docs_rs.version = Some(version);
+        }
+    }
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct IntralinksDocsRsConfig {
     base_url: Option<String>,
-    docs_rs_version: Option<String>,
+    version: Option<String>,
 }

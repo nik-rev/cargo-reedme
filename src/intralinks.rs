@@ -311,7 +311,7 @@ impl<'a> ItemInfo<'a> {
         let base_url = config.base_url.as_deref().unwrap_or("https://docs.rs");
 
         if self.is_from_current_crate() {
-            let version = config.docs_rs_version.as_deref().unwrap_or("latest");
+            let version = config.version.as_deref().unwrap_or("latest");
 
             f.write_fmt(format_args!("{base_url}/{package_name}/{version}/"))?;
             self.url_path(f)?;

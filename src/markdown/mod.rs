@@ -258,9 +258,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
             }
         });
 
-    let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);
-
-    markdown
+    ReplaceContent::replace_all(markdown.to_string(), replacements)
 }
 
 /// If this markdown fence language can be considered to be a "rust" language
