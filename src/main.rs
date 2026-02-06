@@ -27,7 +27,8 @@ fn main() -> Result<()> {
         let readme = generate_readme_for_package(&cli, pkg, workspace_metadata)
             .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
 
-        let readme_path = get_readme_path(pkg).context("failed to get `README.md` path")?;
+        let readme_path =
+            get_readme_path_for_package(pkg).context("failed to get `README.md` path")?;
 
         fs::write(readme_path, readme).context("failed to write `README.md` file")?;
 
@@ -171,7 +172,7 @@ fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
 }
 
 /// For the given Cargo package, gets the path to the package's README.md file
-fn get_readme_path(pkg: &Package) -> Result<Utf8PathBuf> {
+fn get_readme_path_for_package(pkg: &Package) -> Result<Utf8PathBuf> {
     let readme_path = match pkg.readme() {
         Some(path) => path,
         None => {
