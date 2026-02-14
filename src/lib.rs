@@ -48,8 +48,9 @@ pub fn resolve(world: &World) -> Result<Output> {
         let generated_readme = generate_readme_for_package(world, pkg, workspace_metadata)
             .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
 
-        let readme_path =
-            get_readme_path_for_package(pkg).context("failed to get `README.md` path")?;
+        let readme_path = get_readme_path_for_package(pkg).with_context(|| {
+            format!("failed to get `README.md` path for package `{}`", pkg.name)
+        })?;
 
         let original_readme = match (world.read_file)(&readme_path) {
             Ok(contents) => Some(contents),
@@ -61,7 +62,10 @@ pub fn resolve(world: &World) -> Result<Output> {
         // NOTE: not .map() due to ownership issues
         let new_readme = match original_readme {
             Some(original_readme) => ReadmeContents::InsertedIntoExisting(
-                insert_into_readme::ReadmeParts::new(&original_readme, &generated_readme)?,
+                insert_into_readme::ReadmeParts::new(&original_readme, &generated_readme)
+                    .with_context(|| {
+                        format!("failed to find edit location in README: {readme_path}")
+                    })?,
             ),
             None => ReadmeContents::NewlyCreated(generated_readme),
         };

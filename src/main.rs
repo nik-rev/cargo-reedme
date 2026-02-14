@@ -3,7 +3,6 @@ use std::io::Write as _;
 use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
-use eyre::bail;
 use fs_err as fs;
 use rayon::prelude::*;
 
@@ -55,11 +54,11 @@ fn main() -> Result<()> {
 
     // Let's report each individual error rather than just the first one
     for err in &output.errors {
-        eprintln!("{err}");
+        eprintln!("{err:?}");
     }
 
     if !output.errors.is_empty() {
-        bail!("aborting due to errors");
+        std::process::exit(1);
     }
 
     // Execute the actual function of the program
