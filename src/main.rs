@@ -3,6 +3,7 @@ use std::io::Write as _;
 use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
+use eyre::bail;
 use fs_err as fs;
 use rayon::prelude::*;
 
@@ -57,14 +58,11 @@ fn main() -> Result<()> {
         eprintln!("{err}");
     }
 
-    // Regular output
-    output.generated_readmes.par_iter().for_each(|readme| {
-        if let Err(err) = fs::write(&readme.readme_path, readme.readme_contents.to_string())
-            .context("failed to write `README.md` file")
-        {
-            println!("{err}");
-        }
-    });
+    if !output.errors.is_empty() {
+        bail!("aborting due to errors");
+    }
+
+    // Execute the actual function of the program
 
     if cli.json {
         output
@@ -76,6 +74,15 @@ fn main() -> Result<()> {
         std::io::stdout()
             .write_all(json.as_bytes())
             .context("failed to write JSON")?;
+    } else {
+        // Regular output
+        output.generated_readmes.par_iter().for_each(|readme| {
+            if let Err(err) = fs::write(&readme.readme_path, readme.readme_contents.to_string())
+                .context("failed to write `README.md` file")
+            {
+                println!("{err}");
+            }
+        });
     }
 
     Ok(())

@@ -14,22 +14,6 @@ mod intralinks;
 mod markdown;
 mod replace_content;
 
-/// Output of the program, with all computed README paths
-#[derive(Serialize, Deserialize)]
-pub struct Output {
-    pub version: String,
-    pub generated_readmes: Vec<GeneratedReadme>,
-    #[serde(skip)]
-    pub errors: Vec<eyre::Report>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GeneratedReadme {
-    pub readme_path: Utf8PathBuf,
-    pub package: String,
-    pub readme_contents: ReadmeContents,
-}
-
 /// Represents all necessary inputs to the program
 #[allow(clippy::type_complexity)]
 pub struct World {
@@ -40,6 +24,23 @@ pub struct World {
     pub rustdoc_json_for_crate: Box<dyn Fn(&Package) -> Result<rustdoc_types::Crate> + Sync>,
     /// Read the given file to a string
     pub read_file: fn(&Utf8Path) -> std::io::Result<String>,
+}
+
+/// Output of the program, with all computed README paths
+#[derive(Serialize, Deserialize)]
+pub struct Output {
+    pub version: String,
+    pub generated_readmes: Vec<GeneratedReadme>,
+    /// Errors that were encountered while processing the READMEs
+    #[serde(skip)]
+    pub errors: Vec<eyre::Report>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GeneratedReadme {
+    pub readme_path: Utf8PathBuf,
+    pub package: String,
+    pub readme_contents: ReadmeContents,
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
