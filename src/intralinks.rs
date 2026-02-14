@@ -533,10 +533,6 @@ fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
             Box::new(fields.chain(impls.iter().copied()))
         }
         ItemEnum::Impl(Impl {
-            trait_: Some(_), ..
-        }) => Box::new(std::iter::empty()),
-        ItemEnum::Impl(Impl {
-            trait_: None,
             for_,
             items: item_ids,
             ..

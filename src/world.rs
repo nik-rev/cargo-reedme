@@ -55,7 +55,7 @@ pub fn extract_rustdoc_json(
         .document_private_items(true)
         .no_default_features(true)
         .all_features(false)
-        .features(dbg!(node.features.as_slice()))
+        .features(node.features.as_slice())
         .quiet(true)
         .color(rustdoc_json::Color::Never)
         .package_target(extract_package_target(pkg).context("failed to extract package target")?);
