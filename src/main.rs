@@ -1,8 +1,9 @@
-use std::io::Cursor;
+use std::{collections::HashMap, io::Cursor};
 
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
 use clap::Parser;
+use docstr::docstr;
 use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
 use rayon::prelude::*;
@@ -12,6 +13,7 @@ use rustdoc_types::Crate;
 use crate::config::Config;
 
 mod config;
+mod insert_into_readme;
 mod intralinks;
 mod markdown;
 mod replace_content;
@@ -31,7 +33,22 @@ fn main() -> Result<()> {
         let readme_path =
             get_readme_path_for_package(pkg).context("failed to get `README.md` path")?;
 
-        fs::write(readme_path, readme).context("failed to write `README.md` file")?;
+        let original_readme = match fs::read_to_string(&readme_path) {
+            Ok(contents) => Some(contents),
+            // if this file doesn't exist, we will create it
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
+            Err(err) => return Err(err.into()),
+        };
+
+        // NOTE: not .map() due to ownership
+        let readme = match original_readme {
+            Some(original_readme) => {
+                insert_into_readme::insert_into_readme(&original_readme, &readme)?
+            }
+            None => readme,
+        };
+
+        fs::write(&readme_path, readme).context("failed to write `README.md` file")?;
 
         Ok(())
     })?;
@@ -54,6 +71,23 @@ struct Cli {
     #[command(flatten)]
     verbosity: clap_verbosity_flag::Verbosity,
 }
+
+// fn get(cli: &Cli) {
+//     let mut metadata_cmd = cli.manifest.metadata();
+
+//     // Takes into account selected features via --feature
+//     cli.features.forward_metadata(&mut metadata_cmd);
+
+//     let metadata = metadata_cmd
+//         .exec()
+//         .context("failed to obtain Cargo metadata")?;
+
+//     // This takes into account selected packages such as via --package
+//     let (pkgs, _excluded_packages) = cli.workspace.partition_packages(&metadata);
+
+//     // Config from [workspace.metadata.cargo-reedme]
+//     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
+// }
 
 /// Calls the given function for each Cargo package in the workspace
 fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Sync) -> Result<()> {
@@ -86,6 +120,19 @@ fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Syn
     }
 
     Ok(())
+}
+
+struct Readme<'inserted, 'original> {
+    before: &'original str,
+    inserted: &'inserted str,
+    after: &'original str,
+}
+
+struct Input {}
+
+struct Output {
+    /// Maps README file paths to new README contents
+    readmes: HashMap<Utf8PathBuf, String>,
 }
 
 fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {

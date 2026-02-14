@@ -1,15 +1,19 @@
+use std::{path::PathBuf, process::Command};
+
 use fs_err as fs;
 use rayon::prelude::*;
 
-// cargo test download_top_crates -- --ignored
+// TO RUN: cargo test download_top_crates -- --ignored
 #[ignore]
 #[test]
 fn download_top_crates() -> eyre::Result<()> {
     let (dependencies, _) = rust_playground_top_crates::generate_info(&Default::default());
 
-    // Create a base directory for your 100 crates
-    let base_path = "downloaded_crates";
-    fs::create_dir_all(base_path)?;
+    let downloaded_crates_path =
+        PathBuf::from(format!("{}/downloaded_crates", env!("CARGO_MANIFEST_DIR")));
+
+    fs::remove_dir_all(&downloaded_crates_path)?;
+    fs::create_dir_all(&downloaded_crates_path)?;
 
     dependencies.into_par_iter().for_each(|(name, spec)| {
         let version = spec.version;
@@ -31,6 +35,8 @@ fn download_top_crates() -> eyre::Result<()> {
         archive.unpack(&unpack_dir).unwrap();
 
         println!("Unpacked to {}", unpack_dir);
+
+        // Command::new(env!("CARGO_BIN_EXE_cargo-reedme")).arg(arg);
     });
 
     Ok(())
