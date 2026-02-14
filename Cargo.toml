@@ -3,6 +3,9 @@ name = "cargo-reedme"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+__failing_links = []
+
 [dependencies]
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.54", features = ["derive", "unstable-markdown", "wrap_help"] }

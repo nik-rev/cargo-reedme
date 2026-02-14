@@ -74,7 +74,22 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
 
     for (link, item_id) in &root.links {
         let Some(item_info) = items_info.get(item_id) else {
-            error!(item = link, "unknown item");
+            error!(item = link, "failed to generate link");
+
+            #[cfg(feature = "__failing_links")]
+            {
+                let mut file = std::fs::File::options()
+                    .append(true)
+                    .create(true)
+                    .open(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/tests/top_crates_failing"
+                    ))
+                    .unwrap();
+                file.write_fmt(format_args!("{}: {link:?}\n\n", pkg.name))
+                    .unwrap();
+            }
+
             continue;
         };
 

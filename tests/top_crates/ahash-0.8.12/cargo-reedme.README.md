@@ -30,7 +30,7 @@ It is also possible to have randomness supplied via the `compile-time-rng` flag,
 
 ### If randomness is not available
 
-[AHasher::default()] can be used to hash using fixed keys. This works with
+[AHasher::default()](https://docs.rs/ahash/0.8.12/ahash/fallback_hash/struct.AHasher.html#method.default) can be used to hash using fixed keys. This works with
 [BuildHasherDefault](https://doc.rust-lang.org/stable/core/hash/struct.BuildHasherDefault.html). For example:
 
 ```rust

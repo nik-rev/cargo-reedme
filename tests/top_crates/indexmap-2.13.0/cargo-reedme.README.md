@@ -88,7 +88,7 @@ This is chosen by disabling the default “std” cargo feature, by adding
 
 - Creating maps and sets using [IndexMap::new](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.new) and
   [IndexMap::with_capacity](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.with_capacity) is unavailable without `std`.
-  Use methods [`IndexMap::default`], [IndexMap::with_hasher](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.with_hasher),
+  Use methods [`IndexMap::default`](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.default), [IndexMap::with_hasher](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.with_hasher),
   [IndexMap::with_capacity_and_hasher](https://docs.rs/indexmap/2.13.0/indexmap/map/struct.IndexMap.html#method.with_capacity_and_hasher) instead.
   A no-std compatible hasher will be needed as well, for example
   from the crate `twox-hash`.

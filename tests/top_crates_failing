@@ -1,0 +1,30 @@
+icu_provider: "dynutil::impl_dynamic_data_provider"
+
+zeroize: "`Vec::clear`"
+
+zeroize: "`String::clear`"
+
+zeroize: "core::sync::atomic::Ordering::SeqCst"
+
+convert_case: "unicode_segmentation::UnicodeSegmentation::graphemes"
+
+tracing: "subscriber::Subscriber::exit"
+
+tracing: "span::Attributes::is_contextual"
+
+tracing: "span::Attributes::parent"
+
+tracing: "subscriber::Subscriber::enter"
+
+tracing: "Metadata::target"
+
+thiserror: "std::error::Error::provide"
+
+thiserror: "std::error::Error::source"
+
+socket2: "std::io::ErrorKind::Interrupted"
+
+bytemuck: "`f32::from_bits`"
+
+chrono: "str::parse"
+
