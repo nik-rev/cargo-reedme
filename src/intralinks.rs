@@ -1,3 +1,5 @@
+//! Resolves rustdoc intra-doc links
+//!
 //! This module has in large part been taken from `cargo-rdme` from the "rustdoc-json" branch,
 //! including modifications
 //!

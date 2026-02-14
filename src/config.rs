@@ -1,3 +1,5 @@
+//! Handles configuration in the `Cargo.toml` `[workspace.metadata]` and `[package.metadata]` sections
+
 use serde::{Deserialize, Serialize};
 
 /// This is the `[package.metadata.cargo-reedme]` and `[workspace.package.metadata.cargo-reedme]`

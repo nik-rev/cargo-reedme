@@ -1,41 +1,83 @@
+//! Handles logic for inserting generated README files into existing README files
+
+use std::fmt;
+
 use docstr::docstr;
 use eyre::{ContextCompat as _, Result};
+use serde::{Deserialize, Serialize};
 
-const MARKER_INSERT: &str = "<!-- cargo-reedme -->";
-const MARKER_INSERT_START: &str = "<!-- cargo-reedme: start -->";
-const MARKER_INSERT_END: &str = "<!-- cargo-reedme: end -->";
+#[derive(Serialize, Deserialize)]
+pub enum ReadmeContents {
+    /// The README file did not exist before, so we created it
+    ///
+    /// Contains full README contents from documentation comments
+    NewlyCreated(String),
+    /// README file already existed, and we inserted our generated README in the middle of it
+    InsertedIntoExisting(ReadmeParts),
+}
 
-pub fn insert_into_readme(original_readme: &str, to_insert: &str) -> Result<String> {
-    let (before, after) = original_readme
-        .split_once(MARKER_INSERT)
-        .or_else(|| {
-            original_readme
-                .split_once(MARKER_INSERT_START)
-                .and_then(|(before, remaining)| {
-                    remaining
-                        .split_once(MARKER_INSERT_END)
-                        .map(|(_previously_inserted_by_us, after)| (before, after))
-                })
+impl fmt::Display for ReadmeContents {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ReadmeContents::NewlyCreated(s) => s.fmt(f),
+            ReadmeContents::InsertedIntoExisting(s) => s.fmt(f),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ReadmeParts {
+    before: String,
+    inserted: String,
+    after: String,
+}
+
+impl ReadmeParts {
+    const MARKER_INSERT: &'static str = "<!-- cargo-reedme -->";
+    const MARKER_INSERT_START: &'static str = "<!-- cargo-reedme: start -->";
+    const MARKER_INSERT_END: &'static str = "<!-- cargo-reedme: end -->";
+
+    pub fn new(original_readme: &str, to_insert: &str) -> Result<Self> {
+        let (before, after) = original_readme
+            .split_once(Self::MARKER_INSERT)
+            .or_else(|| {
+                original_readme
+                    .split_once(Self::MARKER_INSERT_START)
+                    .and_then(|(before, remaining)| {
+                        remaining
+                            .split_once(Self::MARKER_INSERT_END)
+                            .map(|(_previously_inserted_by_us, after)| (before, after))
+                    })
+            })
+            .with_context(|| {
+                format!(
+                    concat!(
+                        "please add `{}` somewhere in your README, that's where",
+                        " the generated portion from rust doc comments will be inserted!"
+                    ),
+                    Self::MARKER_INSERT
+                )
+            })?;
+
+        Ok(Self {
+            before: before.to_string(),
+            inserted: to_insert.to_string(),
+            after: after.to_string(),
         })
-        .with_context(|| {
-            format!(
-                concat!(
-                    "please add `{}` somewhere in your README, that's where",
-                    " the generated portion from rust doc comments will be inserted!"
-                ),
-                MARKER_INSERT
-            )
-        })?;
+    }
+}
 
-    let new_readme = docstr!(format!
-        /// {before}{MARKER_INSERT_START}
-        ///
-        /// {to_insert}
-        ///
-        /// {MARKER_INSERT_END}{after}
-    );
-
-    Ok(new_readme)
+impl fmt::Display for ReadmeParts {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(docstr!(format_args!
+            /// {}{}
+            ///
+            /// {}
+            ///
+            /// {}{}
+            self.before, Self::MARKER_INSERT_START, self.inserted, Self::MARKER_INSERT_END, self.after
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -44,9 +86,13 @@ mod tests {
 
     use super::*;
 
+    fn t(original: &str, insert: &str) -> Result<String> {
+        ReadmeParts::new(original, insert).map(|s| s.to_string())
+    }
+
     #[test]
     fn missing_marker() {
-        _ = super::insert_into_readme(
+        _ = t(
             docstr!(
                 /// Header
                 ///
@@ -59,7 +105,7 @@ mod tests {
 
     #[test]
     fn insert() {
-        let output = super::insert_into_readme(
+        let output = t(
             docstr!(
                 /// Header
                 ///
@@ -89,7 +135,7 @@ mod tests {
 
     #[test]
     fn update() {
-        let output = super::insert_into_readme(
+        let output = t(
             docstr!(
                 /// Header
                 ///

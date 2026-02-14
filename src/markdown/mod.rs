@@ -22,8 +22,6 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     // touches this set will be excluded because it is inside of a code block
     let mut code_block_ranges = RangeSet::new();
 
-    dbg!(&links);
-
     // Pass 1/3
     //
     // Resolves regular links (such as inline links), broken links, code blocks

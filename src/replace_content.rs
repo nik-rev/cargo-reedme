@@ -1,3 +1,5 @@
+//! Declarative replacement of content in string
+
 use std::ops::Range;
 
 use pulldown_cmark::CowStr;

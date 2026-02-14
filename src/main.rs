@@ -1,22 +1,36 @@
-use std::{collections::HashMap, io::Cursor};
+use std::io::{Cursor, Write};
 
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
 use clap::Parser;
-use docstr::docstr;
 use eyre::{Context, ContextCompat, Result};
 use fs_err as fs;
+use itertools::Either;
 use rayon::prelude::*;
 use rustdoc_json::PackageTarget;
 use rustdoc_types::Crate;
+use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
+use crate::{config::Config, insert_into_readme::ReadmeContents};
 
 mod config;
 mod insert_into_readme;
 mod intralinks;
 mod markdown;
 mod replace_content;
+
+#[derive(Serialize, Deserialize)]
+struct JsonOutput {
+    version: String,
+    generated_readmes: Vec<GeneratedReadme>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GeneratedReadme {
+    readme_path: Utf8PathBuf,
+    package: String,
+    readme_contents: ReadmeContents,
+}
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -26,8 +40,8 @@ fn main() -> Result<()> {
     init_logging(cli.verbosity);
 
     // Writes README.md files for each Cargo package
-    for_each_package(&cli, |pkg, workspace_metadata| {
-        let readme = generate_readme_for_package(&cli, pkg, workspace_metadata)
+    let mut data = map_each_package(&cli, |pkg, workspace_metadata| {
+        let generated_readme = generate_readme_for_package(&cli, pkg, workspace_metadata)
             .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
 
         let readme_path =
@@ -40,25 +54,50 @@ fn main() -> Result<()> {
             Err(err) => return Err(err.into()),
         };
 
-        // NOTE: not .map() due to ownership
-        let readme = match original_readme {
-            Some(original_readme) => {
-                insert_into_readme::insert_into_readme(&original_readme, &readme)?
-            }
-            None => readme,
+        // NOTE: not .map() due to ownership issues
+        let new_readme = match original_readme {
+            Some(original_readme) => ReadmeContents::InsertedIntoExisting(
+                insert_into_readme::ReadmeParts::new(&original_readme, &generated_readme)?,
+            ),
+            None => ReadmeContents::NewlyCreated(generated_readme),
         };
 
-        fs::write(&readme_path, readme).context("failed to write `README.md` file")?;
+        if !cli.json {
+            fs::write(&readme_path, new_readme.to_string())
+                .context("failed to write `README.md` file")?;
+        }
 
-        Ok(())
+        Ok(GeneratedReadme {
+            readme_path,
+            readme_contents: new_readme,
+            package: pkg.name.to_string(),
+        })
     })?;
+
+    if cli.json {
+        data.sort_unstable_by(|a, b| a.readme_path.cmp(&b.readme_path));
+
+        let json = colored_json::to_colored_json_auto(&JsonOutput {
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            generated_readmes: data,
+        })
+        .context("failed to write json")?;
+
+        std::io::stdout()
+            .write_all(json.as_bytes())
+            .context("failed to write JSON")?;
+    }
 
     Ok(())
 }
 
+/// Cargo plugin that generates `README.md` files from documentation comments in `lib.rs` or `main.rs`
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
 struct Cli {
+    /// Write JSON to stdout
+    #[arg(long)]
+    json: bool,
     /// Specify a custom toolchain to use
     #[arg(long, default_value = "nightly")]
     toolchain: String,
@@ -72,25 +111,11 @@ struct Cli {
     verbosity: clap_verbosity_flag::Verbosity,
 }
 
-// fn get(cli: &Cli) {
-//     let mut metadata_cmd = cli.manifest.metadata();
-
-//     // Takes into account selected features via --feature
-//     cli.features.forward_metadata(&mut metadata_cmd);
-
-//     let metadata = metadata_cmd
-//         .exec()
-//         .context("failed to obtain Cargo metadata")?;
-
-//     // This takes into account selected packages such as via --package
-//     let (pkgs, _excluded_packages) = cli.workspace.partition_packages(&metadata);
-
-//     // Config from [workspace.metadata.cargo-reedme]
-//     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
-// }
-
 /// Calls the given function for each Cargo package in the workspace
-fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Sync) -> Result<()> {
+fn map_each_package<T: Send>(
+    cli: &Cli,
+    f: impl Fn(&Package, &Config) -> Result<T> + Sync,
+) -> Result<Vec<T>> {
     let mut metadata_cmd = cli.manifest.metadata();
 
     // Takes into account selected features via --feature
@@ -106,10 +131,12 @@ fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Syn
     // Config from [workspace.metadata.cargo-reedme]
     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
 
-    let mut errs: Vec<_> = pkgs
-        .into_par_iter()
-        .filter_map(|pkg| f(pkg, &config).err())
-        .collect();
+    let (oks, mut errs): (Vec<_>, Vec<_>) =
+        pkgs.into_par_iter()
+            .partition_map(|pkg| match f(pkg, &config) {
+                Ok(ok) => Either::Left(ok),
+                Err(err) => Either::Right(err),
+            });
 
     // Errors are sorted by their display, so we show the same errors at the same time
     errs.sort_by_key(|x| x.to_string());
@@ -119,20 +146,7 @@ fn for_each_package(cli: &Cli, f: impl Fn(&Package, &Config) -> Result<()> + Syn
         eprintln!("{err}");
     }
 
-    Ok(())
-}
-
-struct Readme<'inserted, 'original> {
-    before: &'original str,
-    inserted: &'inserted str,
-    after: &'original str,
-}
-
-struct Input {}
-
-struct Output {
-    /// Maps README file paths to new README contents
-    readmes: HashMap<Utf8PathBuf, String>,
+    Ok(oks)
 }
 
 fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
