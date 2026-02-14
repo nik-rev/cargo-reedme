@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
 
 use fs_err as fs;
 use rayon::prelude::*;

@@ -1,35 +1,34 @@
-use std::io::{Cursor, Write};
+use std::io::Write as _;
 
-use camino::Utf8PathBuf;
-use cargo_metadata::Package;
-use clap::Parser;
-use eyre::{Context, ContextCompat, Result};
+use eyre::Context as _;
+use eyre::ContextCompat as _;
+use eyre::Result;
 use fs_err as fs;
-use itertools::Either;
 use rayon::prelude::*;
-use rustdoc_json::PackageTarget;
-use rustdoc_types::Crate;
-use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, insert_into_readme::ReadmeContents};
+use clap::Parser;
 
-mod config;
-mod insert_into_readme;
-mod intralinks;
-mod markdown;
-mod replace_content;
+/// Cargo plugin that generates `README.md` files from documentation comments in `lib.rs` or `main.rs`
+#[derive(Parser)]
+#[command(styles = clap_cargo::style::CLAP_STYLING)]
+pub struct Cli {
+    /// Write JSON to stdout
+    #[arg(long)]
+    pub json: bool,
+    /// Specify a custom toolchain to use
+    #[arg(long, default_value = "nightly")]
+    pub toolchain: String,
 
-#[derive(Serialize, Deserialize)]
-struct JsonOutput {
-    version: String,
-    generated_readmes: Vec<GeneratedReadme>,
-}
-
-#[derive(Serialize, Deserialize)]
-struct GeneratedReadme {
-    readme_path: Utf8PathBuf,
-    package: String,
-    readme_contents: ReadmeContents,
+    // cargo-specific flags for package resolution
+    //
+    #[command(flatten)]
+    pub manifest: clap_cargo::Manifest,
+    #[command(flatten)]
+    pub workspace: clap_cargo::Workspace,
+    #[command(flatten)]
+    pub features: clap_cargo::Features,
+    #[command(flatten)]
+    pub verbosity: clap_verbosity_flag::Verbosity,
 }
 
 fn main() -> Result<()> {
@@ -39,49 +38,40 @@ fn main() -> Result<()> {
 
     init_logging(cli.verbosity);
 
+    let world = cargo_reedme::World {
+        manifest: cli.manifest,
+        workspace: cli.workspace,
+        features: cli.features,
+        rustdoc_json_for_crate: Box::new(move |pkg| extract_rustdoc_json(pkg, &cli.toolchain)),
+        read_file: |a| fs::read_to_string(a),
+    };
+
     // Writes README.md files for each Cargo package
-    let mut data = map_each_package(&cli, |pkg, workspace_metadata| {
-        let generated_readme = generate_readme_for_package(&cli, pkg, workspace_metadata)
-            .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
+    let mut output = cargo_reedme::resolve(&world)?;
 
-        let readme_path =
-            get_readme_path_for_package(pkg).context("failed to get `README.md` path")?;
+    // Errors are sorted by their display, so we show the same errors at the same time
+    output.errors.sort_by_key(|x| x.to_string());
 
-        let original_readme = match fs::read_to_string(&readme_path) {
-            Ok(contents) => Some(contents),
-            // if this file doesn't exist, we will create it
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
-            Err(err) => return Err(err.into()),
-        };
+    // Let's report each individual error rather than just the first one
+    for err in &output.errors {
+        eprintln!("{err}");
+    }
 
-        // NOTE: not .map() due to ownership issues
-        let new_readme = match original_readme {
-            Some(original_readme) => ReadmeContents::InsertedIntoExisting(
-                insert_into_readme::ReadmeParts::new(&original_readme, &generated_readme)?,
-            ),
-            None => ReadmeContents::NewlyCreated(generated_readme),
-        };
-
-        if !cli.json {
-            fs::write(&readme_path, new_readme.to_string())
-                .context("failed to write `README.md` file")?;
+    // Regular output
+    output.generated_readmes.par_iter().for_each(|readme| {
+        if let Err(err) = fs::write(&readme.readme_path, readme.readme_contents.to_string())
+            .context("failed to write `README.md` file")
+        {
+            println!("{err}");
         }
-
-        Ok(GeneratedReadme {
-            readme_path,
-            readme_contents: new_readme,
-            package: pkg.name.to_string(),
-        })
-    })?;
+    });
 
     if cli.json {
-        data.sort_unstable_by(|a, b| a.readme_path.cmp(&b.readme_path));
+        output
+            .generated_readmes
+            .sort_unstable_by(|a, b| a.readme_path.cmp(&b.readme_path));
 
-        let json = colored_json::to_colored_json_auto(&JsonOutput {
-            version: env!("CARGO_PKG_VERSION").to_string(),
-            generated_readmes: data,
-        })
-        .context("failed to write json")?;
+        let json = colored_json::to_colored_json_auto(&output).context("failed to write json")?;
 
         std::io::stdout()
             .write_all(json.as_bytes())
@@ -89,64 +79,6 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Cargo plugin that generates `README.md` files from documentation comments in `lib.rs` or `main.rs`
-#[derive(Parser)]
-#[command(styles = clap_cargo::style::CLAP_STYLING)]
-struct Cli {
-    /// Write JSON to stdout
-    #[arg(long)]
-    json: bool,
-    /// Specify a custom toolchain to use
-    #[arg(long, default_value = "nightly")]
-    toolchain: String,
-    #[command(flatten)]
-    manifest: clap_cargo::Manifest,
-    #[command(flatten)]
-    workspace: clap_cargo::Workspace,
-    #[command(flatten)]
-    features: clap_cargo::Features,
-    #[command(flatten)]
-    verbosity: clap_verbosity_flag::Verbosity,
-}
-
-/// Calls the given function for each Cargo package in the workspace
-fn map_each_package<T: Send>(
-    cli: &Cli,
-    f: impl Fn(&Package, &Config) -> Result<T> + Sync,
-) -> Result<Vec<T>> {
-    let mut metadata_cmd = cli.manifest.metadata();
-
-    // Takes into account selected features via --feature
-    cli.features.forward_metadata(&mut metadata_cmd);
-
-    let metadata = metadata_cmd
-        .exec()
-        .context("failed to obtain Cargo metadata")?;
-
-    // This takes into account selected packages such as via --package
-    let (pkgs, _excluded_packages) = cli.workspace.partition_packages(&metadata);
-
-    // Config from [workspace.metadata.cargo-reedme]
-    let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
-
-    let (oks, mut errs): (Vec<_>, Vec<_>) =
-        pkgs.into_par_iter()
-            .partition_map(|pkg| match f(pkg, &config) {
-                Ok(ok) => Either::Left(ok),
-                Err(err) => Either::Right(err),
-            });
-
-    // Errors are sorted by their display, so we show the same errors at the same time
-    errs.sort_by_key(|x| x.to_string());
-
-    // Let's report each individual error rather than just the first one
-    for err in errs {
-        eprintln!("{err}");
-    }
-
-    Ok(oks)
 }
 
 fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
@@ -161,48 +93,13 @@ fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
         .init();
 }
 
-/// For a given Cargo package, returns contents of generated README.md
-fn generate_readme_for_package(
-    cli: &Cli,
-    pkg: &Package,
-    workspace_config: &Config,
-) -> Result<String> {
-    // Read configuration as specified in [package.metadata.cargo-reedme]
-    let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
-    // Inherit values from [workspace.metadata.cargo-reedme]
-    config.inherit_workspace_metadata(workspace_config.clone());
-
-    let krate = extract_rustdoc_json(pkg, &cli.toolchain).context("failed to run rustdoc")?;
-
-    let root = krate
-        .index
-        .get(&krate.root)
-        .expect("rustdoc's root item is a valid item");
-
-    // Get the link map, which for [main function](main) creates: { "main": "https://example.com" }
-    let links = intralinks::create_links(pkg, &config, &krate);
-
-    // All links in the markdown are rewritten to consider the link map, e.g. [main function](https://example.com)
-    Ok(markdown::resolve_markdown(
-        root.docs.as_deref().unwrap_or_default(),
-        links,
-    ))
-}
-
-fn extract_package_target(pkg: &Package) -> Result<PackageTarget> {
-    let target = pkg.targets.first().context("no cargo target")?;
-    let package_target = if target.is_kind(cargo_metadata::TargetKind::Bin) {
-        PackageTarget::Bin(target.name.clone())
-    } else {
-        PackageTarget::Lib
-    };
-    Ok(package_target)
-}
-
 /// Run Rustdoc on the package, generate the JSON into a file
 ///
 /// Returns path to the file
-fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
+fn extract_rustdoc_json(
+    pkg: &cargo_metadata::Package,
+    toolchain: &str,
+) -> Result<rustdoc_types::Crate> {
     let builder = rustdoc_json::Builder::default()
         .toolchain(toolchain)
         .manifest_path(&pkg.manifest_path)
@@ -227,24 +124,17 @@ fn extract_rustdoc_json(pkg: &Package, toolchain: &str) -> Result<Crate> {
         })?;
 
     let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
-    let mut rustdoc_json = Cursor::new(rustdoc_json);
+    let mut rustdoc_json = std::io::Cursor::new(rustdoc_json);
 
     serde_json::from_reader(&mut rustdoc_json).context("failed to deserialize rustdoc json")
 }
 
-/// For the given Cargo package, gets the path to the package's README.md file
-fn get_readme_path_for_package(pkg: &Package) -> Result<Utf8PathBuf> {
-    let readme_path = match pkg.readme() {
-        Some(path) => path,
-        None => {
-            let parent = pkg
-                .manifest_path
-                .parent()
-                .context("manifest has no parent directory")?;
-
-            parent.join("README.md")
-        }
+fn extract_package_target(pkg: &cargo_metadata::Package) -> Result<rustdoc_json::PackageTarget> {
+    let target = pkg.targets.first().context("no cargo target")?;
+    let package_target = if target.is_kind(cargo_metadata::TargetKind::Bin) {
+        rustdoc_json::PackageTarget::Bin(target.name.clone())
+    } else {
+        rustdoc_json::PackageTarget::Lib
     };
-
-    Ok(readme_path)
+    Ok(package_target)
 }
