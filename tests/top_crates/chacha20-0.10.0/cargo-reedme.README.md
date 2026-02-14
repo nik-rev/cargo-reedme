@@ -104,17 +104,17 @@ dual licensed as above, without any additional terms or conditions.
 [9]: https://www.mobilecoin.com/
 # Usage
 
-Cipher functionality is accessed using traits from re-exported [`cipher`](https://docs.rs/cipher/latest/cipher/) crate, or as a set
+Cipher functionality is accessed using traits from re-exported [`cipher`] crate, or as a set
 of random number generator types ending in `*Rng` which implement traits from the [`rand_core`](https://docs.rs/rand_core/latest/rand_core/)
 crate.
 
 This crate contains the following variants of the ChaCha20 core algorithm:
 
-- [`ChaCha20`](https://docs.rs/chacha20/0.10.0/chacha20/chacha/type.ChaCha20.html): standard IETF variant with 96-bit nonce
-- [`ChaCha8`](https://docs.rs/chacha20/0.10.0/chacha20/chacha/type.ChaCha8.html) / [`ChaCha12`](https://docs.rs/chacha20/0.10.0/chacha20/chacha/type.ChaCha12.html): reduced round variants of ChaCha20
-- [`XChaCha20`](https://docs.rs/chacha20/0.10.0/chacha20/xchacha/type.XChaCha20.html): 192-bit extended nonce variant
-- [`XChaCha8`](https://docs.rs/chacha20/0.10.0/chacha20/xchacha/type.XChaCha8.html) / [`XChaCha12`](https://docs.rs/chacha20/0.10.0/chacha20/xchacha/type.XChaCha12.html): reduced round variants of XChaCha20
-- [`ChaCha20Legacy`](https://docs.rs/chacha20/0.10.0/chacha20/legacy/type.ChaCha20Legacy.html): “djb” variant with 64-bit nonce.
+- [`ChaCha20`]: standard IETF variant with 96-bit nonce
+- [`ChaCha8`] / [`ChaCha12`]: reduced round variants of ChaCha20
+- [`XChaCha20`]: 192-bit extended nonce variant
+- [`XChaCha8`] / [`XChaCha12`]: reduced round variants of XChaCha20
+- [`ChaCha20Legacy`]: “djb” variant with 64-bit nonce.
 **WARNING:** This implementation internally uses 32-bit counter,
 while the original implementation uses 64-bit counter. In other words,
 it does not allow encryption of more than 256 GiB of data.

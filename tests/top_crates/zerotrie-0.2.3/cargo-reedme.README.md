@@ -27,5 +27,5 @@ To read about the internal structure of [`ZeroTrie`](https://docs.rs/zerotrie/0.
 cargo doc --document-private-items --all-features --no-deps --open
 ```
 
-[`LiteMap`]: https://docs.rs/litemap/latest/litemap/map/struct.LiteMap.html
-[`BTreeMap`]: https://doc.rust-lang.org/stable/alloc/collections/btree/map/struct.BTreeMap.html
+[`LiteMap`]: litemap::LiteMap
+[`BTreeMap`]: alloc::collections::BTreeMap

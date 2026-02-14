@@ -34,59 +34,7 @@ See the crate’s README for details on the available C backends.
 The `zlib-rs` backend typically outperforms all the C implementations.
 
 # Feature Flags
-* **`miniz_oxide`** *(enabled by default)* —  This implementation uses only safe Rust code and doesn’t require a C compiler.
-  It provides good performance for most use cases while being completely portable.
-* **`default`** —  The default backend using pure Rust implementation via miniz_oxide.
-  This provides a safe, portable compression implementation without requiring a C compiler.
-
- ### User-Facing Backend Features
- Choose one of these features to select the compression backend.
- Only one backend should be enabled at a time, or else one will see an unstable order which is currently
- `zlib-ng`, `zlib-rs`, `cloudflare_zlib`, `miniz_oxide` and which may change at any time.
-* **`rust_backend`** *(enabled by default)* —  Use the pure Rust `miniz_oxide` backend (default).
-  This implementation uses only safe Rust code and doesn’t require a C compiler.
-  It provides good performance for most use cases while being completely portable.
- 
-  Note that this feature at some point may be switched to use `zlib-rs` instead.
-* **`zlib-rs`** —  Use the zlib-rs backend, a pure Rust rewrite of zlib.
-  This is the fastest backend overall, providing excellent performance with some `unsafe` code.
-  It does not require a C compiler but uses `unsafe` Rust for optimization.
-* **`miniz_oxide`** *(enabled by default)* —  Use the pure Rust `miniz_oxide` backend.
-* **`zlib`** —  Use the system’s installed zlib library.
-  This is useful when you need compatibility with other C code that uses zlib,
-  or when you want to use the system-provided zlib for consistency.
-* **`zlib-default`** —  Use the system’s installed zlib library with default features enabled.
-  Similar to `zlib` but enables additional features from libz-sys.
-* **`zlib-ng-compat`** —  Use zlib-ng in zlib-compat mode via libz-sys.
-  This provides zlib-ng’s performance improvements while maintaining compatibility.
-  Note: If any crate in your dependency graph uses stock zlib, you’ll get stock zlib instead.
-  For guaranteed zlib-ng, use the `zlib-ng` feature.
-  When using this feature, if any crate in your dependency graph explicitly requests stock zlib,
-  or uses libz-sys directly without `default-features = false`, you’ll get stock zlib rather than zlib-ng.
-  See [the libz-sys README](https://github.com/rust-lang/libz-sys/blob/main/README.md) for details.
-  To avoid that, use the `"zlib-ng"` feature instead.
-* **`zlib-ng`** —  Use the high-performance zlib-ng library directly.
-  This typically provides better performance than stock zlib and works even when
-  other dependencies use zlib. Requires a C compiler.
-* **`cloudflare_zlib`** —  Use Cloudflare’s optimized zlib implementation.
-  This provides better performance than stock zlib on x86-64 (with SSE 4.2) and ARM64 (with NEON & CRC).
-  * ⚠ Does not support 32-bit CPUs and is incompatible with mingw.
-  * ⚠ May cause conflicts if other crates use different zlib versions.
-* **`miniz-sys`** —  Deprecated alias for `rust_backend`, provided for backwards compatibility.
-  Use `rust_backend` instead.
-
- ### Internal Features
- These features are used internally for backend selection and should not be enabled directly by users.
- They are documented here to aid with maintenance.
-* **`any_zlib`** —  **Internal:** Marker feature indicating that any zlib-based C backend is enabled.
-  This is automatically enabled by `zlib-rs`, `zlib`, `zlib-ng`, `zlib-ng-compat`, and `cloudflare_zlib`.
-  Do not enable this feature directly; instead, choose a specific backend feature.
-* **`any_c_zlib`** —  **Internal:** Marker feature indicating that any C based fully zlib compatible backend is enabled.
-  This is automatically enabled by `zlib`, `zlib-ng`, `zlib-ng-compat`, and `cloudflare_zlib`.
-  Do not enable this feature directly; instead, choose a specific backend feature.
-* **`any_impl`** *(enabled by default)* —  **Internal:** Marker feature indicating that any compression backend is enabled.
-  This is automatically enabled by all backend features to ensure at least one implementation is available.
-  Do not enable this feature directly; instead, choose a specific backend feature.
+Activate the `document-features` cargo feature to see feature docs here
 
 ## Ambiguous feature selection
 

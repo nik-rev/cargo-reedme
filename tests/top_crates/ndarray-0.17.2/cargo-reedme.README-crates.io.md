@@ -61,8 +61,8 @@ The following crate feature flags are available. They are configured in your
 
 - `std`: Rust standard library-using functionality (enabled by default)
 - `serde`: serialization support for serde 1.x
-- `rayon`: Parallel iterators, parallelized methods, the [`parallel`](https://docs.rs/ndarray/0.17.2/ndarray/parallel/) module and [`par_azip!`](https://docs.rs/ndarray/0.17.2/ndarray/macro.par_azip.html).
-- `approx` Implementations of traits from the [`approx`](https://docs.rs/approx/latest/approx/) crate.
+- `rayon`: Parallel iterators, parallelized methods, the [`parallel`] module and [`par_azip!`].
+- `approx` Implementations of traits from the [`approx`] crate.
 - `blas`: transparent BLAS support for matrix multiplication, needs configuration.
 - `matrixmultiply-threading`: Use threading from `matrixmultiply`.
 

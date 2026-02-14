@@ -1,0 +1,9 @@
+@@ -5,7 +5,7 @@
+ 
+ # Quick Start
+ 
+-```
++```rust
+ // The prelude import enables methods we use below, specifically
+ // Rng::random, Rng::sample, SliceRandom::shuffle and IndexedRandom::choose.
+ use rand::prelude::*;

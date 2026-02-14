@@ -25,8 +25,8 @@ Foldhash can be used in a `#![no_std]` environment by disabling its default
 
 # Usage
 
-The easiest way to use this crate with the standard library [`HashMap`](https://docs.rs/foldhash/0.2.0/foldhash/convenience/type.HashMap.html) or
-[`HashSet`](https://docs.rs/foldhash/0.2.0/foldhash/convenience/type.HashSet.html) is to import them from `foldhash` instead, along with the
+The easiest way to use this crate with the standard library [`HashMap`] or
+[`HashSet`] is to import them from `foldhash` instead, along with the
 extension traits to make [`HashMap::new`] and [`HashMap::with_capacity`]
 work out-of-the-box:
 
@@ -73,7 +73,7 @@ tables and has known statistical imperfections.
 
 Finally, you can also directly use the [`RandomState`](https://docs.rs/foldhash/0.2.0/foldhash/quality/struct.RandomState.html)
 or [`FixedState`](https://docs.rs/foldhash/0.2.0/foldhash/quality/struct.FixedState.html) to manually hash items using the
-[`BuildHasher`](https://doc.rust-lang.org/stable/core/hash/trait.BuildHasher.html) trait:
+[`BuildHasher`](std::hash::BuildHasher) trait:
 ```rust
 use std::hash::BuildHasher;
 use foldhash::quality::RandomState;

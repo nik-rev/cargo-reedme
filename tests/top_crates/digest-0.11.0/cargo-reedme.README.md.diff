@@ -12,16 +12,16 @@
  Traits in this crate are organized into the following levels:
  
 -- **High-level convenience traits**: [`Digest`], [`DynDigest`], [`Mac`].
-+- **High-level convenience traits**: [`Digest`](https://docs.rs/digest/0.11.0/digest/digest/trait.Digest.html), [`DynDigest`](https://docs.rs/digest/0.11.0/digest/digest/trait.DynDigest.html), [`Mac`](https://docs.rs/digest/0.11.0/digest/mac/trait.Mac.html).
++- **High-level convenience traits**: [`Digest`](https://docs.rs/digest/0.11.0/digest/digest/trait.Digest.html), [`DynDigest`](https://docs.rs/digest/0.11.0/digest/digest/trait.DynDigest.html), [`Mac`].
    Wrappers around lower-level traits for most common use-cases. Users should
    usually prefer using these traits.
 -- **Mid-level traits**: [`Update`], [`FixedOutput`], [`FixedOutputReset`], [`ExtendableOutput`],
 -  [`ExtendableOutputReset`], [`XofReader`], [`Reset`], [`KeyInit`], and [`InnerInit`].
 +- **Mid-level traits**: [`Update`](https://docs.rs/digest/0.11.0/digest/trait.Update.html), [`FixedOutput`](https://docs.rs/digest/0.11.0/digest/trait.FixedOutput.html), [`FixedOutputReset`](https://docs.rs/digest/0.11.0/digest/trait.FixedOutputReset.html), [`ExtendableOutput`](https://docs.rs/digest/0.11.0/digest/trait.ExtendableOutput.html),
-+  [`ExtendableOutputReset`](https://docs.rs/digest/0.11.0/digest/trait.ExtendableOutputReset.html), [`XofReader`](https://docs.rs/digest/0.11.0/digest/trait.XofReader.html), [`Reset`](https://docs.rs/crypto_common/latest/crypto_common/trait.Reset.html), [`KeyInit`](https://docs.rs/crypto_common/latest/crypto_common/trait.KeyInit.html), and [`InnerInit`](https://docs.rs/crypto_common/latest/crypto_common/trait.InnerInit.html).
++  [`ExtendableOutputReset`](https://docs.rs/digest/0.11.0/digest/trait.ExtendableOutputReset.html), [`XofReader`](https://docs.rs/digest/0.11.0/digest/trait.XofReader.html), [`Reset`](https://docs.rs/crypto_common/latest/crypto_common/trait.Reset.html), [`KeyInit`], and [`InnerInit`].
    These traits atomically describe available functionality of an algorithm.
 -- **Marker traits**: [`HashMarker`], [`MacMarker`]. Used to distinguish
-+- **Marker traits**: [`HashMarker`](https://docs.rs/digest/0.11.0/digest/digest/trait.HashMarker.html), [`MacMarker`](https://docs.rs/digest/0.11.0/digest/mac/trait.MacMarker.html). Used to distinguish
++- **Marker traits**: [`HashMarker`](https://docs.rs/digest/0.11.0/digest/digest/trait.HashMarker.html), [`MacMarker`]. Used to distinguish
    different algorithm classes.
 -- **Low-level traits** defined in the [`block_api`] module. These traits
 +- **Low-level traits** defined in the [`block_api`](https://docs.rs/digest/0.11.0/digest/block_api/) module. These traits

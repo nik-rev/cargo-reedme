@@ -121,41 +121,12 @@
  
  [`alloc`]: https://doc.rust-lang.org/alloc/
  [`std`]: https://doc.rust-lang.org/std/
-@@ -116,21 +116,21 @@
+@@ -116,7 +116,7 @@
  [`rand_distr`]: https://crates.io/crates/rand_distr
  [`rkyv`]: (https://crates.io/crates/rkyv)
  [`arbitrary`]: (https://crates.io/crates/arbitrary)
 -[`vec`]: mod@vec
--[`Serialize`]: serde::Serialize
--[`Deserialize`]: serde::Deserialize
--[`ToPrimitive`]: ::num_traits::ToPrimitive
--[`FromPrimitive`]: ::num_traits::FromPrimitive
--[`ToBytes`]: ::num_traits::ToBytes
--[`AsPrimitive`]: ::num_traits::AsPrimitive
--[`Num`]: ::num_traits::Num
--[`Float`]: ::num_traits::Float
--[`FloatCore`]: ::num_traits::float::FloatCore
--[`Signed`]: ::num_traits::Signed
--[`Bounded`]: ::num_traits::Bounded
--[`Zeroable`]: bytemuck::Zeroable
--[`Pod`]: bytemuck::Pod
 +[`vec`]: https://docs.rs/half/2.7.1/hahttps://docs.rs/half/2.7.1/hahttps://docs.rs/half/2.7.1/half/vec/
-+[`Serialize`]: https://docs.rs/serde/1.0.219/serde/ser/trait.Serialize.html
-+[`Deserialize`]: https://docs.rs/serde/1.0.219/serde/de/trait.Deserialize.html
-+[`ToPrimitive`]: https://docs.rs/num-traits/0.2/num_traits/cast/trait.ToPrimitive.html
-+[`FromPrimitive`]: https://docs.rs/num-traits/0.2/num_traits/cast/trait.FromPrimitive.html
-+[`ToBytes`]: https://docs.rs/num-traits/0.2/num_traits/ops/bytes/trait.ToBytes.html
-+[`AsPrimitive`]: https://docs.rs/num-traits/0.2/num_traits/cast/trait.AsPrimitive.html
-+[`Num`]: https://docs.rs/num-traits/0.2/num_traits/trait.Num.html
-+[`Float`]: https://docs.rs/num-traits/0.2/num_traits/float/trait.Float.html
-+[`FloatCore`]: https://docs.rs/num-traits/0.2/num_traits/float/trait.FloatCore.html
-+[`Signed`]: https://docs.rs/num-traits/0.2/num_traits/sign/trait.Signed.html
-+[`Bounded`]: https://docs.rs/num-traits/0.2/num_traits/bounds/trait.Bounded.html
-+[`Zeroable`]: https://docs.rs/bytemuck/latest/bytemuck/zeroable/trait.Zeroable.html
-+[`Pod`]: https://docs.rs/bytemuck/latest/bytemuck/pod/trait.Pod.html
- [`IntoBytes`]: zerocopy::IntoBytes
- [`FromBytes`]: zerocopy::FromBytes
--[`Distribution`]: rand::distr::Distribution
-+[`Distribution`]: https://rust-random.github.io/rand/rand/distr/distribution/trait.Distribution.html
- [`Arbitrary`]: arbitrary::Arbitrary
-\ No newline at end of file
+ [`Serialize`]: https://docs.rs/serde/*/serde/trait.Serialize.html
+ [`Deserialize`]: https://docs.rs/serde/*/serde/trait.Deserialize.html
+ [`ToPrimitive`]: https://docs.rs/num-traits/*/num_traits/cast/trait.ToPrimitive.html

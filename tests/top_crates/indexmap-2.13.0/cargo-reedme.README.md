@@ -48,8 +48,9 @@ _Note: only the `std` feature is enabled by default._
 [`Deserialize`]: https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html
 [`BorshSerialize`]: `::borsh::BorshSerialize`
 [`BorshDeserialize`]: `::borsh::BorshDeserialize`
-[`borsh`]: `:https://docs.rs/borsh/latest/borsh/ser/trait.BorshSerialize.htmltrary`]: https://docs.rhttps://docs.rs/borsh/latest/borsh/de/trait.BorshDeserialize.htmly/trait.Arbihttps://docs.rs/borsh/latest/borsh/l
-[`quickcheck::Arbitrary`]: https://docs.rs/quickcheck/latest/quickcheck/arbitrary/trait.Arbitrary.html
+[`borsh`]: `::borsh`
+[`arbitrary::Arbitrary`]: `::arbitrary::Arbitrary`
+[`quickcheck::Arbitrary`]: `::quickcheck::Arbitrary`
 
 ### Alternate Hashers
 

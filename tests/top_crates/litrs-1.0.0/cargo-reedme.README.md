@@ -143,7 +143,7 @@ if it is expected that breakage is minimal or non-existent.
 # Crate features
 
 - `proc-macro2`: adds the dependency `proc_macro2`, a bunch of `From` and
-  `TryFrom` impls, and [`InvalidToken::to_compile_error2`](https://docs.rs/litrs/1.0.0/litrs/err/struct.InvalidToken.html#method.to_compile_error2).
+  `TryFrom` impls, and [`InvalidToken::to_compile_error2`].
 - `check_suffix`: if enabled, `parse` functions will exactly verify that the
   literal suffix is valid. Adds the dependency `unicode-xid`. If disabled,
   only an approximate check (only in ASCII range) is done. If you are

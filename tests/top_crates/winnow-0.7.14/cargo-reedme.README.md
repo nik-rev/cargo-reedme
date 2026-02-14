@@ -4,8 +4,8 @@
 
 Quick links:
 - [crate::combinator](https://docs.rs/winnow/0.7.14/winnow/combinator/)
-- [_tutorial::chapter_0](https://docs.rs/winnow/0.7.14/winnow/_tutorial/chapter_0/)
-- [_topic](https://docs.rs/winnow/0.7.14/winnow/_topic/)
+- [Tutorial][_tutorial::chapter_0]
+- [Special Topics][_topic]
 - [Discussions](https://github.com/winnow-rs/winnow/discussions)
 - [CHANGELOG](https://github.com/winnow-rs/winnow/blob/v0.7.14/CHANGELOG.md) (includes major version migration
   guides)
@@ -18,7 +18,7 @@ In roughly priority order:
 1. Support writing parser declaratively while not getting in the way of imperative-style
    parsing when needed, working as an open-ended toolbox rather than a close-ended framework.
 2. Flexible enough to be used for any application, including parsing strings, binary data,
-   or separate [_topic::lexing](https://docs.rs/winnow/0.7.14/winnow/_topic/lexing/)
+   or separate [lexing and parsing phases][_topic::lexing]
 3. Zero-cost abstractions, making it easy to write high performance parsers
 4. Easy to use, making it trivial for one-off uses
 
@@ -28,7 +28,7 @@ In addition:
   - Leverage feature flags to keep one active branch
 - We will support the last 6 months of rust releases (MSRV, currently 1.64.0)
 
-See also [crate::_topic::why](https://docs.rs/winnow/0.7.14/winnow/_topic/why/)
+See also [Special Topic: Why winnow?][crate::_topic::why]
 
 ## Example
 
@@ -77,4 +77,4 @@ fn hex_primary(input: &mut &str) -> Result<u8> {
 }
 ```
 
-See also the [_tutorial::chapter_0](https://docs.rs/winnow/0.7.14/winnow/_tutorial/chapter_0/) and [_topic](https://docs.rs/winnow/0.7.14/winnow/_topic/)
+See also the [Tutorial][_tutorial::chapter_0] and [Special Topics][_topic]

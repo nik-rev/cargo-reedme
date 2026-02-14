@@ -48,7 +48,7 @@
    dependency that arose between [`borsh`] and `indexmap`, `borsh v1.5.6`
    added an `indexmap` feature that should be used instead of enabling the
    feature here.
-@@ -44,23 +44,22 @@
+@@ -44,8 +44,8 @@
  
  [feature flags]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
  [`no_std`]: #no-standard-library-targets
@@ -58,11 +58,8 @@
 +[`Deserialize`]: https://docs.rs/serde_core/1.0.228/serde_core/de/trait.Deserialize.html
  [`BorshSerialize`]: `::borsh::BorshSerialize`
  [`BorshDeserialize`]: `::borsh::BorshDeserialize`
--[`borsh`]: `::borsh`
--[`arbitrary::Arbitrary`]: `::arbitrary::Arbitrary`
--[`quickcheck::Arbitrary`]: `::quickcheck::Arbitrary`
-+[`borsh`]: `:https://docs.rs/borsh/latest/borsh/ser/trait.BorshSerialize.htmltrary`]: https://docs.rhttps://docs.rs/borsh/latest/borsh/de/trait.BorshDeserialize.htmly/trait.Arbihttps://docs.rs/borsh/latest/borsh/l
-+[`quickcheck::Arbitrary`]: https://docs.rs/quickcheck/latest/quickcheck/arbitrary/trait.Arbitrary.html
+ [`borsh`]: `::borsh`
+@@ -54,13 +54,13 @@
  
  ### Alternate Hashers
  
@@ -79,7 +76,7 @@
  use fnv::FnvBuildHasher;
  use indexmap::{IndexMap, IndexSet};
  
-@@ -83,14 +82,14 @@
+@@ -83,14 +83,14 @@
  ## No Standard Library Targets
  
  This crate supports being built without `std`, requiring `alloc` instead.

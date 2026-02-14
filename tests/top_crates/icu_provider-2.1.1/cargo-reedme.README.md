@@ -36,7 +36,7 @@ implementations that should be called out
 ### BufferProvider
 
 These providers are able to return unstructured data typically represented as
-[`serde`](https://docs.rs/serde/1.0.228/serde/)-serialized buffers. Users can call [`as_deserializing()`] to get an object
+[`serde`]-serialized buffers. Users can call [`as_deserializing()`] to get an object
 implementing [`DataProvider`](https://docs.rs/icu_provider/2.1.1/icu_provider/data_provider/trait.DataProvider.html) by invoking Serde Deserialize.
 
 Examples of BufferProviders:
@@ -65,9 +65,10 @@ structs to borrow zero-copy data.
 
 [`FixedProvider`]: https://docs.rs/icu_provider_adapters/latest/fixed/any_payload/struct.FixedProvider.html
 [`HelloWorldProvider`]: hello_world::HelloWorldProvider
-[`Yokeable`]: yoke::Yokeable
-[`impl_dynahttps://docs.rs/icu_provider/2.1.1/icu_provider/hello_world/struct.HelloWorldProvider.htmlimpl_dynamic_dahttps://docs.rs/yoke/latest/yoke/yokeable/trait.Yokeable.htmlicu_provider_adapters`]: https://docs.rs/icu_provider_adapters/latest/icu_provider_adapters/index.html
+[`Yokeable`]: https://docs.rs/yoke/latest/yoke/yokeable/trait.Yokeable.html
+[`impl_dynamic_data_provider!`]: dynutil::impl_dynamic_data_provider
+[`icu_provider_adapters`]: https://docs.rs/icu_provider_adapters/latest/icu_provider_adapters/index.html
 [`SourceDataProvider`]: https://docs.rs/icu_provider_source/latest/icu_provider_source/struct.SourceDataProvider.html
-[`as_deserializing()`]: https://docs.rs/icu_provider/2.1.1/icu_provider/buf/serde/trait.AsDeserializingBufferProvider.html#tymethod.as_deserializing
+[`as_deserializing()`]: buf::AsDeserializingBufferProvider::as_deserializing
 [`FsDataProvider`]: https://docs.rs/icu_provider_fs/latest/icu_provider_fs/struct.FsDataProvider.html
 [`BlobDataProvider`]: https://docs.rs/icu_provider_blob/latest/icu_provider_blob/struct.BlobDataProvider.html

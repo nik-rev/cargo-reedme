@@ -5,7 +5,7 @@ based off of a single sorted vector.
 
 The main goal of this crate is to provide a map that is good enough for small
 sizes, and does not carry the binary size impact of [`HashMap`](https://doc.rust-lang.org/stable/std/collections/hash/map/struct.HashMap.html)
-or [`BTreeMap`](https://doc.rust-lang.org/stable/alloc/collections/btree/map/struct.BTreeMap.html).
+or [`BTreeMap`](alloc::collections::BTreeMap).
 
 If binary size is not a concern, [`std::collections::BTreeMap`](https://doc.rust-lang.org/stable/alloc/collections/btree/map/struct.BTreeMap.html) may be a better choice
 for your use case. It behaves very similarly to [`LiteMap`](https://docs.rs/litemap/0.8.1/litemap/map/struct.LiteMap.html) for less than 12 elements,
@@ -35,7 +35,7 @@ module for more details.
 
 [`LiteMap`](https://docs.rs/litemap/0.8.1/litemap/map/struct.LiteMap.html) supports const construction from any store that is const-constructible, such as a
 static slice, via [`LiteMap::from_sorted_store_unchecked()`](https://docs.rs/litemap/0.8.1/litemap/map/struct.LiteMap.html#method.from_sorted_store_unchecked). This also makes [`LiteMap`](https://docs.rs/litemap/0.8.1/litemap/map/struct.LiteMap.html)
-suitable for use with [`databake`](https://docs.rs/databake/latest/databake/). See [`impl Bake for LiteMap`] for more details.
+suitable for use with [`databake`]. See [`impl Bake for LiteMap`] for more details.
 
 [`impl Bake for LiteMap`]: ./struct.LiteMap.html#impl-Bake-for-LiteMap<K,+V,+S>
-[`Vec`]: https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html
+[`Vec`]: alloc::vec::Vec

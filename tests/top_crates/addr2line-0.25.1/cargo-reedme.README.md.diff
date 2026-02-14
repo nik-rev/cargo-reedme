@@ -1,0 +1,20 @@
+@@ -3,14 +3,14 @@
+ line number, and function name associated with that address, as well as the inline call
+ stack leading to that address.
+ 
+-At the lowest level, the library uses a [`Context`] to cache parsed information so that
++At the lowest level, the library uses a [`Context`](https://docs.rs/addr2line/0.25.1/addr2line/struct.Context.html) to cache parsed information so that
+ multiple lookups are efficient. To create a `Context`, you first need to open and parse the
+ file using an object file parser such as [`object`](https://github.com/gimli-rs/object),
+-create a [`gimli::Dwarf`], and finally call [`Context::from_dwarf`].
++create a [`gimli::Dwarf`](https://docs.rs/gimli/latest/gimli/read/dwarf/struct.Dwarf.html), and finally call [`Context::from_dwarf`](https://docs.rs/addr2line/0.25.1/addr2line/struct.Context.html#method.from_dwarf).
+ 
+-Location information is obtained with [`Context::find_location`] or
+-[`Context::find_location_range`]. Function information is obtained with
+-[`Context::find_frames`], which returns a frame for each inline function. Each frame
++Location information is obtained with [`Context::find_location`](https://docs.rs/addr2line/0.25.1/addr2line/struct.Context.html#method.find_location) or
++[`Context::find_location_range`](https://docs.rs/addr2line/0.25.1/addr2line/struct.Context.html#method.find_location_range). Function information is obtained with
++[`Context::find_frames`](https://docs.rs/addr2line/0.25.1/addr2line/struct.Context.html#method.find_frames), which returns a frame for each inline function. Each frame
+ contains both name and location.
+ 
+ The library also provides a [`Loader`] which internally memory maps the files,

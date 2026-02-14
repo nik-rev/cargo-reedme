@@ -7,7 +7,7 @@
  
  * `default`, or `rust_backend` - this implementation currently uses the `miniz_oxide`
    crate which is a port of `miniz.c` to Rust. This feature does not
-@@ -29,12 +29,12 @@
+@@ -29,7 +29,7 @@
  Several backends implemented in C are also available.
  These are useful in case you are already using a specific C implementation
  and need the result of compression to be bit-identical.
@@ -16,52 +16,7 @@
  
  The `zlib-rs` backend typically outperforms all the C implementations.
  
- # Feature Flags
--* **`miniz_oxide`** *(enabled by default)* —  This implementation uses only safe Rust code and doesn't require a C compiler.
-+* **`miniz_oxide`** *(enabled by default)* —  This implementation uses only safe Rust code and doesn’t require a C compiler.
-   It provides good performance for most use cases while being completely portable.
- * **`default`** —  The default backend using pure Rust implementation via miniz_oxide.
-   This provides a safe, portable compression implementation without requiring a C compiler.
-@@ -44,7 +44,7 @@
-  Only one backend should be enabled at a time, or else one will see an unstable order which is currently
-  `zlib-ng`, `zlib-rs`, `cloudflare_zlib`, `miniz_oxide` and which may change at any time.
- * **`rust_backend`** *(enabled by default)* —  Use the pure Rust `miniz_oxide` backend (default).
--  This implementation uses only safe Rust code and doesn't require a C compiler.
-+  This implementation uses only safe Rust code and doesn’t require a C compiler.
-   It provides good performance for most use cases while being completely portable.
-  
-   Note that this feature at some point may be switched to use `zlib-rs` instead.
-@@ -52,23 +52,23 @@
-   This is the fastest backend overall, providing excellent performance with some `unsafe` code.
-   It does not require a C compiler but uses `unsafe` Rust for optimization.
- * **`miniz_oxide`** *(enabled by default)* —  Use the pure Rust `miniz_oxide` backend.
--* **`zlib`** —  Use the system's installed zlib library.
-+* **`zlib`** —  Use the system’s installed zlib library.
-   This is useful when you need compatibility with other C code that uses zlib,
-   or when you want to use the system-provided zlib for consistency.
--* **`zlib-default`** —  Use the system's installed zlib library with default features enabled.
-+* **`zlib-default`** —  Use the system’s installed zlib library with default features enabled.
-   Similar to `zlib` but enables additional features from libz-sys.
- * **`zlib-ng-compat`** —  Use zlib-ng in zlib-compat mode via libz-sys.
--  This provides zlib-ng's performance improvements while maintaining compatibility.
--  Note: If any crate in your dependency graph uses stock zlib, you'll get stock zlib instead.
-+  This provides zlib-ng’s performance improvements while maintaining compatibility.
-+  Note: If any crate in your dependency graph uses stock zlib, you’ll get stock zlib instead.
-   For guaranteed zlib-ng, use the `zlib-ng` feature.
-   When using this feature, if any crate in your dependency graph explicitly requests stock zlib,
--  or uses libz-sys directly without `default-features = false`, you'll get stock zlib rather than zlib-ng.
-+  or uses libz-sys directly without `default-features = false`, you’ll get stock zlib rather than zlib-ng.
-   See [the libz-sys README](https://github.com/rust-lang/libz-sys/blob/main/README.md) for details.
-   To avoid that, use the `"zlib-ng"` feature instead.
- * **`zlib-ng`** —  Use the high-performance zlib-ng library directly.
-   This typically provides better performance than stock zlib and works even when
-   other dependencies use zlib. Requires a C compiler.
--* **`cloudflare_zlib`** —  Use Cloudflare's optimized zlib implementation.
-+* **`cloudflare_zlib`** —  Use Cloudflare’s optimized zlib implementation.
-   This provides better performance than stock zlib on x86-64 (with SSE 4.2) and ARM64 (with NEON & CRC).
-   * ⚠ Does not support 32-bit CPUs and is incompatible with mingw.
-   * ⚠ May cause conflicts if other crates use different zlib versions.
-@@ -101,23 +101,23 @@
+@@ -49,23 +49,23 @@
  # Organization
  
  This crate consists of three main modules: `bufread`, `read`, and `write`. Each module
@@ -92,7 +47,7 @@
  use futures::{Stream, StreamExt};
  use std::io::{Result, Write as _};
  
-@@ -139,7 +139,7 @@
+@@ -87,7 +87,7 @@
  
  Note that types which operate over a specific trait often implement the mirroring trait as well.
  For example a `bufread::DeflateDecoder<T>` *also* implements the
@@ -101,7 +56,7 @@
  to the underlying object if available.
  
  # About multi-member Gzip files
-@@ -161,6 +161,6 @@
+@@ -109,6 +109,6 @@
  [`Bufread`]: std::io::BufRead
  [`BufReader`]: std::io::BufReader
  [`Read`]: std::io::Read

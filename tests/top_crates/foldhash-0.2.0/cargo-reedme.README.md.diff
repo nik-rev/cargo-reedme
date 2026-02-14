@@ -15,17 +15,6 @@
    Foldhash is **not appropriate for any cryptographic purpose**.
  
  Foldhash has two variants, one optimized for speed which is ideal for data
-@@ -25,8 +25,8 @@
- 
- # Usage
- 
--The easiest way to use this crate with the standard library [`HashMap`] or
--[`HashSet`] is to import them from `foldhash` instead, along with the
-+The easiest way to use this crate with the standard library [`HashMap`](https://docs.rs/foldhash/0.2.0/foldhash/convenience/type.HashMap.html) or
-+[`HashSet`](https://docs.rs/foldhash/0.2.0/foldhash/convenience/type.HashSet.html) is to import them from `foldhash` instead, along with the
- extension traits to make [`HashMap::new`] and [`HashMap::with_capacity`]
- work out-of-the-box:
- 
 @@ -38,7 +38,7 @@
  ```
  
@@ -44,7 +33,7 @@
  instead, but note that this makes you trivially vulnerable to HashDoS
  attacks and might lead to quadratic runtime when moving data from one
  hashmap/set into another:
-@@ -66,14 +66,14 @@
+@@ -66,13 +66,13 @@
  
  If you rely on statistical properties of the hash for the correctness of
  your algorithm, such as in [HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog),
@@ -58,13 +47,11 @@
  
 -Finally, you can also directly use the [`RandomState`](quality::RandomState)
 -or [`FixedState`](quality::FixedState) to manually hash items using the
--[`BuildHasher`](std::hash::BuildHasher) trait:
 +Finally, you can also directly use the [`RandomState`](https://docs.rs/foldhash/0.2.0/foldhash/quality/struct.RandomState.html)
 +or [`FixedState`](https://docs.rs/foldhash/0.2.0/foldhash/quality/struct.FixedState.html) to manually hash items using the
-+[`BuildHasher`](https://doc.rust-lang.org/stable/core/hash/trait.BuildHasher.html) trait:
+ [`BuildHasher`](std::hash::BuildHasher) trait:
  ```rust
  use std::hash::BuildHasher;
- use foldhash::quality::RandomState;
 @@ -86,20 +86,20 @@
  
  Foldhash relies on a single 8-byte per-hasher seed which should be ideally

@@ -16,7 +16,7 @@
  use zerotrie::ZeroTrie;
  
  let data: &[(&str, usize)] = &[("abc", 11), ("xyz", 22), ("axyb", 33)];
-@@ -21,11 +21,11 @@
+@@ -21,7 +21,7 @@
  
  # Internal Structure
  
@@ -25,11 +25,3 @@
  
  ```bash
  cargo doc --document-private-items --all-features --no-deps --open
- ```
- 
--[`LiteMap`]: litemap::LiteMap
--[`BTreeMap`]: alloc::collections::BTreeMap
-\ No newline at end of file
-+[`LiteMap`]: https://docs.rs/litemap/latest/litemap/map/struct.LiteMap.html
-+[`BTreeMap`]: https://doc.rust-lang.org/stable/alloc/collections/btree/map/struct.BTreeMap.html
-\ No newline at end of file

@@ -1,0 +1,26 @@
+@@ -6,19 +6,19 @@
+ 
+ ## Raw struct definitions
+ 
+-Raw structs are defined for: [ELF](elf), [Mach-O](macho), [PE/COFF](pe),
+-[XCOFF](xcoff), [archive].
+-Types and traits for zerocopy support are defined in the [`pod`] and [`endian`] modules.
++Raw structs are defined for: [ELF](https://docs.rs/object/0.37.3/object/elf/), [Mach-O](https://docs.rs/object/0.37.3/object/macho/), [PE/COFF](https://docs.rs/object/0.37.3/object/pe/),
++[XCOFF](https://docs.rs/object/0.37.3/object/xcoff/), [archive](https://docs.rs/object/0.37.3/object/archive/).
++Types and traits for zerocopy support are defined in the [`pod`](https://docs.rs/object/0.37.3/object/pod/) and [`endian`](https://docs.rs/object/0.37.3/object/endian/) modules.
+ 
+ ## Unified read API
+ 
+-The [`read`] module provides a unified read API using the [`read::Object`] trait.
+-There is an implementation of this trait for [`read::File`], which allows reading any
++The [`read`](https://docs.rs/object/0.37.3/object/read/) module provides a unified read API using the [`read::Object`](https://docs.rs/object/0.37.3/object/read/traits/trait.Object.html) trait.
++There is an implementation of this trait for [`read::File`](https://docs.rs/object/0.37.3/object/read/any/enum.File.html), which allows reading any
+ file format, as well as implementations for each file format.
+ 
+ ## Low level read API
+ 
+-The [`read#modules`] submodules define helpers that operate on the raw structs.
++The [`read#modules`](https://docs.rs/object/0.37.3/object/read/##modules`) submodules define helpers that operate on the raw structs.
+ These can be used instead of the unified API, or in conjunction with it to access
+ details that are not available via the unified API.
+ 

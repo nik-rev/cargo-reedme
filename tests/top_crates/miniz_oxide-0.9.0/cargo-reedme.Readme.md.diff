@@ -1,0 +1,20 @@
+@@ -5,7 +5,7 @@
+ 
+ # Usage
+ ## Simple compression/decompression:
+-``` rust
++```rust
+ 
+ use miniz_oxide::inflate::decompress_to_vec;
+ use miniz_oxide::deflate::compress_to_vec;
+@@ -13,7 +13,6 @@
+ fn roundtrip(data: &[u8]) {
+     let compressed = compress_to_vec(data, 6);
+     let decompressed = decompress_to_vec(compressed.as_slice()).expect("Failed to decompress!");
+-#   let _ = decompressed;
+ }
+ 
+-# roundtrip(b"Test_data test data lalalal blabla");
+\ No newline at end of file
++```
+\ No newline at end of file

@@ -1,0 +1,9 @@
+@@ -10,7 +10,7 @@
+ 
+ # Example
+ 
+-```no_run
++```rust
+ use std::io;
+ 
+ // Uncompress input and print the result.

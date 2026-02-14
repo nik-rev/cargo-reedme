@@ -8,7 +8,7 @@
  management, recording changes as they are made, and optional automatic
  cookie encryption and signing.
  
-@@ -21,37 +21,37 @@
+@@ -21,8 +21,8 @@
  
    Enables _percent encoding and decoding_ of names and values in cookies.
  
@@ -19,42 +19,25 @@
    returns a wrapper around a `Cookie` whose `Display` implementation
    percent-encodes the name and value of the cookie. The `parse_encoded`
    method percent-decodes the name and value of a `Cookie` during parsing.
+@@ -32,8 +32,8 @@
+   Enables _signed_ cookies via [`CookieJar::signed()`].
  
- * **`signed`**
- 
--  Enables _signed_ cookies via [`CookieJar::signed()`].
-+  Enables _signed_ cookies via [`CookieJar::signed()`](https://docs.rs/cookie/0.18.1/cookie/jar/struct.CookieJar.html#method.signed).
- 
--  When this feature is enabled, the [`CookieJar::signed()`] method,
+   When this feature is enabled, the [`CookieJar::signed()`] method,
 -  [`SignedJar`] type, and [`Key`] type are available. The jar acts as "child
 -  jar"; operations on the jar automatically sign and verify cookies as they
-+  When this feature is enabled, the [`CookieJar::signed()`](https://docs.rs/cookie/0.18.1/cookie/jar/struct.CookieJar.html#method.signed) method,
-+  [`SignedJar`](https://docs.rs/cookie/0.18.1/cookie/secure/signed/struct.SignedJar.html) type, and [`Key`](https://docs.rs/cookie/0.18.1/cookie/secure/key/struct.Key.html) type are available. The jar acts as “child
++  [`SignedJar`] type, and [`Key`] type are available. The jar acts as “child
 +  jar”; operations on the jar automatically sign and verify cookies as they
    are added and retrieved from the parent jar.
  
  * **`private`**
+@@ -42,8 +42,8 @@
+   [`CookieJar::private()`].
  
-   Enables _private_ (authenticated, encrypted) cookies via
--  [`CookieJar::private()`].
-+  [`CookieJar::private()`](https://docs.rs/cookie/0.18.1/cookie/jar/struct.CookieJar.html#method.private).
- 
--  When this feature is enabled, the [`CookieJar::private()`] method,
+   When this feature is enabled, the [`CookieJar::private()`] method,
 -  [`PrivateJar`] type, and [`Key`] type are available. The jar acts as "child
 -  jar"; operations on the jar automatically encrypt and decrypt/authenticate
-+  When this feature is enabled, the [`CookieJar::private()`](https://docs.rs/cookie/0.18.1/cookie/jar/struct.CookieJar.html#method.private) method,
-+  [`PrivateJar`](https://docs.rs/cookie/0.18.1/cookie/secure/private/struct.PrivateJar.html) type, and [`Key`](https://docs.rs/cookie/0.18.1/cookie/secure/key/struct.Key.html) type are available. The jar acts as “child
++  [`PrivateJar`] type, and [`Key`] type are available. The jar acts as “child
 +  jar”; operations on the jar automatically encrypt and decrypt/authenticate
    cookies as they are added and retrieved from the parent jar.
  
  * **`key-expansion`**
- 
--  Enables _key expansion_ or _key derivation_ via [`Key::derive_from()`].
-+  Enables _key expansion_ or _key derivation_ via [`Key::derive_from()`](https://docs.rs/cookie/0.18.1/cookie/secure/key/struct.Key.html#method.derive_from).
- 
-   When this feature is enabled, and either `signed` or `private` are _also_
--  enabled, the [`Key::derive_from()`] method is available. The method can be
-+  enabled, the [`Key::derive_from()`](https://docs.rs/cookie/0.18.1/cookie/secure/key/struct.Key.html#method.derive_from) method is available. The method can be
-   used to derive a `Key` structure appropriate for use with signed and
-   private jars from cryptographically valid key material that is shorter in
-   length than the full key.
