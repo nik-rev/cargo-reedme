@@ -19,7 +19,12 @@ pub enum ReadmeContents {
 impl fmt::Display for ReadmeContents {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ReadmeContents::NewlyCreated(s) => s.fmt(f),
+            ReadmeContents::NewlyCreated(s) => {
+                f.write_fmt(format_args!("{}\n\n", ReadmeParts::MARKER_INSERT_START))?;
+                f.write_fmt(format_args!("{s}\n\n"))?;
+                f.write_fmt(format_args!("{}\n", ReadmeParts::MARKER_INSERT_END))?;
+                Ok(())
+            }
             ReadmeContents::InsertedIntoExisting(s) => s.fmt(f),
         }
     }
@@ -53,7 +58,7 @@ impl ReadmeParts {
                 format!(
                     concat!(
                         "please add `{}` somewhere in your README, that's where",
-                        " the generated portion from rust doc comments will be inserted!"
+                        " the generated portion from rustdoc comments will be inserted!"
                     ),
                     Self::MARKER_INSERT
                 )
@@ -101,6 +106,29 @@ mod tests {
             "...",
         )
         .unwrap_err();
+    }
+
+    /// Creating README file for the first time will insert markers,
+    /// so subsequent invocations won't error
+    #[test]
+    fn create() {
+        assert_str_eq!(
+            ReadmeContents::NewlyCreated(
+                docstr!(
+                    /// first
+                )
+                .to_string(),
+            )
+            .to_string(),
+            docstr!(
+                /// <!-- cargo-reedme: start -->
+                ///
+                /// first
+                ///
+                /// <!-- cargo-reedme: end -->
+                ///
+            )
+        );
     }
 
     #[test]

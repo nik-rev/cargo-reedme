@@ -1,3 +1,4 @@
+//! lmao
 use camino::{Utf8Path, Utf8PathBuf};
 use cargo_metadata::Package;
 
@@ -40,9 +41,9 @@ pub struct Output {
 
 #[derive(Serialize, Deserialize)]
 pub struct GeneratedReadme {
-    pub readme_path: Utf8PathBuf,
+    pub path: Utf8PathBuf,
     pub package: String,
-    pub readme_contents: ReadmeContents,
+    pub contents: ReadmeContents,
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
@@ -73,8 +74,8 @@ pub fn resolve(world: &World) -> Result<Output> {
         };
 
         Ok(GeneratedReadme {
-            readme_path,
-            readme_contents: new_readme,
+            path: readme_path,
+            contents: new_readme,
             package: pkg.name.to_string(),
         })
     })

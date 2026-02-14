@@ -32,8 +32,6 @@ pub struct Cli {
 }
 
 fn main() -> Result<()> {
-    color_eyre::install()?;
-
     let cli = Cli::parse();
 
     init_logging(cli.verbosity);
@@ -66,7 +64,7 @@ fn main() -> Result<()> {
     if cli.json {
         output
             .generated_readmes
-            .sort_unstable_by(|a, b| a.readme_path.cmp(&b.readme_path));
+            .sort_unstable_by(|a, b| a.path.cmp(&b.path));
 
         let json = colored_json::to_colored_json_auto(&output).context("failed to write json")?;
 
@@ -76,7 +74,7 @@ fn main() -> Result<()> {
     } else {
         // Regular output
         output.generated_readmes.par_iter().for_each(|readme| {
-            if let Err(err) = fs::write(&readme.readme_path, readme.readme_contents.to_string())
+            if let Err(err) = fs::write(&readme.path, readme.contents.to_string())
                 .context("failed to write `README.md` file")
             {
                 println!("{err}");
