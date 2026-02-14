@@ -85,7 +85,7 @@ pub fn resolve(world: &World) -> Result<Output> {
     })
 }
 
-pub const VERSION: semver::Version = semver::Version::new(
+const VERSION: semver::Version = semver::Version::new(
     konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MAJOR"))),
     konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MINOR"))),
     konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_PATCH"))),
