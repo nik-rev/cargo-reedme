@@ -1,0 +1,27 @@
+@@ -11,7 +11,7 @@
+ 
+ This crate allows you to test `Instant`/`Duration`/`SystemTime` code, deterministically.
+ 
+-It provides a replacement `std::time::Instant` that uses a deterministic 'clock'
++It provides a replacement `std::time::Instant` that uses a deterministic ‘clock’
+ 
+ You can swap out the `std::time::Instant` with this one by doing something similar to:
+ 
+@@ -46,7 +46,7 @@
+ 
+ ## API:
+ 
+-```rust,compile_fail
++```rust
+ // Overrides the current time to this `Duration`
+ MockClock::set_time(time: Duration)
+ 
+@@ -77,7 +77,7 @@
+ 
+ In your tests, you can use `MockClock::set_time(Duration::ZERO)` to reset the clock back to 0. Or, you can set it to some sentinel time value.
+ 
+-Then, before you check your time-based logic, you can advance the clock by some `Duration` (it'll freeze the time to that duration)
++Then, before you check your time-based logic, you can advance the clock by some `Duration` (it’ll freeze the time to that duration)
+ 
+ You can also get the current frozen time with `MockClock::time`
+ 

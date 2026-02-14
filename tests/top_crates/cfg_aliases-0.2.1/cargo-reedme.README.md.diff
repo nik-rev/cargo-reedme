@@ -1,0 +1,23 @@
+@@ -1,8 +1,8 @@
+ # CFG Aliases
+ 
+-CFG Aliases is a tiny utility to help save you a lot of effort with long winded `#[cfg()]` checks. This crate provides a single [`cfg_aliases!`] macro that doesn't have any dependencies and specifically avoids pulling in `syn` or `quote` so that the impact on your comile times should be negligible.
++CFG Aliases is a tiny utility to help save you a lot of effort with long winded `#[cfg()]` checks. This crate provides a single [`cfg_aliases!`](https://docs.rs/cfg_aliases/0.2.1/cfg_aliases/macro.cfg_aliases.html) macro that doesn’t have any dependencies and specifically avoids pulling in `syn` or `quote` so that the impact on your comile times should be negligible.
+ 
+-You use the the [`cfg_aliases!`] macro in your `build.rs` script to define aliases such as `x11` that could then be used in the `cfg` attribute or macro for conditional compilation: `#[cfg(x11)]`.
++You use the the [`cfg_aliases!`](https://docs.rs/cfg_aliases/0.2.1/cfg_aliases/macro.cfg_aliases.html) macro in your `build.rs` script to define aliases such as `x11` that could then be used in the `cfg` attribute or macro for conditional compilation: `#[cfg(x11)]`.
+ 
+ ## Example
+ 
+@@ -87,9 +87,9 @@
+ 
+ The aliase names are restricted to the same rules as rust identifiers which, for one, means that they cannot have dashes ( `-` ) in them. Additionally, if you get certain syntax elements wrong, such as the alias name, the macro will error saying that the recursion limit was reached instead of giving a clear indication of what actually went wrong. This is due to a nuance with the macro parser and it might be fixed in a later release of this crate. It is also possible that aliases with dashes in the name might be supported in a later release. Open an issue if that is something that you would like implemented.
+ 
+-Finally, you can also induce an infinite recursion by having rules that both reference each-other, but this isn't a real limitation because that doesn't make logical sense anyway:
++Finally, you can also induce an infinite recursion by having rules that both reference each-other, but this isn’t a real limitation because that doesn’t make logical sense anyway:
+ 
+-```rust,ignore
++```rust
+ // This causes an error!
+ cfg_aliases! {
+     test1: { not(test2) },

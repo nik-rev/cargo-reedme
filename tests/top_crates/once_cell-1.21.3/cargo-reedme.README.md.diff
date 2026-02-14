@@ -1,0 +1,99 @@
+@@ -3,10 +3,10 @@
+ `once_cell` provides two new cell-like types, [`unsync::OnceCell`] and
+ [`sync::OnceCell`]. A `OnceCell` might store arbitrary non-`Copy` types, can
+ be assigned to at most once and provides direct access to the stored
+-contents. The core API looks *roughly* like this (and there's much more
++contents. The core API looks *roughly* like this (and there’s much more
+ inside, read on!):
+ 
+-```rust,ignore
++```rust
+ impl<T> OnceCell<T> {
+     const fn new() -> OnceCell<T> { ... }
+     fn set(&self, value: T) -> Result<(), T> { ... }
+@@ -51,7 +51,6 @@
+ 
+     fn from_cli(args: env::Args) -> Result<Logger, std::io::Error> {
+        // ...
+-#      Ok(Logger {})
+     }
+ }
+ 
+@@ -152,7 +151,7 @@
+ This is a `regex!` macro which takes a string literal and returns an
+ *expression* that evaluates to a `&'static Regex`:
+ 
+-```
++```rust
+ macro_rules! regex {
+     ($re:literal $(,)?) => {{
+         static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
+@@ -161,8 +160,8 @@
+ }
+ ```
+ 
+-This macro can be useful to avoid the "compile regex on every loop
+-iteration" problem.
++This macro can be useful to avoid the “compile regex on every loop
++iteration” problem.
+ 
+ ## Runtime `include_bytes!`
+ 
+@@ -170,7 +169,7 @@
+ down test compilation a lot. An alternative is to load the resources at
+ runtime:
+ 
+-```
++```rust
+ use std::path::Path;
+ 
+ use once_cell::sync::OnceCell;
+@@ -201,17 +200,16 @@
+ fn test_sobel_filter() {
+     let rgb: &[u8] = TEST_IMAGE.bytes();
+     // ...
+-# drop(rgb);
+ }
+ ```
+ 
+ ## `lateinit`
+ 
+-`LateInit` type for delayed initialization. It is reminiscent of Kotlin's
++`LateInit` type for delayed initialization. It is reminiscent of Kotlin’s
+ `lateinit` keyword and allows construction of cyclic data structures:
+ 
+ 
+-```
++```rust
+ use once_cell::sync::OnceCell;
+ 
+ pub struct LateInit<T> { cell: OnceCell<T> }
+@@ -303,9 +301,9 @@
+ 
+ **Should I use the sync or unsync flavor?**
+ 
+-Because Rust compiler checks thread safety for you, it's impossible to
++Because Rust compiler checks thread safety for you, it’s impossible to
+ accidentally use `unsync` where `sync` is required. So, use `unsync` in
+-single-threaded code and `sync` in multi-threaded. It's easy to switch
++single-threaded code and `sync` in multi-threaded. It’s easy to switch
+ between the two if code becomes multi-threaded later.
+ 
+ At the moment, `unsync` has an additional benefit that reentrant
+@@ -345,13 +343,13 @@
+ 
+ **Should I use `std::cell::OnceCell`, `once_cell`, or `lazy_static`?**
+ 
+-If you can use `std` version (your MSRV is at least 1.70, and you don't need
++If you can use `std` version (your MSRV is at least 1.70, and you don’t need
+ extra features `once_cell` provides), use `std`. Otherwise, use `once_cell`.
+-Don't use `lazy_static`.
++Don’t use `lazy_static`.
+ 
+ # Related crates
+ 
+-* Most of this crate's functionality is available in `std` starting with
++* Most of this crate’s functionality is available in `std` starting with
+   Rust 1.70. See `std::cell::OnceCell` and `std::sync::OnceLock`.
+ * [double-checked-cell](https://github.com/niklasf/double-checked-cell)
+ * [lazy-init](https://crates.io/crates/lazy-init)

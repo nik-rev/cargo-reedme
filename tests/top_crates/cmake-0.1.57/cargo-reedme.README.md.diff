@@ -1,0 +1,18 @@
+@@ -20,7 +20,7 @@
+ 
+ ## Examples
+ 
+-```no_run
++```rust
+ use cmake;
+ 
+ // Builds the project in the directory located in `libfoo`, installing it
+@@ -31,7 +31,7 @@
+ println!("cargo:rustc-link-lib=static=foo");
+ ```
+ 
+-```no_run
++```rust
+ use cmake::Config;
+ 
+ let dst = Config::new("libfoo")

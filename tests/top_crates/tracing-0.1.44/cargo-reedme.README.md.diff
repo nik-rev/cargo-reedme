@@ -1,0 +1,676 @@
+@@ -24,8 +24,8 @@
+  [msrv]: #supported-rust-versions
+  # Core Concepts
+ 
+- The core of `tracing`'s API is composed of _spans_, _events_ and
+- _subscribers_. We'll cover these in turn.
++ The core of `tracing`’s API is composed of _spans_, _events_ and
++ _subscribers_. We’ll cover these in turn.
+ 
+  ## Spans
+ 
+@@ -33,46 +33,43 @@
+  concept of [spans]. Unlike a log line that represents a _moment in
+  time_, a span represents a _period of time_ with a beginning and an end. When a
+  program begins executing in a context or performing a unit of work, it
+- _enters_ that context's span, and when it stops executing in that context,
++ _enters_ that context’s span, and when it stops executing in that context,
+  it _exits_ the span. The span in which a thread is currently executing is
+- referred to as that thread's _current_ span.
++ referred to as that thread’s _current_ span.
+ 
+  For example:
+- ```
++ ```rust
+  use tracing::{span, Level};
+- # fn main() {
+  let span = span!(Level::TRACE, "my_span");
+  // `enter` returns a RAII guard which, when dropped, exits the span. this
+  // indicates that we are in the span for the current lexical scope.
+  let _enter = span.enter();
+  // perform some work in the context of `my_span`...
+- # }
+ ```
+ 
+- The [`span` module][span]'s documentation provides further details on how to
++ The [`span` module][span]’s documentation provides further details on how to
+  use spans.
+ 
+- <div class="example-wrap" style="display:inline-block"><pre class="compile_fail" style="white-space:normal;font:inherit;">
++  <div class="example-wrap" style="display:inline-block"><pre class="compile_fail" style="white-space:normal;font:inherit;">
+ 
+   **Warning**: In asynchronous code that uses async/await syntax,
+   `Span::enter` may produce incorrect traces if the returned drop
+   guard is held across an await point. See
+-  [the method documentation][Span#in-asynchronous-code] for details.
++  [Span#in-asynchronous-code](https://docs.rs/tracing/0.1.44/tracing/span/struct.Span.html#in-asynchronous-code) for details.
+ 
+  </pre></div>
+ 
+  ## Events
+ 
+- An [`Event`] represents a _moment_ in time. It signifies something that
++ An [`Event`](https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.html) represents a _moment_ in time. It signifies something that
+  happened while a trace was being recorded. `Event`s are comparable to the log
+  records emitted by unstructured logging code, but unlike a typical log line,
+  an `Event` may occur within the context of a span.
+ 
+  For example:
+- ```
++ ```rust
+  use tracing::{event, span, Level};
+ 
+- # fn main() {
+  // records an event outside of any span context:
+  event!(Level::INFO, "something happened");
+ 
+@@ -81,14 +78,13 @@
+ 
+  // records an event within "my_span".
+  event!(Level::DEBUG, "something happened inside my_span");
+- # }
+ ```
+ 
+  In general, events should be used to represent points in time _within_ a
+  span — a request returned with a given status code, _n_ new items were
+  taken from a queue, and so on.
+ 
+- The [`Event` struct][`Event`] documentation provides further details on using
++ The [`Event`](https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.html) documentation provides further details on using
+  events.
+ 
+  ## Subscribers
+@@ -126,7 +122,7 @@
+  ### Spans
+ 
+  The [`span!`] macro expands to a [`Span` struct][`Span`] which is used to
+- record a span. The [`Span::enter`] method on that struct records that the
++ record a span. The [`Span::enter`](https://docs.rs/tracing/0.1.44/tracing/span/struct.Span.html#method.enter) method on that struct records that the
+  span has been entered, and returns a [RAII] guard object, which will exit
+  the span when dropped.
+ 
+@@ -134,7 +130,6 @@
+ 
+  ```rust
+  use tracing::{span, Level};
+- # fn main() {
+  // Construct a new span named "my span" with trace log level.
+  let span = span!(Level::TRACE, "my span");
+ 
+@@ -145,19 +140,16 @@
+  // within the span.
+ 
+  // Dropping the guard will exit the span.
+- # }
+- ```
++```
+ 
+  The [`#[instrument]`][instrument] attribute provides an easy way to
+  add `tracing` spans to functions. A function annotated with `#[instrument]`
+- will create and enter a span with that function's name every time the
++ will create and enter a span with that function’s name every time the
+  function is called, with arguments to that function will be recorded as
+  fields using `fmt::Debug`.
+ 
+  For example:
+- ```ignore
+- # // this doctest is ignored because we don't have a way to say
+- # // that it should only be run with cfg(feature = "attributes")
++ ```rust
+  use tracing::{Level, event, instrument};
+ 
+  #[instrument]
+@@ -167,10 +159,9 @@
+      event!(Level::INFO, "inside my_function!");
+      // ...
+  }
+- # fn main() {}
+- ```
++```
+ 
+- For functions which don't have built-in tracing support and can't have
++ For functions which don’t have built-in tracing support and can’t have
+  the `#[instrument]` attribute applied (such as from an external crate),
+  the [`Span` struct][`Span`] has a [`in_scope()` method][`in_scope`]
+  which can be used to easily wrap synchronous code in a span.
+@@ -179,16 +170,8 @@
+  ```rust
+  use tracing::info_span;
+ 
+- # fn doc() -> Result<(), ()> {
+- # mod serde_json {
+- #    pub(crate) fn from_slice(buf: &[u8]) -> Result<(), ()> { Ok(()) }
+- # }
+- # let buf: [u8; 0] = [];
+  let json = info_span!("json.parse").in_scope(|| serde_json::from_slice(&buf))?;
+- # let _ = json; // suppress unused variable warning
+- # Ok(())
+- # }
+- ```
++```
+ 
+  You can find more examples showing how to use this crate [here][examples].
+ 
+@@ -197,14 +180,12 @@
+ 
+  ### Events
+ 
+- [`Event`]s are recorded using the [`event!`] macro:
++ [`Event`](https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.html)s are recorded using the [`event!`] macro:
+ 
+  ```rust
+- # fn main() {
+  use tracing::{event, Level};
+  event!(Level::INFO, "something has happened!");
+- # }
+- ```
++```
+ 
+  ## Using the Macros
+ 
+@@ -213,7 +194,7 @@
+ 
+  ### Configuring Attributes
+ 
+- Both macros require a [`Level`] specifying the verbosity of the span or
++ Both macros require a [`Level`](https://docs.rs/tracing_core/latest/tracing_core/metadata/struct.Level.html) specifying the verbosity of the span or
+  event. Optionally, the, [target] and [parent span] may be overridden. If the
+  target and parent span are not overridden, they will default to the
+  module path where the macro was invoked and the current span (as determined
+@@ -221,81 +202,57 @@
+ 
+  For example:
+ 
+- ```
+- # use tracing::{span, event, Level};
+- # fn main() {
++ ```rust
+  span!(target: "app_spans", Level::TRACE, "my span");
+  event!(target: "app_events", Level::INFO, "something has happened!");
+- # }
+- ```
+- ```
+- # use tracing::{span, event, Level};
+- # fn main() {
++```
++ ```rust
+  let span = span!(Level::TRACE, "my span");
+  event!(parent: &span, Level::INFO, "something has happened!");
+- # }
+- ```
++```
+ 
+  The span macros also take a string literal after the level, to set the name
+  of the span (as above).  In the case of the event macros, the name of the event can
+  be overridden (the default is `event file:line`) using the `name:` specifier.
+ 
+- ```
+- # use tracing::{span, event, Level};
+- # fn main() {
++ ```rust
+  span!(Level::TRACE, "my span");
+  event!(name: "some_info", Level::INFO, "something has happened!");
+- # }
+- ```
++```
+ 
+  ### Recording Fields
+ 
+  Structured fields on spans and events are specified using the syntax
+  `field_name = field_value`. Fields are separated by commas.
+ 
+- ```
+- # use tracing::{event, Level};
+- # fn main() {
++ ```rust
+  // records an event with two fields:
+  //  - "answer", with the value 42
+  //  - "question", with the value "life, the universe and everything"
+  event!(Level::INFO, answer = 42, question = "life, the universe, and everything");
+- # }
+- ```
++```
+ 
+  As shorthand, local variables may be used as field values without an
+  assignment, similar to [struct initializers]. For example:
+ 
+- ```
+- # use tracing::{span, Level};
+- # fn main() {
++ ```rust
+  let user = "ferris";
+ 
+  span!(Level::TRACE, "login", user);
+  // is equivalent to:
+  span!(Level::TRACE, "login", user = user);
+- # }
+ ```
+ 
+  Field names can include dots, but should not be terminated by them:
+- ```
+- # use tracing::{span, Level};
+- # fn main() {
++ ```rust
+  let user = "ferris";
+  let email = "ferris@rust-lang.org";
+  span!(Level::TRACE, "login", user, user.email = email);
+- # }
+ ```
+ 
+  Since field names can include dots, fields on local structs can be used
+  using the local variable shorthand:
+- ```
+- # use tracing::{span, Level};
+- # fn main() {
+- # struct User {
+- #    name: &'static str,
+- #    email: &'static str,
+- # }
++ ```rust
+  let user = User {
+      name: "ferris",
+      email: "ferris@rust-lang.org",
+@@ -303,40 +260,31 @@
+  // the span will have the fields `user.name = "ferris"` and
+  // `user.email = "ferris@rust-lang.org"`.
+  span!(Level::TRACE, "login", user.name, user.email);
+- # }
+ ```
+ 
+  Fields with names that are not Rust identifiers, or with names that are Rust reserved words,
+  may be created using quoted string literals. However, this may not be used with the local
+  variable shorthand.
+- ```
+- # use tracing::{span, Level};
+- # fn main() {
++ ```rust
+  // records an event with fields whose names are not Rust identifiers
+  //  - "guid:x-request-id", containing a `:`, with the value "abcdef"
+  //  - "type", which is a reserved word, with the value "request"
+  span!(Level::TRACE, "api", "guid:x-request-id" = "abcdef", "type" = "request");
+- # }
+ ```
+ 
+  Constant expressions can also be used as field names. Constants
+  must be enclosed in curly braces (`{}`) to indicate that the *value*
+  of the constant is to be used as the field name, rather than the
+- constant's name. For example:
+- ```
+- # use tracing::{span, Level};
+- # fn main() {
++ constant’s name. For example:
++ ```rust
+  const RESOURCE_NAME: &str = "foo";
+  // this span will have the field `foo = "some_id"`
+  span!(Level::TRACE, "get", { RESOURCE_NAME } = "some_id");
+- # }
+ ```
+ 
+  The `?` sigil is shorthand that specifies a field should be recorded using
+  its [`fmt::Debug`] implementation:
+- ```
+- # use tracing::{event, Level};
+- # fn main() {
++ ```rust
+  #[derive(Debug)]
+  struct MyStruct {
+      field: &'static str,
+@@ -350,52 +298,29 @@
+  event!(Level::TRACE, greeting = ?my_struct);
+  // is equivalent to:
+  event!(Level::TRACE, greeting = tracing::field::debug(&my_struct));
+- # }
+- ```
++```
+ 
+  The `%` sigil operates similarly, but indicates that the value should be
+  recorded using its [`fmt::Display`] implementation:
+- ```
+- # use tracing::{event, Level};
+- # fn main() {
+- # #[derive(Debug)]
+- # struct MyStruct {
+- #     field: &'static str,
+- # }
+- #
+- # let my_struct = MyStruct {
+- #     field: "Hello world!"
+- # };
++ ```rust
+  // `my_struct.field` will be recorded using its `fmt::Display` implementation.
+  event!(Level::TRACE, greeting = %my_struct.field);
+  // is equivalent to:
+  event!(Level::TRACE, greeting = tracing::field::display(&my_struct.field));
+- # }
+- ```
++```
+ 
+  The `%` and `?` sigils may also be used with local variable shorthand:
+ 
+- ```
+- # use tracing::{event, Level};
+- # fn main() {
+- # #[derive(Debug)]
+- # struct MyStruct {
+- #     field: &'static str,
+- # }
+- #
+- # let my_struct = MyStruct {
+- #     field: "Hello world!"
+- # };
++ ```rust
+  // `my_struct.field` will be recorded using its `fmt::Display` implementation.
+  event!(Level::TRACE, %my_struct.field);
+- # }
+- ```
++```
+ 
+  Additionally, a span may declare fields with the special value [`Empty`],
+  which indicates that that the value for that field does not currently exist
+  but may be recorded later. For example:
+ 
+- ```
++ ```rust
+  use tracing::{trace_span, field};
+ 
+  // Create a span with two fields: `greeting`, with the value "hello world", and
+@@ -406,19 +331,17 @@
+ 
+  // Now, record a value for parting as well.
+  span.record("parting", &"goodbye world!");
+- ```
++```
+ 
+  Finally, events may also include human-readable messages, in the form of a
+- [format string][fmt] and (optional) arguments, **after** the event's
++ [format string][fmt] and (optional) arguments, **after** the event’s
+  key-value fields. If a format string and arguments are provided,
+  they will implicitly create a new field named `message` whose value is the
+  provided set of format arguments.
+ 
+  For example:
+ 
+- ```
+- # use tracing::{event, Level};
+- # fn main() {
++ ```rust
+  let question = "the ultimate question of life, the universe, and everything";
+  let answer = 42;
+  // records an event with the following fields:
+@@ -432,8 +355,7 @@
+      question.tricky = true,
+      "the answer to {} is {}.", question, answer
+  );
+- # }
+- ```
++```
+ 
+  Specifying a formatted message in this manner does not allocate by default.
+ 
+@@ -450,9 +372,9 @@
+ 
+  `tracing` also offers a number of macros with preset verbosity levels.
+  The [`trace!`], [`debug!`], [`info!`], [`warn!`], and [`error!`] behave
+- similarly to the [`event!`] macro, but with the [`Level`] argument already
+- specified, while the corresponding [`trace_span!`], [`debug_span!`],
+- [`info_span!`], [`warn_span!`], and [`error_span!`] macros are the same,
++ similarly to the [`event!`] macro, but with the [`Level`](https://docs.rs/tracing_core/latest/tracing_core/metadata/struct.Level.html) argument already
++ specified, https://doc.rust-lang.org/stable/core/fmt/trait.Debug.htmlsponding [`trace_spahttps://doc.rust-lang.org/stable/core/fmt/trait.Display.htmln!`],
++ [`https://doc.rust-lang.org/stable/alloc/fmt/[`warn_span!`], and [`error_span!`] macros are the same,
+  but for the [`span!`] macro.
+ 
+  These are intended both as a shorthand, and for compatibility with the [`log`]
+@@ -469,19 +391,19 @@
+  [`debug_span!`]: debug_span!
+  [`info_span!`]: info_span!
+  [`warn_span!`]: warn_span!
+- [`error_span!`]: error_span!
++ https://docs.rs/tracing/0.1.44/tracing/macro.span.htmlor_span!`]: erhttps://docs.rs/tracing/0.1.44https://docs.rs/tracing/0.1.44/tracing/macro.span.htmling/macro.evenhttps://docs.rs/tracing/0.1.44/tracing/macro.event.htmlan!
+ 
+- ### For `log` Users
++ ### For https://docs.rs/tracing/0.1.44/tracing/macro.trace.htmlUsers
+ 
+- Users of the [`log`] crate should note that `tracing` exposes a set of
+- macros for creating `Event`s (`trace!`, `debug!`, `info!`, `warn!`, and
+- `error!`) which may be invoked with the same syntax as the similarly-named
++ Users https://docs.rs/tracing/0.1.44/tracing/macro.debug.html [`log`] crathttps://docs.rs/tracing/0.1.44/tracing/macro.info.htmluld note thathttps://docs.rs/tracihttps://docs.rs/tracing/0.1.44/tracing/macro.event.html.44/tracing/macro.warn.htmlcing` exposes https://docs.rs/tracing/0.1.44/tracing/macro.error.htmlof
++ macros for creahttps://docs.rs/tracing/0.1.44/tracing/macro.trace_span.html`s (`trace!`, `debuhttps://docs.rs/tracing/0.https://docs.rs/tracing/0.1.44/tracing/macro.span.htmltracing/macro.debug_span.html`, `warn!`, and
++ `https://docs.rs/tracing/0.1.44/tracing/macro.info_span.htmlhich may be invokehttps://docs.rs/tracing/0.1.44/tracing/macro.warn_span.html same syntax as thehttps://docs.rs/tracing/0.1.44/tracing/macro.error_span.htmlnamed
+  macros from the `log` crate. Often, the process of converting a project to
+  use `tracing` can begin with a simple drop-in replacement.
+ 
+- Let's consider the `log` crate's yak-shaving example:
++ Let’s consider the `log` crate’s yak-shaving example:
+ 
+- ```rust,ignore
++ ```rust
+  use std::{error::Error, io};
+  use tracing::{debug, error, info, span, warn, Level};
+ 
+@@ -537,7 +459,7 @@
+ 
+      yaks_shaved
+  }
+- ```
++```
+ 
+  ## In libraries
+ 
+@@ -557,31 +479,15 @@
+  The simplest way to use a subscriber is to call the [`set_global_default`]
+  function:
+ 
+- ```
++ ```rust
+  extern crate tracing;
+- # pub struct FooSubscriber;
+- # use tracing::{span::{Id, Attributes, Record}, Metadata};
+- # impl tracing::Subscriber for FooSubscriber {
+- #   fn new_span(&self, _: &Attributes) -> Id { Id::from_u64(0) }
+- #   fn record(&self, _: &Id, _: &Record) {}
+- #   fn event(&self, _: &tracing::Event) {}
+- #   fn record_follows_from(&self, _: &Id, _: &Id) {}
+- #   fn enabled(&self, _: &Metadata) -> bool { false }
+- #   fn enter(&self, _: &Id) {}
+- #   fn exit(&self, _: &Id) {}
+- # }
+- # impl FooSubscriber {
+- #   fn new() -> Self { FooSubscriber }
+- # }
+- # fn main() {
+ 
+  let my_subscriber = FooSubscriber::new();
+  tracing::subscriber::set_global_default(my_subscriber)
+      .expect("setting tracing default failed");
+- # }
+- ```
++```
+ 
+- <pre class="compile_fail" style="white-space:normal;font:inherit;">
++  <pre class="compile_fail" style="white-space:normal;font:inherit;">
+      <strong>Warning</strong>: In general, libraries should <em>not</em> call
+      <code>set_global_default()</code>! Doing so will cause conflicts when
+      executables that depend on the library try to set the default later.
+@@ -597,30 +503,13 @@
+  of the closure. For example:
+ 
+  ```rust
+- # pub struct FooSubscriber;
+- # use tracing::{span::{Id, Attributes, Record}, Metadata};
+- # impl tracing::Subscriber for FooSubscriber {
+- #   fn new_span(&self, _: &Attributes) -> Id { Id::from_u64(0) }
+- #   fn record(&self, _: &Id, _: &Record) {}
+- #   fn event(&self, _: &tracing::Event) {}
+- #   fn record_follows_from(&self, _: &Id, _: &Id) {}
+- #   fn enabled(&self, _: &Metadata) -> bool { false }
+- #   fn enter(&self, _: &Id) {}
+- #   fn exit(&self, _: &Id) {}
+- # }
+- # impl FooSubscriber {
+- #   fn new() -> Self { FooSubscriber }
+- # }
+- # fn main() {
+ 
+  let my_subscriber = FooSubscriber::new();
+- # #[cfg(feature = "std")]
+  tracing::subscriber::with_default(my_subscriber, || {
+      // Any trace events generated in this closure or by functions it calls
+      // will be collected by `my_subscriber`.
+  })
+- # }
+- ```
++```
+ 
+  This approach allows trace data to be collected by multiple subscribers
+  within different contexts in the program. Note that the override only applies to the
+@@ -629,23 +518,23 @@
+  Any trace events generated outside the context of a subscriber will not be collected.
+ 
+  Once a subscriber has been set, instrumentation points may be added to the
+- executable using the `tracing` crate's macros.
++ executable using the `tracing` crate’s macros.
+ 
+  ## `log` Compatibility
+ 
+  The [`log`] crate provides a simple, lightweight logging facade for Rust.
+- While `tracing` builds upon `log`'s foundation with richer structured
+- diagnostic data, `log`'s simplicity and ubiquity make it the "lowest common
+- denominator" for text-based logging in Rust — a vast majority of Rust
++ While `tracing` builds upon `log`’s foundation with richer structured
++ diagnostic data, `log`’s simplicity and ubiquity make it the “lowest common
++ denominator” for text-based logging in Rust — a vast majority of Rust
+  libraries and applications either emit or consume `log` records. Therefore,
+  `tracing` provides multiple forms of interoperability with `log`: `tracing`
+  instrumentation can emit `log` records, and a compatibility layer enables
+- `tracing` [`Subscriber`]s to consume `log` records as `tracing` [`Event`]s.
++ `tracing` [`Subscriber`]s to consume `log` records as `tracing` [`Event`](https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.html)s.
+ 
+  ### Emitting `log` Records
+ 
+- This crate provides two feature flags, "log" and "log-always", which will
+- cause [spans] and [events] to emit `log` records. When the "log" feature is
++ This crate provides two feature flags, “log” and “log-always”, which will
++ cause [spans] and [events] to emit `log` records. When the “log” feature is
+  enabled, if no `tracing` `Subscriber` is active, invoking an event macro or
+  creating a span with fields will emit a `log` record. This is intended
+  primarily for use in libraries which wish to emit diagnostics that can be
+@@ -653,26 +542,26 @@
+  additional overhead of emitting both forms of diagnostics when `tracing` is
+  in use.
+ 
+- Enabling the "log-always" feature will cause `log` records to be emitted
++ Enabling the “log-always” feature will cause `log` records to be emitted
+  even if a `tracing` `Subscriber` _is_ set. This is intended to be used in
+  applications where a `log` `Logger` is being used to record a textual log,
+  and `tracing` is used only to record other forms of diagnostics (such as
+- metrics, profiling, or distributed tracing data). Unlike the "log" feature,
+- libraries generally should **not** enable the "log-always" feature, as doing
++ metrics, profiling, or distributed tracing data). Unlike the “log” feature,
++ libraries generally should **not** enable the “log-always” feature, as doing
+  so will prevent applications from being able to opt out of the `log` records.
+ 
+- See [here][flags] for more details on this crate's feature flags.
++ See [here][flags] for more details on this crate’s feature flags.
+ 
+- The generated `log` records' messages will be a string representation of the
+- span or event's fields, and all additional information recorded by `log`
++ The generated `log` records’ messages will be a string representation of the
++ span or event’s fields, and all additional information recorded by `log`
+  (target, verbosity level, module path, file, and line number) will also be
+  populated. Additionally, `log` records are also generated when spans are
+  entered, exited, and closed. Since these additional span lifecycle logs have
+- the potential to be very verbose, and don't include additional fields, they
++ the potential to be very verbose, and don’t include additional fields, they
+  will always be emitted at the `Trace` level, rather than inheriting the
+  level of the span that generated them. Furthermore, they are categorized
+- under a separate `log` target, "tracing::span" (and its sub-target,
+- "tracing::span::active", for the logs on entering and exiting a span), which
++ under a separate `log` target, “tracing::span” (and its sub-target,
++ “tracing::span::active”, for the logs on entering and exiting a span), which
+  may be enabled or disabled separately from other `log` records emitted by
+  `tracing`.
+ 
+@@ -682,7 +571,7 @@
+  allows a `tracing` [`Subscriber`] to consume `log` records as though they
+  were `tracing` [events]. This allows applications using `tracing` to record
+  the logs emitted by dependencies using `log` as events within the context of
+- the application's trace tree. See [that crate's documentation][log-tracer]
++ the application’s trace tree. See [that crate’s documentation][log-tracer]
+  for details.
+ 
+  [log-tracer]: https://docs.rs/tracing-log/latest/tracing_log/#convert-log-records-to-tracing-events
+@@ -706,8 +595,8 @@
+   - [`tracing-log`] provides a compatibility layer with the [`log`] crate,
+     allowing log messages to be recorded as `tracing` `Event`s within the
+     trace tree. This is useful when a project using `tracing` have
+-    dependencies which use `log`. Note that if you're using
+-    `tracing-subscriber`'s `FmtSubscriber`, you don't need to depend on
++    dependencies which use `log`. Note that if you’re using
++    `tracing-subscriber`’s `FmtSubscriber`, you don’t need to depend on
+     `tracing-log` directly.
+   - [`tracing-appender`] provides utilities for outputting tracing data,
+     including a file appender and non blocking writer.
+@@ -735,7 +624,7 @@
+   - [`tracing-wasm`] provides a `Subscriber`/`Layer` implementation that reports
+     events and spans via browser `console.log` and [User Timing API (`window.performance`)].
+   - [`tracing-web`] provides a layer implementation of level-aware logging of events
+-    to web browsers' `console.*` and span events to the [User Timing API (`window.performance`)].
++    to web browsers’ `console.*` and span events to the [User Timing API (`window.performance`)].
+   - [`tide-tracing`] provides a [tide] middleware to trace all incoming requests and responses.
+   - [`test-log`] takes care of initializing `tracing` for tests, based on
+     environment variables with an `env_logger` compatible syntax.
+@@ -756,10 +645,10 @@
+   - [`reqwest-tracing`] provides a middleware to trace [`reqwest`] HTTP requests.
+   - [`tracing-cloudwatch`] provides a layer that sends events to AWS CloudWatch Logs.
+   - [`clippy-tracing`] provides a tool to add, remove and check for `tracing::instrument`.
+-  - [`json-subscriber`] provides a subscriber for emitting JSON logs. The output can be customized much more than with [`tracing-subscriber`]'s JSON output.
++  - [`json-subscriber`] provides a subscriber for emitting JSON logs. The output can be customized much more than with [`tracing-subscriber`]’s JSON output.
+ 
+- If you're the maintainer of a `tracing` ecosystem crate not listed above,
+- please let us know! We'd love to add your project to the list!
++ If you’re the maintainer of a `tracing` ecosystem crate not listed above,
++ please let us know! We’d love to add your project to the list!
+ 
+  [`tracing-opentelemetry`]: https://crates.io/crates/tracing-opentelemetry
+  [OpenTelemetry]: https://opentelemetry.io/
+@@ -802,7 +691,7 @@
+  [`clippy-tracing`]: https://crates.io/crates/clippy-tracing
+  [`json-subscriber`]: https://crates.io/crates/json-subscriber
+ 
+- <pre class="ignore" style="white-space:normal;font:inherit;">
++  <pre class="ignore" style="white-space:normal;font:inherit;">
+      <strong>Note</strong>: Some of these ecosystem crates are currently
+      unreleased and/or in earlier stages of development. They may be less stable
+      than <code>tracing</code> and <code>tracing-core</code>.
+@@ -834,7 +723,7 @@
+    tracing = { version = "0.1.38", default-features = false }
+    ```
+ 
+- <pre class="ignore" style="white-space:normal;font:inherit;">
++  <pre class="ignore" style="white-space:normal;font:inherit;">
+      <strong>Note</strong>: <code>tracing</code>'s <code>no_std</code> support
+      requires <code>liballoc</code>.
+  </pre>
+@@ -891,16 +780,16 @@
+  [`in_scope`]: span::Span::in_scope
+  [event]: Event
+  [events]: Event
+- [`Subscriber`]: subscriber::Subscriber
+- [Subscriber::event]: subscriber::Subscriber::event
++ [`Subscriber`]: https://docs.rs/tracing_core/latest/tracing_core/subscriber/trait.Subscriber.html
++ [Subscriber::event]: https://docs.rs/tracing_core/latest/tracing_core/subscriber/Subscriber/fn.event.html
+  [`enter`]: subscriber::Subscriber::enter
+  [`exit`]: subscriber::Subscriber::exit
+- [`enabled`]: subscriber::Subscriber::enabled
+- [metadata]: Metadata
++ [`enabled`]: https://docs.rs/tracing_core/latest/tracing_cohttps://docs.rs/tracing_core/latest/https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.htmlng_core/subscriberhttps://docs.rs/tracing_core/latest/https://docs.rs/tracing_core/latest/tracing_core/event/struct.Event.htmlng_core/subscriber/trait.Subscriber.htmler/fn.enabled.html
++ [metadata]: https://docs.rs/tracing_core/latest/tracing_core/metadata/struct.Metadata.html
+  [`field::display`]: field::display
+  [`field::debug`]: field::debug
+- [`set_global_default`]: subscriber::set_global_default
+- [`with_default`]: subscriber::with_default
++ [`set_global_default`]: https://docs.rs/tracing/0.1.44/tracing/subscriber/fn.set_global_default.html
++ [`with_default`]: https://docs.rs/tracing/0.1.44/tracing/subscriber/fn.with_default.html
+  [`tokio-rs/tracing`]: https://github.com/tokio-rs/tracing
+  [`tracing-futures`]: https://crates.io/crates/tracing-futures
+  [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber

@@ -1,0 +1,9 @@
+@@ -27,7 +27,7 @@
+ 
+ # Examples
+ 
+-```
++```rust
+ let nfc = icu_normalizer::ComposingNormalizerBorrowed::new_nfc();
+ assert_eq!(nfc.normalize("a\u{0308}"), "ä");
+ assert!(nfc.is_normalized("ä"));

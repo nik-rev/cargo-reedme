@@ -1,0 +1,78 @@
+@@ -14,7 +14,7 @@
+ Bump allocation is a fast, but limited approach to allocation. We have a chunk
+ of memory, and we maintain a pointer within that memory. Whenever we allocate an
+ object, we do a quick check that we have enough capacity left in our chunk to
+-allocate the object and then update the pointer by the object's size. *That's
++allocate the object and then update the pointer by the object’s size. *That’s
+ it!*
+ 
+ The disadvantage of bump allocation is that there is no general way to
+@@ -28,12 +28,12 @@
+ ### Deallocation en Masse, but no `Drop`
+ 
+ To deallocate all the objects in the arena at once, we can simply reset the bump
+-pointer back to the start of the arena's memory chunk. This makes mass
+-deallocation *extremely* fast, but allocated objects' [`Drop`] implementations are
++pointer back to the start of the arena’s memory chunk. This makes mass
++deallocation *extremely* fast, but allocated objects’ [`Drop`] implementations are
+ not invoked.
+ 
+ > **However:** [`bumpalo::boxed::Box<T>`][box] can be used to wrap
+-> `T` values allocated in the `Bump` arena, and calls `T`'s `Drop`
++> `T` values allocated in the `Bump` arena, and calls `T`’s `Drop`
+ > implementation when the `Box<T>` wrapper goes out of scope. This is similar to
+ > how [`std::boxed::Box`] works, except without deallocating its backing memory.
+ 
+@@ -75,7 +75,7 @@
+ ### Collections
+ 
+ When the `"collections"` cargo feature is enabled, a fork of some of the `std`
+-library's collections are available in the [`collections`] module. These
++library’s collections are available in the [`collections`] module. These
+ collection types are modified to allocate their space inside `bumpalo::Bump`
+ arenas.
+ 
+@@ -114,7 +114,7 @@
+ is available in the `boxed` module. This `Box` type is modified to allocate its
+ space inside `bumpalo::Bump` arenas.
+ 
+-**A `Box<T>` runs `T`'s drop implementation when the `Box<T>` is dropped.** You
++**A `Box<T>` runs `T`’s drop implementation when the `Box<T>` is dropped.** You
+ can use this to work around the fact that `Bump` does not drop values allocated
+ in its space itself.
+ 
+@@ -162,7 +162,7 @@
+ bumpalo = { version = "3.18", features = ["collections", "boxed", "serde"] }
+ ```
+ 
+-```rust,ignore
++```rust
+ use bumpalo::{Bump, boxed::Box, collections::Vec};
+ 
+ // Create a new bump arena.
+@@ -208,7 +208,7 @@
+ trait and exposes custom allocators for `std` types. Bumpalo has a matching
+ `allocator_api` cargo feature to enable implementing `Allocator` and using
+ `Bump` with `std` collections. Note that, as `feature(allocator_api)` is
+-unstable and only in nightly Rust, Bumpalo's matching `allocator_api` cargo
++unstable and only in nightly Rust, Bumpalo’s matching `allocator_api` cargo
+ feature should be considered unstable, and will not follow the semver
+ conventions that the rest of the crate does.
+ 
+@@ -222,14 +222,14 @@
+ Next, enable the `allocator_api` nightly Rust feature in your `src/lib.rs` or
+ `src/main.rs`:
+ 
+-```rust,ignore
++```rust
+ #![feature(allocator_api)]
+ ```
+ 
+ Finally, use `std` collections with `Bump`, so that their internal heap
+ allocations are made within the given bump arena:
+ 
+-```rust,ignore
++```rust
+ use bumpalo::Bump;
+ 
+ // Create a new bump arena.

@@ -1,0 +1,14 @@
+@@ -19,11 +19,7 @@
+ The sha1 object can be updated multiple times.  If you only need to use
+ it once you can also use shortcuts (requires std):
+ 
+-```
+-# trait X { fn hexdigest(&self) -> &'static str { "2ef7bde608ce5404e97d5f042f95f89f1c232871" }}
+-# impl X for sha1_smol::Sha1 {}
+-# fn main() {
++```rust
+ assert_eq!(sha1_smol::Sha1::from("Hello World!").hexdigest(),
+            "2ef7bde608ce5404e97d5f042f95f89f1c232871");
+-# }
+ ```
+\ No newline at end of file

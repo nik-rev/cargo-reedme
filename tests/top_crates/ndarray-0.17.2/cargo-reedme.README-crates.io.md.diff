@@ -1,0 +1,84 @@
+@@ -7,28 +7,28 @@
+ Each dimension is also called an *axis*.
+ 
+ To get started, functionality is provided in the following core types:
+-- **[`ArrayBase`]**:
++- **[`ArrayBase`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayBase.html)**:
+   The *n*-dimensional array type itself.<br>
+   It is used to implement both the owned arrays and the views; see its docs
+   for an overview of all array features.<br>
+-- The main specific array type is **[`Array`]**, which owns
++- The main specific array type is **[`Array`](https://docs.rs/ndarray/0.17.2/ndarray/type.Array.html)**, which owns
+   its elements.
+-- A reference type, **[`ArrayRef`]**, that contains most of the functionality
++- A reference type, **[`ArrayRef`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayRef.html)**, that contains most of the functionality
+   for reading and writing to arrays.
+-- A reference type, **[`LayoutRef`]**, that contains most of the functionality
++- A reference type, **[`LayoutRef`](https://docs.rs/ndarray/0.17.2/ndarray/struct.LayoutRef.html)**, that contains most of the functionality
+   for reading and writing to array layouts: their shape and strides.
+ 
+ ## Highlights
+ 
+ - Generic *n*-dimensional array
+-- [Slicing](ArrayBase#slicing), also with arbitrary step size, and negative
++- [Slicing](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayBase.html), also with arbitrary step size, and negative
+   indices to mean elements from the end of the axis.
+ - Views and subviews of arrays; iterators that yield subviews.
+ - Higher order operations and arithmetic are performant
+ - Array views can be used to slice and mutate any `[T]` data using
+   `ArrayView::from` and `ArrayViewMut::from`.
+-- [`Zip`] for lock step function application across two or more arrays or other
+-  item producers ([`NdProducer`] trait).
++- [`Zip`](https://docs.rs/ndarray/0.17.2/ndarray/zip/struct.Zip.html) for lock step function application across two or more arrays or other
++  item producers ([`NdProducer`](https://docs.rs/ndarray/0.17.2/ndarray/zip/ndproducer/trait.NdProducer.html) trait).
+ 
+ ## Crate Status
+ 
+@@ -42,12 +42,12 @@
+ - Performance:
+   + Prefer higher order methods and arithmetic operations on arrays first,
+     then iteration, and as a last priority using indexed algorithms.
+-  + The higher order functions like [`.map()`](ArrayRef::map),
+-    [`.map_inplace()`](ArrayRef::map_inplace), [`.zip_mut_with()`](ArrayRef::zip_mut_with),
+-    [`Zip`] and [`azip!()`](azip) are the most efficient ways
++  + The higher order functions like [`.map()`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayRef.html#method.map),
++    [`.map_inplace()`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayRef.html#method.map_inplace), [`.zip_mut_with()`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayRef.html#method.zip_mut_with),
++    [`Zip`](https://docs.rs/ndarray/0.17.2/ndarray/zip/struct.Zip.html) and [`azip!()`](https://docs.rs/ndarray/0.17.2/ndarray/macro.azip.html) are the most efficient ways
+     to perform single traversal and lock step traversal respectively.
+   + Performance of an operation depends on the memory layout of the array
+-    or array view. Especially if it's a binary operation, which
++    or array view. Especially if it’s a binary operation, which
+     needs matching memory layout to be efficient (with some exceptions).
+   + Efficient floating point matrix multiplication even for very large
+     matrices; can optionally use BLAS to improve it further.
+@@ -61,24 +61,24 @@
+ 
+ - `std`: Rust standard library-using functionality (enabled by default)
+ - `serde`: serialization support for serde 1.x
+-- `rayon`: Parallel iterators, parallelized methods, the [`parallel`] module and [`par_azip!`].
+-- `approx` Implementations of traits from the [`approx`] crate.
++- `rayon`: Parallel iterators, parallelized methods, the [`parallel`](https://docs.rs/ndarray/0.17.2/ndarray/parallel/) module and [`par_azip!`](https://docs.rs/ndarray/0.17.2/ndarray/macro.par_azip.html).
++- `approx` Implementations of traits from the [`approx`](https://docs.rs/approx/latest/approx/) crate.
+ - `blas`: transparent BLAS support for matrix multiplication, needs configuration.
+ - `matrixmultiply-threading`: Use threading from `matrixmultiply`.
+ 
+ ## Documentation
+ 
+-* The docs for [`ArrayBase`] provide an overview of
++* The docs for [`ArrayBase`](https://docs.rs/ndarray/0.17.2/ndarray/struct.ArrayBase.html) provide an overview of
+   the *n*-dimensional array type. Other good pages to look at are the
+-  documentation for the [`s![]`](s!) and
+-  [`azip!()`](azip!) macros.
++  documentation for the [`s![]`](https://docs.rs/ndarray/0.17.2/ndarray/macro.s.html) and
++  [`azip!()`](https://docs.rs/ndarray/0.17.2/ndarray/macro.azip.html) macros.
+ 
+ * If you have experience with NumPy, you may also be interested in
+   [`ndarray_for_numpy_users`](doc::ndarray_for_numpy_users).
+ 
+ ## The ndarray ecosystem
+ 
+-`ndarray` provides a lot of functionality, but it's not a one-stop solution.
++`ndarray` provides a lot of functionality, but it’s not a one-stop solution.
+ 
+ `ndarray` includes matrix multiplication and other binary/unary operations out of the box.
+ More advanced linear algebra routines (e.g. SVD decomposition or eigenvalue computation)

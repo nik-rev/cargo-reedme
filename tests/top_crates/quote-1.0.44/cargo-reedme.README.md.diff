@@ -1,0 +1,60 @@
+@@ -1,4 +1,4 @@
+-[![github]](https://github.com/dtolnay/quote)&ensp;[![crates-io]](https://crates.io/crates/quote)&ensp;[![docs-rs]](https://docs.rs/quote)
++[![github]](https://github.com/dtolnay/quote) [![crates-io]](https://crates.io/crates/quote) [![docs-rs]](https://docs.rs/quote)
+ 
+ [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
+ [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
+@@ -6,22 +6,22 @@
+ 
+ <br>
+ 
+-This crate provides the [`quote!`] macro for turning Rust syntax tree data
++This crate provides the [`quote!`](https://docs.rs/quote/1.0.44/quote/macro.quote.html) macro for turning Rust syntax tree data
+ structures into tokens of source code.
+ 
+ Procedural macros in Rust receive a stream of tokens as input, execute
+ arbitrary Rust code to determine how to manipulate those tokens, and produce
+-a stream of tokens to hand back to the compiler to compile into the caller's
+-crate. Quasi-quoting is a solution to one piece of that &mdash; producing
++a stream of tokens to hand back to the compiler to compile into the caller’s
++crate. Quasi-quoting is a solution to one piece of that — producing
+ tokens to return to the compiler.
+ 
+ The idea of quasi-quoting is that we write *code* that we treat as *data*.
+ Within the `quote!` macro, we can write what looks like code to our text
+-editor or IDE. We get all the benefits of the editor's brace matching,
++editor or IDE. We get all the benefits of the editor’s brace matching,
+ syntax highlighting, indentation, and maybe autocompletion. But rather than
+ compiling that as code into the current crate, we can treat it as data, pass
+ it around, mutate it, and eventually hand it back to the compiler as tokens
+-to compile into the macro caller's crate.
++to compile into the macro caller’s crate.
+ 
+ This crate is motivated by the procedural macro use case, but is a
+ general-purpose Rust quasi-quoting library and is not specific to procedural
+@@ -39,22 +39,13 @@
+ The following quasi-quoted block of code is something you might find in [a]
+ procedural macro having to do with data structure serialization. The `#var`
+ syntax performs interpolation of runtime variables into the quoted tokens.
+-Check out the documentation of the [`quote!`] macro for more detail about
+-the syntax. See also the [`quote_spanned!`] macro which is important for
++Check out the documentation of the [`quote!`](https://docs.rs/quote/1.0.44/quote/macro.quote.html) macro for more detail about
++the syntax. See also the [`quote_spanned!`](https://docs.rs/quote/1.0.44/quote/macro.quote_spanned.html) macro which is important for
+ implementing hygienic procedural macros.
+ 
+ [a]: https://serde.rs/
+ 
+-```
+-# use quote::quote;
+-#
+-# let generics = "";
+-# let where_clause = "";
+-# let field_ty = "";
+-# let item_ty = "";
+-# let path = "";
+-# let value = "";
+-#
++```rust
+ let tokens = quote! {
+     struct SerializeWith #generics #where_clause {
+         value: &'a #field_ty,

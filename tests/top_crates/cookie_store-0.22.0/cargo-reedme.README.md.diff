@@ -1,0 +1,16 @@
+@@ -1,5 +1,5 @@
+ # cookie_store
+-Provides an implementation for storing and retrieving [`Cookie`]s per the path and domain matching
++Provides an implementation for storing and retrieving [`Cookie`](https://docs.rs/cookie_store/0.22.0/cookie_store/cookie/struct.Cookie.html)s per the path and domain matching
+ rules specified in [RFC6265](https://datatracker.ietf.org/doc/html/rfc6265).
+ 
+ ## Example
+@@ -10,7 +10,7 @@
+ * **`preserve_order`** —  uses `indexmap::IndexMap` in lieu of HashMap internally, so cookies are maintained in insertion/creation order
+ * **`public_suffix`** *(enabled by default)* —  Add support for public suffix lists, as provided by [publicsuffix](https://crates.io/crates/publicsuffix).
+ * **`wasm-bindgen`** —  Enables transitive feature `time/wasm-bindgen`; necessary in `wasm` contexts.
+-* **`log_secure_cookie_values`** —  Enable logging the values of cookies marked 'secure', off by default as values may be sensitive
++* **`log_secure_cookie_values`** —  Enable logging the values of cookies marked ‘secure’, off by default as values may be sensitive
+ 
+  ### Serialization
+ * **`serde`** *(enabled by default)* —  Supports generic (format-agnostic) de/serialization for a `CookieStore`. Adds dependencies `serde` and `serde_derive`.

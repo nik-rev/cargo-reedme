@@ -1,0 +1,68 @@
+@@ -4,30 +4,13 @@
+ 
+ With rustix, you can write code like this:
+ 
+-```
+-# #[cfg(feature = "net")]
+-# fn read(sock: std::net::TcpStream, buf: &mut [u8]) -> std::io::Result<()> {
+-# use rustix::net::RecvFlags;
++```rust
+ let (nread, _received) = rustix::net::recv(&sock, buf, RecvFlags::PEEK)?;
+-# let _ = nread;
+-# Ok(())
+-# }
+ ```
+ 
+ instead of like this:
+ 
+-```
+-# #[cfg(feature = "net")]
+-# fn read(sock: std::net::TcpStream, buf: &mut [u8]) -> std::io::Result<()> {
+-# #[cfg(unix)]
+-# use std::os::unix::io::AsRawFd;
+-# #[cfg(target_os = "wasi")]
+-# use std::os::wasi::io::AsRawFd;
+-# #[cfg(windows)]
+-# use windows_sys::Win32::Networking::WinSock as libc;
+-# #[cfg(windows)]
+-# use std::os::windows::io::AsRawSocket;
+-# const MSG_PEEK: i32 = libc::MSG_PEEK;
++```rust
+ let nread = unsafe {
+     #[cfg(any(unix, target_os = "wasi"))]
+     let raw = sock.as_raw_fd();
+@@ -43,13 +26,10 @@
+         nread => nread as usize,
+     }
+ };
+-# let _ = nread;
+-# Ok(())
+-# }
+ ```
+ 
+-rustix's APIs perform the following tasks:
+- - Error values are translated to [`Result`]s.
++rustix’s APIs perform the following tasks:
++ - Error values are translated to [`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html)s.
+  - Buffers are passed as Rust slices.
+  - Out-parameters are presented as return values.
+  - Path arguments use [`Arg`], so they accept any string type.
+@@ -74,7 +54,7 @@
+  - Use `timespec` for timestamps and timeouts instead of `timeval` and
+    `c_int` milliseconds.
+ 
+-Things they don't do include:
++Things they don’t do include:
+  - Detecting whether functions are supported at runtime, except in specific
+    cases where new interfaces need to be detected to support y2038 and LFS.
+  - Hiding significant differences between platforms.
+@@ -92,6 +72,6 @@
+ [`bitflags`]: bitflags
+ [`AsFd`]: crate::fd::AsFd
+ [`OwnedFd`]: crate::fd::OwnedFd
+-[I/O-safe]: https://github.com/rust-lang/rfcs/blob/master/text/3128-io-safety.md
+-[`Arg`]: path::Arg
++[Ihttps://doc.rust-lang.org/stable/std/os/fd/owned/trait.AsFd.html://github.com/hthttps://docs.rs/bitflags/latest/bitflags/c.rust-lang.org/stable/std/os/fd/owned/struct.OwnedFd.htmlb/master/text/3128-io-safety.md
++[`Arg`]: https://docs.rs/rustix/1.1.3/rustix/path/arg/trait.Arg.html
+ [support for externally defined flags]: bitflags#externally-defined-flags
+\ No newline at end of file

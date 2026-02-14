@@ -1,0 +1,24 @@
+@@ -1,4 +1,4 @@
+-This crate defines [`Writeable`], a trait representing an object that can be written to a
++This crate defines [`Writeable`](https://docs.rs/writeable/0.6.2/writeable/trait.Writeable.html), a trait representing an object that can be written to a
+ sink implementing `std::fmt::Write`. It is an alternative to `std::fmt::Display` with the
+ addition of a function indicating the number of bytes to be written.
+ 
+@@ -7,7 +7,7 @@
+ 1. More efficient, since the sink can pre-allocate bytes.
+ 2. Smaller code, since the format machinery can be short-circuited.
+ 
+-This crate also exports [`TryWriteable`], a writeable that supports a custom error.
++This crate also exports [`TryWriteable`](https://docs.rs/writeable/0.6.2/writeable/try_writeable/trait.TryWriteable.html), a writeable that supports a custom error.
+ 
+ # Benchmarks
+ 
+@@ -21,7 +21,7 @@
+ 
+ # Examples
+ 
+-```
++```rust
+ use std::fmt;
+ use writeable::assert_writeable_eq;
+ use writeable::LengthHint;

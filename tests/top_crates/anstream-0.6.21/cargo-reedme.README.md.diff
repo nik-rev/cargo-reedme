@@ -1,0 +1,37 @@
+@@ -1,12 +1,12 @@
+-**Auto-adapting [`stdout`] / [`stderr`] streams**
++**Auto-adapting [`stdout`](https://docs.rs/anstream/0.6.21/anstream/fn.stdout.html) / [`stderr`](https://docs.rs/anstream/0.6.21/anstream/fn.stderr.html) streams**
+ 
+-*A portmanteau of "ansi stream"*
++*A portmanteau of “ansi stream”*
+ 
+-[`AutoStream`] always accepts [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code),
+-[adapting to the user's terminal's capabilities][AutoStream].
++[`AutoStream`](https://docs.rs/anstream/0.6.21/anstream/auto/struct.AutoStream.html) always accepts [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code),
++[AutoStream](https://docs.rs/anstream/0.6.21/anstream/auto/struct.AutoStream.html).
+ 
+ Benefits
+-- Allows the caller to not be concerned with the terminal's capabilities
++- Allows the caller to not be concerned with the terminal’s capabilities
+ - Semver safe way of passing styled text between crates as ANSI escape codes offer more
+   compatibility than most crate APIs.
+ 
+@@ -17,8 +17,7 @@
+ 
+ # Example
+ 
+-```
+-#  #[cfg(feature = "auto")] {
++```rust
+ use anstream::println;
+ use owo_colors::OwoColorize as _;
+ 
+@@ -26,7 +25,6 @@
+ println!("My number is {:#x}!", 10.green());
+ // Background colors
+ println!("My number is not {}!", 4.on_red());
+-# }
+ ```
+ 
+ And this will correctly handle piping to a file, etc
+\ No newline at end of file

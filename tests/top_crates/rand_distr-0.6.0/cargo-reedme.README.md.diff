@@ -1,0 +1,94 @@
+@@ -2,16 +2,16 @@
+ 
+ ## Re-exports
+ 
+-This crate is a super-set of the [`rand::distr`] module. See the
+-[`rand::distr`] module documentation for an overview of the core
+-[`Distribution`] trait and implementations.
++This crate is a super-set of the [`rand::distr`](https://docs.rs/rand/latest/rand/distr/) module. See the
++[`rand::distr`](https://docs.rs/rand/latest/rand/distr/) module documentation for an overview of the core
++[`Distribution`](https://docs.rs/rand/latest/rand/distr/distribution/trait.Distribution.html) trait and implementations.
+ 
+ The following are re-exported:
+ 
+-- The [`Distribution`] trait and [`Iter`] helper type
+-- The [`StandardUniform`], [`Alphanumeric`], [`Uniform`], [`OpenClosed01`],
+-  [`Open01`], [`Bernoulli`] distributions
+-- The [`weighted`] module
++- The [`Distribution`](https://docs.rs/rand/latest/rand/distr/distribution/trait.Distribution.html) trait and [`Iter`](https://docs.rs/rand/latest/rand/distr/distribution/struct.Iter.html) helper type
++- The [`StandardUniform`](https://docs.rs/rand/latest/rand/distr/struct.StandardUniform.html), [`Alphanumeric`](https://docs.rs/rand/latest/rand/distr/other/struct.Alphanumeric.html), [`Uniform`](https://docs.rs/rand/latest/rand/distr/uniform/struct.Uniform.html), [`OpenClosed01`](https://docs.rs/rand/latest/rand/distr/float/struct.OpenClosed01.html),
++  [`Open01`](https://docs.rs/rand/latest/rand/distr/float/struct.Open01.html), [`Bernoulli`](https://docs.rs/rand/latest/rand/distr/bernoulli/struct.Bernoulli.html) distributions
++- The [`weighted`](https://docs.rs/rand_distr/0.6.0/rand_distr/weighted/) module
+ 
+ ## Distributions
+ 
+@@ -19,39 +19,39 @@
+ 
+ - Related to real-valued quantities that grow linearly
+   (e.g. errors, offsets):
+-  - [`Normal`] distribution, and [`StandardNormal`] as a primitive
+-  - [`SkewNormal`] distribution
+-  - [`Cauchy`] distribution
++  - [`Normal`](https://docs.rs/rand_distr/0.6.0/rand_distr/normal/struct.Normal.html) distribution, and [`StandardNormal`](https://docs.rs/rand_distr/0.6.0/rand_distr/normal/struct.StandardNormal.html) as a primitive
++  - [`SkewNormal`](https://docs.rs/rand_distr/0.6.0/rand_distr/skew_normal/struct.SkewNormal.html) distribution
++  - [`Cauchy`](https://docs.rs/rand_distr/0.6.0/rand_distr/cauchy/struct.Cauchy.html) distribution
+ - Related to Bernoulli trials (yes/no events, with a given probability):
+-  - [`Binomial`] distribution
+-  - [`Geometric`] distribution
+-  - [`Hypergeometric`] distribution
++  - [`Binomial`](https://docs.rs/rand_distr/0.6.0/rand_distr/binomial/struct.Binomial.html) distribution
++  - [`Geometric`](https://docs.rs/rand_distr/0.6.0/rand_distr/geometric/struct.Geometric.html) distribution
++  - [`Hypergeometric`](https://docs.rs/rand_distr/0.6.0/rand_distr/hypergeometric/struct.Hypergeometric.html) distribution
+ - Related to positive real-valued quantities that grow exponentially
+   (e.g. prices, incomes, populations):
+-  - [`LogNormal`] distribution
++  - [`LogNormal`](https://docs.rs/rand_distr/0.6.0/rand_distr/normal/struct.LogNormal.html) distribution
+ - Related to the occurrence of independent events at a given rate:
+-  - [`Pareto`] distribution
+-  - [`Poisson`] distribution
+-  - [`Exp`]onential distribution, and [`Exp1`] as a primitive
+-  - [`Weibull`] distribution
+-  - [`Gumbel`] distribution
+-  - [`Frechet`] distribution
+-  - [`Zeta`] distribution
+-  - [`Zipf`] distribution
++  - [`Pareto`](https://docs.rs/rand_distr/0.6.0/rand_distr/pareto/struct.Pareto.html) distribution
++  - [`Poisson`](https://docs.rs/rand_distr/0.6.0/rand_distr/poisson/struct.Poisson.html) distribution
++  - [`Exp`](https://docs.rs/rand_distr/0.6.0/rand_distr/exponential/struct.Exp.html)onential distribution, and [`Exp1`](https://docs.rs/rand_distr/0.6.0/rand_distr/exponential/struct.Exp1.html) as a primitive
++  - [`Weibull`](https://docs.rs/rand_distr/0.6.0/rand_distr/weibull/struct.Weibull.html) distribution
++  - [`Gumbel`](https://docs.rs/rand_distr/0.6.0/rand_distr/gumbel/struct.Gumbel.html) distribution
++  - [`Frechet`](https://docs.rs/rand_distr/0.6.0/rand_distr/frechet/struct.Frechet.html) distribution
++  - [`Zeta`](https://docs.rs/rand_distr/0.6.0/rand_distr/zeta/struct.Zeta.html) distribution
++  - [`Zipf`](https://docs.rs/rand_distr/0.6.0/rand_distr/zipf/struct.Zipf.html) distribution
+ - Gamma and derived distributions:
+-  - [`Gamma`] distribution
+-  - [`ChiSquared`] distribution
+-  - [`StudentT`] distribution
+-  - [`FisherF`] distribution
++  - [`Gamma`](https://docs.rs/rand_distr/0.6.0/rand_distr/gamma/struct.Gamma.html) distribution
++  - [`ChiSquared`](https://docs.rs/rand_distr/0.6.0/rand_distr/chi_squared/struct.ChiSquared.html) distribution
++  - [`StudentT`](https://docs.rs/rand_distr/0.6.0/rand_distr/student_t/struct.StudentT.html) distribution
++  - [`FisherF`](https://docs.rs/rand_distr/0.6.0/rand_distr/fisher_f/struct.FisherF.html) distribution
+ - Triangular distribution:
+-  - [`Beta`] distribution
+-  - [`Triangular`] distribution
++  - [`Beta`](https://docs.rs/rand_distr/0.6.0/rand_distr/beta/struct.Beta.html) distribution
++  - [`Triangular`](https://docs.rs/rand_distr/0.6.0/rand_distr/triangular/struct.Triangular.html) distribution
+ - Multivariate probability distributions
+-  - [`multi::Dirichlet`] distribution
+-  - [`UnitSphere`] distribution
+-  - [`UnitBall`] distribution
+-  - [`UnitCircle`] distribution
+-  - [`UnitDisc`] distribution
++  - [`multi::Dirichlet`](https://docs.rs/rand_distr/0.6.0/rand_distr/multi/dirichlet/struct.Dirichlet.html) distribution
++  - [`UnitSphere`](https://docs.rs/rand_distr/0.6.0/rand_distr/unit_sphere/struct.UnitSphere.html) distribution
++  - [`UnitBall`](https://docs.rs/rand_distr/0.6.0/rand_distr/unit_ball/struct.UnitBall.html) distribution
++  - [`UnitCircle`](https://docs.rs/rand_distr/0.6.0/rand_distr/unit_circle/struct.UnitCircle.html) distribution
++  - [`UnitDisc`](https://docs.rs/rand_distr/0.6.0/rand_distr/unit_disc/struct.UnitDisc.html) distribution
+ - Misc. distributions
+-  - [`InverseGaussian`] distribution
+-  - [`NormalInverseGaussian`] distribution
+\ No newline at end of file
++  - [`InverseGaussian`](https://docs.rs/rand_distr/0.6.0/rand_distr/inverse_gaussian/struct.InverseGaussian.html) distribution
++  - [`NormalInverseGaussian`](https://docs.rs/rand_distr/0.6.0/rand_distr/normal_inverse_gaussian/struct.NormalInverseGaussian.html) distribution
+\ No newline at end of file

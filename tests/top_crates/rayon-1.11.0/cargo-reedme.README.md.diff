@@ -1,0 +1,57 @@
+@@ -20,16 +20,16 @@
+   - [`par_extend`] can be used to efficiently grow collections with items produced
+     by a parallel iterator.
+ - **Custom tasks** let you divide your work into parallel tasks yourself.
+-  - [`join`] is used to subdivide a task into two pieces.
+-  - [`scope`] creates a scope within which you can create any number of parallel tasks.
+-  - [`ThreadPoolBuilder`] can be used to create your own thread pools or customize
++  - [`join`](https://docs.rs/rayon_core/latest/rayon_core/join/fn.join.html) is used to subdivide a task into two pieces.
++  - [`scope`](https://docs.rs/rayon_core/latest/rayon_core/scope/fn.scope.html) creates a scope within which you can create any number of parallel tasks.
++  - [`ThreadPoolBuilder`](https://docs.rs/rayon_core/latest/rayon_core/struct.ThreadPoolBuilder.html) can be used to create your own thread pools or customize
+     the global one.
+ 
+ [Parallel iterators]: iter
+ [`par_sort`]: slice::ParallelSliceMut::par_sort
+ [`par_extend`]: iter::ParallelExtend::par_extend
+-[`ParallelIterator`]: iter::ParallelIterator
+-[`IndexedParallelIterator`]: iter::IndexedParallelIterator
++[`Paralhttps://docs.rs/rayon/1.11.0/rayon/slice/trait.ParallelSliceMut.html#tymethod.par_sortyon/1.11.0/rayon/https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelExtend.html#tymethod.par_extend
++[`IndexedParallelIterator`]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.IndexedParallelIterator.html
+ 
+ # Basic usage and the Rayon prelude
+ 
+@@ -45,18 +45,18 @@
+ parallel implementations of many iterative functions such as [`map`],
+ [`for_each`], [`filter`], [`fold`], and [more].
+ 
+-[`rayon::prelude`]: prelude
+-[`map`]: iter::ParallelIterator::map
+-[`for_each`]: iter::ParallelIterator::for_each
+-[`filter`]: iter::ParallelIterator::filter
+-[`fold`]: iter::ParallelIterator::fold
+-[more]: iter::ParallelIterator#provided-methods
++[`rayon::prelude`]: https://docs.rs/rayon/1.11.0/rayon/prelude/
++[`map`]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelIterator.html#tymethod.map
++[`for_each`]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelIterator.html#tymethod.for_each
++[`filter`]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelIterator.html#tymethod.filter
++[`fold`]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelIterator.html#tymethod.fold
++[more]: https://docs.rs/rayon/1.11.0/rayon/iter/trait.ParallelIterator.html
+ 
+ # Crate Layout
+ 
+ Rayon extends many of the types found in the standard library with
+ parallel iterator implementations. The modules in the `rayon`
+-crate mirror [`std`] itself: so, e.g., the `option` module in
++crate mirror [`std`](https://doc.rust-lang.org/stable/std/) itself: so, e.g., the `option` module in
+ Rayon contains parallel iterators for the `Option` type, which is
+ found in [the `option` module of `std`]. Similarly, the
+ `collections` module in Rayon offers parallel iterator types for
+@@ -70,7 +70,7 @@
+ # Targets without threading
+ 
+ Rayon has limited support for targets without `std` threading implementations.
+-See the [`rayon_core`] documentation for more information about its global fallback.
++See the [`rayon_core`](https://docs.rs/rayon_core/latest/rayon_core/) documentation for more information about its global fallback.
+ 
+ # Other questions?
+ 

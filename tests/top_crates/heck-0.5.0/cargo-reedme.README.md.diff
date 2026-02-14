@@ -1,0 +1,18 @@
+@@ -15,14 +15,14 @@
+ be within a single word, except that the last will be part of the next word
+ if it is followed by lowercase characters (see rule 1).
+ 
+-That is, "HelloWorld" is segmented `Hello|World` whereas "XMLHttpRequest" is
++That is, “HelloWorld” is segmented `Hello|World` whereas “XMLHttpRequest” is
+ segmented `XML|Http|Request`.
+ 
+ Characters not within words (such as spaces, punctuations, and underscores)
+ are not included in the output string except as they are a part of the case
+ being converted to. Multiple adjacent word boundaries (such as a series of
+-underscores) are folded into one. ("hello__world" in snake case is therefore
+-"hello_world", not the exact same string). Leading or trailing word boundary
++underscores) are folded into one. (“hello__world” in snake case is therefore
++“hello_world”, not the exact same string). Leading or trailing word boundary
+ indicators are dropped, except insofar as CamelCase capitalizes the first
+ word.
+ 

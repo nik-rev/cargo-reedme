@@ -1,0 +1,99 @@
+@@ -18,7 +18,7 @@
+ passing in the string you want to format as the argument. For example,
+ here’s how to get some red text:
+ 
+-```
++```rust
+ use ansi_term::Colour::Red;
+ 
+ println!("This is in red: {}", Red.paint("a red string"));
+@@ -33,7 +33,7 @@
+ If you *do* want to get at the escape codes, then you can convert the
+ [`ANSIString`] to a string as you would any other `Display` value:
+ 
+-```
++```rust
+ use ansi_term::Colour::Red;
+ 
+ let red_string = Red.paint("a red string").to_string();
+@@ -48,7 +48,7 @@
+ [`Style::new()`]. Each method creates a new style that has that specific
+ property set. For example:
+ 
+-```
++```rust
+ use ansi_term::Style;
+ 
+ println!("How about some {} and {}?",
+@@ -60,7 +60,7 @@
+ so you can give your styles a foreground colour without having to begin with
+ an empty `Style` value:
+ 
+-```
++```rust
+ use ansi_term::Colour::{Blue, Yellow};
+ 
+ println!("Demonstrating {} and {}!",
+@@ -78,7 +78,7 @@
+ existing `Style` rather than starting from the appropriate `Colour`.
+ You can do this using the [`fg`] method:
+ 
+-```
++```rust
+ use ansi_term::Style;
+ use ansi_term::Colour::{Blue, Cyan, Yellow};
+ 
+@@ -94,7 +94,7 @@
+ the same type. The `Style` struct also has a [`Default`] implementation if you
+ want to have a style with *nothing* set.
+ 
+-```
++```rust
+ use ansi_term::Style;
+ use ansi_term::Colour::Red;
+ 
+@@ -109,7 +109,7 @@
+ variant, which takes an argument of the colour number to use. This can be
+ included wherever you would use a `Colour`:
+ 
+-```
++```rust
+ use ansi_term::Colour::Fixed;
+ 
+ Fixed(134).paint("A sort of light purple");
+@@ -124,7 +124,7 @@
+ You can also access full 24-bit colour by using the `Colour::RGB` variant,
+ which takes separate `u8` arguments for red, green, and blue:
+ 
+-```
++```rust
+ use ansi_term::Colour::RGB;
+ 
+ RGB(70, 130, 180).paint("Steel blue");
+@@ -149,7 +149,7 @@
+ The following code snippet uses this to enclose a binary number displayed in
+ red bold text inside some red, but not bold, brackets:
+ 
+-```
++```rust
+ use ansi_term::Colour::Red;
+ use ansi_term::{ANSIString, ANSIStrings};
+ 
+@@ -181,7 +181,7 @@
+ it does provide a method [`write_to`] to write the result to any value that
+ implements [`Write`]:
+ 
+-```
++```rust
+ use ansi_term::Colour::Green;
+ 
+ Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+@@ -190,7 +190,7 @@
+ Similarly, the type [`ANSIByteStrings`] supports writing a list of
+ [`ANSIByteString`] values with minimal escape sequences:
+ 
+-```
++```rust
+ use ansi_term::Colour::Green;
+ use ansi_term::ANSIByteStrings;
+ 

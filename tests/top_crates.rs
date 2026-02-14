@@ -3,6 +3,9 @@ use std::path::PathBuf;
 use fs_err as fs;
 use rayon::prelude::*;
 
+// Downloads top crates into `top_crates` directory, and generates README data for them,
+// so it is easy to see the real-world effects of `cargo-reedme`
+//
 // TO RUN: cargo test download_top_crates -- --ignored
 #[ignore]
 #[test]
@@ -36,7 +39,41 @@ fn download_top_crates() -> eyre::Result<()> {
 
         println!("Unpacked to {}", unpack_dir);
 
-        // Command::new(env!("CARGO_BIN_EXE_cargo-reedme")).arg(arg);
+        // set manifest to point to the package's Cargo.toml
+        let mut manifest = clap_cargo::Manifest::default();
+        manifest.manifest_path = Some(format!("{unpack_dir}/{name}-{version}/Cargo.toml").into());
+
+        // use the correct feature set
+        let mut features = clap_cargo::Features::default();
+        features.no_default_features = !spec.default_features;
+        features.features = spec.features.into_iter().map(|s| s.to_string()).collect();
+
+        let output = cargo_reedme::resolve(&cargo_reedme::World {
+            manifest,
+            features,
+            ..Default::default()
+        })
+        .unwrap();
+
+        for readme in output.readmes {
+            let base = readme.path.parent().unwrap();
+            let filename = readme.path.file_name().unwrap();
+
+            let generated = readme.file.contents;
+            let original = readme.original_doc_comments;
+
+            // this file shows the content that we actually generate
+            fs::write(format!("{base}/cargo-reedme.{filename}"), &generated).unwrap();
+
+            // diff from the raw content inside of doc comments
+            fs::write(
+                format!("{base}/cargo-reedme.{filename}.diff"),
+                similar::TextDiff::from_lines(&original, &generated)
+                    .unified_diff()
+                    .to_string(),
+            )
+            .unwrap();
+        }
     });
 
     Ok(())

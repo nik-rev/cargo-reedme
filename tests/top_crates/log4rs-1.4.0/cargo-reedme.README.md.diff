@@ -1,0 +1,108 @@
+@@ -1,4 +1,4 @@
+-log4rs is a highly configurable logging framework modeled after Java's
++log4rs is a highly configurable logging framework modeled after Java’s
+ Logback and log4j libraries.
+ 
+ # Architecture
+@@ -49,23 +49,23 @@
+ of a log event to the one identified by the module containing the
+ invocation location.
+ 
+-Loggers form a hierarchy: logger names are divided into components by "::".
+-One logger is the ancestor of another if the first logger's component list
+-is a prefix of the second logger's component list.
++Loggers form a hierarchy: logger names are divided into components by “::”.
++One logger is the ancestor of another if the first logger’s component list
++is a prefix of the second logger’s component list.
+ 
+ Loggers are associated with a maximum log level. Log events for that logger
+ with a level above the maximum will be ignored. The maximum log level for
+ any logger can be configured manually; if it is not, the level will be
+-inherited from the logger's parent.
++inherited from the logger’s parent.
+ 
+ Loggers are also associated with a set of appenders. Appenders can be
+ associated directly with a logger. In addition, the appenders of the
+-logger's parent will be associated with the logger unless the logger has
++logger’s parent will be associated with the logger unless the logger has
+ its *additive* set to `false`. Log events sent to the logger that are not
+-filtered out by the logger's maximum log level will be sent to all
++filtered out by the logger’s maximum log level will be sent to all
+ associated appenders.
+ 
+-The "root" logger is the ancestor of all other loggers. Since it has no
++The “root” logger is the ancestor of all other loggers. Since it has no
+ ancestors, its additivity cannot be configured.
+ 
+ # Configuration
+@@ -127,20 +127,13 @@
+ 
+ Add the following in your application initialization.
+ 
+-```no_run
+-# #[cfg(feature = "config_parsing")]
+-# fn f() {
++```rust
+ log4rs::init_file("log4rs.yml", Default::default()).unwrap();
+-# }
+ ```
+ 
+ ## Programmatically constructing a configuration:
+ 
+-```no_run
+-# #[cfg(all(feature = "console_appender",
+-#           feature = "file_appender",
+-#           feature = "pattern_encoder"))]
+-# fn f() {
++```rust
+ use log::LevelFilter;
+ use log4rs::append::console::ConsoleAppender;
+ use log4rs::append::file::FileAppender;
+@@ -170,8 +163,6 @@
+ 
+     // use handle to change logger configuration at runtime
+ }
+-# }
+-# fn main() {}
+ ```
+ 
+ ## Custom implementations of logging components
+@@ -183,8 +174,7 @@
+ 
+ Here is a very simple example to create a custom appender,
+ for more examples about custom, see [examples/custom.rs](https://github.com/estk/log4rs/tree/main/examples/custom.rs):
+-```no_run
+-# fn f() {
++```rust
+ use log4rs::append::Append;
+ use log4rs::config::{Appender, Root};
+ 
+@@ -215,8 +205,6 @@
+     log::info!("This is an info message");
+     log::warn!("This is a warning message");
+ }
+-# }
+-# fn main() {}
+ ```
+ 
+ To configure log4rs with a file, you should implement [log4rs::config::Deserialize](config/trait.Deserialize.html) for your config and be sure to register it with [log4rs::config::Deserializers](config/struct.Deserializers.html) as shown in the example below.
+@@ -236,9 +224,7 @@
+     - my_appender
+ ```
+ 
+-```no_run
+-# #[cfg(feature = "config_parsing")]
+-# fn f() {
++```rust
+ use log4rs::append::Append;
+ use log4rs::config::{Deserialize, Deserializers};
+ 
+@@ -292,8 +278,6 @@
+     log::info!("This is an info message");
+     log::warn!("This is a warning message");
+ }
+-# }
+-# fn main() {}
+ ```
+ 
+ For more examples see the [examples](https://github.com/estk/log4rs/tree/main/examples).

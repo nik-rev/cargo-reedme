@@ -1,0 +1,57 @@
+@@ -4,7 +4,7 @@
+ CLI tools that are interoperating with make or otherwise require some form
+ of parallelism limiting across process boundaries. This was originally
+ written for usage in Cargo to both (a) work when `cargo` is invoked from
+-`make` (using `make`'s jobserver) and (b) work when `cargo` invokes build
++`make` (using `make`’s jobserver) and (b) work when `cargo` invokes build
+ scripts, exporting a jobserver implementation for `make` processes to
+ transitively use.
+ 
+@@ -24,7 +24,7 @@
+ 
+ Connect to a jobserver that was set up by `make` or a different process:
+ 
+-```no_run
++```rust
+ use jobserver::Client;
+ 
+ // See API documentation for why this is `unsafe`
+@@ -36,7 +36,7 @@
+ 
+ Acquire and release token from a jobserver:
+ 
+-```no_run
++```rust
+ use jobserver::Client;
+ 
+ let client = unsafe { Client::from_env().unwrap() };
+@@ -46,7 +46,7 @@
+ 
+ Create a new jobserver and configure a child process to have access:
+ 
+-```
++```rust
+ use std::process::Command;
+ use jobserver::Client;
+ 
+@@ -63,16 +63,16 @@
+ jobserver may be in a corrupt state.
+ 
+ Note that this is typically ok as ctrl-c means that an entire build process
+-is being torn down, but it's worth being aware of at least!
++is being torn down, but it’s worth being aware of at least!
+ 
+ ## Windows caveats
+ 
+ There appear to be two implementations of `make` on Windows. On MSYS2 one
+-typically comes as `mingw32-make` and the other as `make` itself. I'm not
+-personally too familiar with what's going on here, but for jobserver-related
++typically comes as `mingw32-make` and the other as `make` itself. I’m not
++personally too familiar with what’s going on here, but for jobserver-related
+ information the `mingw32-make` implementation uses Windows semaphores
+ whereas the `make` program does not. The `make` program appears to use file
+-descriptors and I'm not really sure how it works, so this crate is not
++descriptors and I’m not really sure how it works, so this crate is not
+ compatible with `make` on Windows. It is, however, compatible with
+ `mingw32-make`.
+ 

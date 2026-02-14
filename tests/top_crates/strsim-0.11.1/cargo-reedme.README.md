@@ -1,0 +1,1 @@
+This library implements string similarity metrics.

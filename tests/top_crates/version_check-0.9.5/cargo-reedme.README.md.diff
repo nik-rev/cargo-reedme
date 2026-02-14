@@ -1,0 +1,55 @@
+@@ -20,9 +20,9 @@
+   if rustc::is_min_version("1.13.0").unwrap_or(false) {
+       println!("cargo:rustc-cfg=question_mark_operator");
+   }
+-  ```
++```
+ 
+-  See [`is_max_version`] or [`is_exact_version`] to check if the compiler
++  See [`is_max_version`](https://docs.rs/version_check/0.9.5/version_check/fn.is_max_version.html) or [`is_exact_version`](https://docs.rs/version_check/0.9.5/version_check/fn.is_exact_version.html) to check if the compiler
+   is _at most_ or _exactly_ a certain version.
+   <br /><br />
+ 
+@@ -36,9 +36,9 @@
+       Some(false) => "No, it's older.",
+       None => "Couldn't determine the rustc version."
+   };
+-  ```
++```
+ 
+-  See [`is_max_date`] or [`is_exact_date`] to check if the compiler was
++  See [`is_max_date`](https://docs.rs/version_check/0.9.5/version_check/fn.is_max_date.html) or [`is_exact_date`](https://docs.rs/version_check/0.9.5/version_check/fn.is_exact_date.html) to check if the compiler was
+   released _prior to_ or _exactly on_ a certain date.
+   <br /><br />
+ 
+@@ -52,7 +52,7 @@
+       Some(false) => "No, it's stable or beta.",
+       None => "Couldn't determine the rustc version."
+   };
+-  ```
++```
+ 
+   Please see the note on [feature detection].
+   <br /><br />
+@@ -65,7 +65,7 @@
+   if let Some(true) = rustc::supports_feature("doc_cfg") {
+      println!("cargo:rustc-cfg=has_doc_cfg");
+   }
+-  ```
++```
+ 
+   Please see the note on [feature detection].
+   <br /><br />
+@@ -80,10 +80,10 @@
+       Some(c) => format!("No, the channel {} is not stable.", c),
+       None => format!("Couldn't determine the rustc version.")
+   };
+-  ```
++```
+ 
+ To interact with the version, release date, and release channel as structs,
+-use [`Version`], [`Date`], and [`Channel`], respectively. The [`triple()`]
++use [`Version`](https://docs.rs/version_check/0.9.5/version_check/version/struct.Version.html), [`Date`](https://docs.rs/version_check/0.9.5/version_check/date/struct.Date.html), and [`Channel`](https://docs.rs/version_check/0.9.5/version_check/channel/struct.Channel.html), respectively. The [`triple()`](https://docs.rs/version_check/0.9.5/version_check/fn.triple.html)
+ function returns all three values efficiently.
+ 
+ # Feature Detection

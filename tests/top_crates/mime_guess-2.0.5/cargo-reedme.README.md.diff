@@ -1,0 +1,19 @@
+@@ -2,8 +2,7 @@
+ 
+ Uses a static list of file-extension : MIME type mappings.
+ 
+-```
+-# extern crate mime;
++```rust
+ // the file doesn't have to exist, it just looks at the path
+ let guess = mime_guess::from_path("some_file.gif");
+ assert_eq!(guess.first(), Some(mime::IMAGE_GIF));
+@@ -11,7 +10,7 @@
+ ```
+ 
+ #### Note: MIME Types Returned Are Not Stable/Guaranteed
+-The media types returned for a given extension are not considered to be part of the crate's
++The media types returned for a given extension are not considered to be part of the crate’s
+ stable API and are often updated in patch <br /> (`x.y.[z + 1]`) releases to be as correct as
+ possible.
+ 

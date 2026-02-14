@@ -1,0 +1,32 @@
+@@ -2,19 +2,19 @@
+ [Vcpkg](https://github.com/microsoft/vcpkg) tree
+ 
+ From a Vcpkg package name
+-this build helper will emit cargo metadata to link it and it's dependencies
++this build helper will emit cargo metadata to link it and it’s dependencies
+ (excluding system libraries, which it does not determine).
+ 
+ The simplest possible usage looks like this :-
+ 
+-```rust,no_run
++```rust
+ // build.rs
+ vcpkg::find_package("libssh2").unwrap();
+ ```
+ 
+ The cargo metadata that is emitted can be changed like this :-
+ 
+-```rust,no_run
++```rust
+ // build.rs
+ vcpkg::Config::new()
+     .emit_includes(true)
+@@ -56,7 +56,7 @@
+ set up with `vcpkg integrate install`, and check the crate source and target
+ to see if a vcpkg tree has been created by [cargo-vcpkg](https://crates.io/crates/cargo-vcpkg).
+ 
+-* `VCPKGRS_TRIPLET` - Use this to override vcpkg-rs' default triplet selection with your own.
++* `VCPKGRS_TRIPLET` - Use this to override vcpkg-rs’ default triplet selection with your own.
+ This is how to select a custom vcpkg triplet.
+ 
+ * `VCPKGRS_NO_FOO` - if set, vcpkg-rs will not attempt to find the

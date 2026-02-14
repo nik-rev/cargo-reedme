@@ -1,0 +1,27 @@
+@@ -19,7 +19,7 @@
+ 
+ In `build.rs`:
+ 
+-```no_run
++```rust
+ extern crate string_cache_codegen;
+ 
+ use std::env;
+@@ -35,7 +35,7 @@
+ 
+ In `lib.rs`:
+ 
+-```ignore
++```rust
+ extern crate string_cache;
+ 
+ mod foo {
+@@ -47,7 +47,7 @@
+ The macro can be used in expression or patterns, with strings listed in `build.rs`.
+ For example:
+ 
+-```ignore
++```rust
+ fn compute_something(input: &foo::FooAtom) -> u32 {
+     match *input {
+         foo_atom!("foo") => 1,

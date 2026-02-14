@@ -1,0 +1,18 @@
+@@ -9,7 +9,7 @@
+ 
+ Every thread sends one message over the channel, which then is collected with the `take()`.
+ 
+-```
++```rust
+ use threadpool::ThreadPool;
+ use std::sync::mpsc::channel;
+ 
+@@ -35,7 +35,7 @@
+ at the barrier which is [not considered unsafe](
+ https://doc.rust-lang.org/reference/behavior-not-considered-unsafe.html).
+ 
+-```
++```rust
+ use threadpool::ThreadPool;
+ use std::sync::{Arc, Barrier};
+ use std::sync::atomic::{AtomicUsize, Ordering};

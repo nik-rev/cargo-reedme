@@ -1,0 +1,11 @@
+@@ -20,7 +20,7 @@
+   This will work with both a stable or nightly compiler.
+ 
+ If none of those features are enabled, __simba__ will still define all the scalar and SIMD traits.
+-However, the SIMD traits won't be implemented for any SIMD types. Therefore it is recommended to:
++However, the SIMD traits won’t be implemented for any SIMD types. Therefore it is recommended to:
+ - Use the `portable_simd` feature if you want more features, and can afford to use a nightly compiler.
+-- Use the `wide` feature if you only need 4-lanes 32-bits floats, and can't afford to use a nightly compiler.
++- Use the `wide` feature if you only need 4-lanes 32-bits floats, and can’t afford to use a nightly compiler.
+  
+\ No newline at end of file

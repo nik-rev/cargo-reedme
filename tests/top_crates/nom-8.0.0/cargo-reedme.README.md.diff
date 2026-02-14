@@ -1,0 +1,153 @@
+@@ -56,10 +56,10 @@
+ There are a few [guides](https://github.com/rust-bakery/nom/tree/main/doc) with more details
+ about [how to write parsers](https://github.com/rust-bakery/nom/blob/main/doc/making_a_new_parser_from_scratch.md),
+ or the [error management system](https://github.com/rust-bakery/nom/blob/main/doc/error_management.md).
+-You can also check out the [recipes] module that contains examples of common patterns.
++You can also check out the [recipes](https://docs.rs/nom/8.0.0/nom/recipes/) module that contains examples of common patterns.
+ 
+ **Looking for a specific combinator? Read the
+-["choose a combinator" guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)**
++[“choose a combinator” guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)**
+ 
+ If you are upgrading to nom 5.0, please read the
+ [migration document](https://github.com/rust-bakery/nom/blob/main/doc/upgrading_to_nom_5.md).
+@@ -70,16 +70,16 @@
+ software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
+ [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
+ in a separate syntax and generating the corresponding code, you use very small
+-functions with very specific purposes, like "take 5 bytes", or "recognize the
+-word 'HTTP'", and assemble them in meaningful patterns like "recognize
+-'HTTP', then a space, then a version".
++functions with very specific purposes, like “take 5 bytes”, or “recognize the
++word ‘HTTP’”, and assemble them in meaningful patterns like “recognize
++‘HTTP’, then a space, then a version”.
+ The resulting code is small, and looks like the grammar you would have
+ written with other parser approaches.
+ 
+ This gives us a few advantages:
+ 
+ - The parsers are small and easy to write
+-- The parsers components are easy to reuse (if they're general enough, please add them to nom!)
++- The parsers components are easy to reuse (if they’re general enough, please add them to nom!)
+ - The parsers components are easy to test separately (unit tests and property-based tests)
+ - The parser combination code looks close to the grammar you would have written
+ - You can build partial parsers, specific to the data you need at the moment, and ignore the rest
+@@ -105,12 +105,11 @@
+ character `(`, the longest byte array not containing `)`, then the character
+ `)`, and will return the byte array in the middle.
+ 
+-Here is another parser, written without using nom's combinators this time:
++Here is another parser, written without using nom’s combinators this time:
+ 
+ ```rust
+ use nom::{IResult, Err, Needed};
+ 
+-# fn main() {
+ fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
+   if i.len() < 4 {
+     Err(Err::Incomplete(Needed::new(4)))
+@@ -118,12 +117,11 @@
+     Ok((&i[4..], &i[0..4]))
+   }
+ }
+-# }
+ ```
+ 
+ This function takes a byte array as input, and tries to consume 4 bytes.
+-Writing all the parsers manually, like this, is dangerous, despite Rust's
+-safety features. There are still a lot of mistakes one can make. That's why
++Writing all the parsers manually, like this, is dangerous, despite Rust’s
++safety features. There are still a lot of mistakes one can make. That’s why
+ nom provides a list of functions to help in developing parsers.
+ 
+ With functions, you would write it like this:
+@@ -138,13 +136,13 @@
+ A parser in nom is a function which, for an input type `I`, an output type `O`
+ and an optional error type `E`, will have the following signature:
+ 
+-```rust,compile_fail
++```rust
+ fn parser(input: I) -> IResult<I, O, E>;
+ ```
+ 
+-Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
++Or like this, if you don’t want to specify a custom error type (it will be `(I, ErrorKind)` by default):
+ 
+-```rust,compile_fail
++```rust
+ fn parser(input: I) -> IResult<I, O>;
+ ```
+ 
+@@ -169,7 +167,7 @@
+ - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
+ - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
+ 
+-Please refer to the ["choose a combinator" guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
++Please refer to the [“choose a combinator” guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
+ See also the rest of the documentation [here](https://github.com/rust-bakery/nom/tree/main/doc).
+ 
+ ## Making new parsers with function combinators
+@@ -229,8 +227,6 @@
+ **`many0`** applies a parser 0 or more times, and returns a vector of the aggregated results:
+ 
+ ```rust
+-# #[cfg(feature = "alloc")]
+-# fn main() {
+ use nom::{IResult, Parser, multi::many0, bytes::complete::tag};
+ use std::str;
+ 
+@@ -244,9 +240,6 @@
+ assert_eq!(multi(a), Ok(("ef",     vec!["abcd"])));
+ assert_eq!(multi(b), Ok(("ef",     vec!["abcd", "abcd"])));
+ assert_eq!(multi(c), Ok(("azerty", Vec::new())));
+-# }
+-# #[cfg(not(feature = "alloc"))]
+-# fn main() {}
+ ```
+ 
+ Here are some basic combinators available:
+@@ -261,7 +254,6 @@
+ Example with a tuple of parsers:
+ 
+ ```rust
+-# fn main() {
+ use nom::{
+   error::ErrorKind,
+   Needed,
+@@ -281,14 +273,12 @@
+ assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+ let input = &b"abcdejk"[..];
+ assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+-# }
+ ```
+ 
+ But you can also use a sequence of combinators written in imperative style,
+ thanks to the `?` operator:
+ 
+ ```rust
+-# fn main() {
+ use nom::{IResult, bytes::complete::tag};
+ 
+ #[derive(Debug, PartialEq)]
+@@ -312,12 +302,11 @@
+ 
+ let r = f(b"abcdefghX");
+ assert_eq!(r, Ok((&b"X"[..], A{a: 1, b: 2})));
+-# }
+ ```
+ 
+ ## Streaming / Complete
+ 
+-Some of nom's modules have `streaming` or `complete` submodules. They hold
++Some of nom’s modules have `streaming` or `complete` submodules. They hold
+ different variants of the same combinators.
+ 
+ A streaming parser assumes that we might not have all of the input data.
+@@ -374,4 +363,4 @@
+ assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
+ ```
+ **Going further:** Read the [guides](https://github.com/rust-bakery/nom/tree/main/doc),
+-check out the [recipes]!
+\ No newline at end of file
++check out the [recipes](https://docs.rs/nom/8.0.0/nom/recipes/)!
+\ No newline at end of file

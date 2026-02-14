@@ -1,0 +1,18 @@
+@@ -3,7 +3,7 @@
+ This functionality currently can not be used in compile time code such as `const` or `const fn` definitions.
+ 
+ ## Examples
+-```
++```rust
+ use memoffset::{offset_of, span_of};
+ 
+ #[repr(C, packed)]
+@@ -19,7 +19,7 @@
+ 
+ This functionality can be useful, for example, for checksum calculations:
+ 
+-```ignore
++```rust
+ #[repr(C, packed)]
+ struct Message {
+     header: MessageHeader,

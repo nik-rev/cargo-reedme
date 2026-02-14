@@ -1,0 +1,8 @@
+@@ -1,3 +1,3 @@
+-This crate provides [`ZeroFrom`], a trait for converting types in a zero-copy way.
++This crate provides [`ZeroFrom`](https://docs.rs/zerofrom/0.1.6/zerofrom/zero_from/trait.ZeroFrom.html), a trait for converting types in a zero-copy way.
+ 
+-See the documentation of [`ZeroFrom`] for more details.
+\ No newline at end of file
++See the documentation of [`ZeroFrom`](https://docs.rs/zerofrom/0.1.6/zerofrom/zero_from/trait.ZeroFrom.html) for more details.
+\ No newline at end of file

@@ -1,0 +1,119 @@
+A crate that safely exposes arch intrinsics via `#[cfg()]`.
+
+`safe_arch` lets you safely use CPU intrinsics. Those things in the
+[`core::arch`](https://doc.rust-lang.org/stable/core/arch/) modules. It works purely via `#[cfg()]` and
+compile time CPU feature declaration. If you want to check for a feature at
+runtime and then call an intrinsic or use a fallback path based on that then
+this crate is sadly not for you.
+
+SIMD register types are “newtype’d” so that better trait impls can be given
+to them, but the inner value is a `pub` field so feel free to just grab it
+out if you need to. Trait impls of the newtypes include: `Default` (zeroed),
+`From`/`Into` of appropriate data types, and appropriate operator
+overloading.
+
+* Most intrinsics (like addition and multiplication) are totally safe to use
+  as long as the CPU feature is available. In this case, what you get is 1:1
+  with the actual intrinsic.
+* Some intrinsics take a pointer of an assumed minimum alignment and
+  validity span. For these, the `safe_arch` function takes a reference of an
+  appropriate type to uphold safety.
+  * Try the [bytemuck](https://docs.rs/bytemuck) crate (and turn on the
+    `bytemuck` feature of this crate) if you want help safely casting
+    between reference types.
+* Some intrinsics are not safe unless you’re _very_ careful about how you
+  use them, such as the streaming operations requiring you to use them in
+  combination with an appropriate memory fence. Those operations aren’t
+  exposed here.
+* Some intrinsics mess with the processor state, such as changing the
+  floating point flags, saving and loading special register state, and so
+  on. LLVM doesn’t really support you messing with that within a high level
+  language, so those operations aren’t exposed here. Use assembly or
+  something if you want to do that.
+
+## Naming Conventions
+The `safe_arch` crate does not simply use the “official” names for each
+intrinsic, because the official names are generally poor. Instead, the
+operations have been given better names that makes things hopefully easier
+to understand then you’re reading the code.
+
+For a full explanation of the naming used, see the [Naming
+Conventions](https://docs.rs/safe_arch/0.7.4/safe_arch/naming_conventions/) page.
+
+## Current Support
+* `x86` / `x86_64` (Intel, AMD, etc)
+  * 128-bit: `sse`, `sse2`, `sse3`, `ssse3`, `sse4.1`, `sse4.2`
+  * 256-bit: `avx`, `avx2`
+  * Other: `adx`, `aes`, `bmi1`, `bmi2`, `fma`, `lzcnt`, `pclmulqdq`,
+    `popcnt`, `rdrand`, `rdseed`
+
+## Compile Time CPU Target Features
+
+At the time of me writing this, Rust enables the `sse` and `sse2` CPU
+features by default for all `i686` (x86) and `x86_64` builds. Those CPU
+features are built into the design of `x86_64`, and you’d need a _super_ old
+`x86` CPU for it to not support at least `sse` and `sse2`, so they’re a safe
+bet for the language to enable all the time. In fact, because the standard
+library is compiled with them enabled, simply trying to _disable_ those
+features would actually cause ABI issues and fill your program with UB
+([link][rustc_docs]).
+
+If you want additional CPU features available at compile time you’ll have to
+enable them with an additional arg to `rustc`. For a feature named `name`
+you pass `-C target-feature=+name`, such as `-C target-feature=+sse3` for
+`sse3`.
+
+You can alternately enable _all_ target features of the current CPU with `-C
+target-cpu=native`. This is primarily of use if you’re building a program
+you’ll only run on your own system.
+
+It’s sometimes hard to know if your target platform will support a given
+feature set, but the [Steam Hardware Survey][steam-survey] is generally
+taken as a guide to what you can expect people to have available. If you
+click “Other Settings” it’ll expand into a list of CPU target features and
+how common they are. These days, it seems that `sse3` can be safely assumed,
+and `ssse3`, `sse4.1`, and `sse4.2` are pretty safe bets as well. The stuff
+above 128-bit isn’t as common yet, give it another few years.
+
+**Please note that executing a program on a CPU that doesn’t support the
+target features it was compiles for is Undefined Behavior.**
+
+Currently, Rust doesn’t actually support an easy way for you to check that a
+feature enabled at compile time is _actually_ available at runtime. There is
+the “[feature_detected][feature_detected]” family of macros, but if you
+enable a feature they will evaluate to a constant `true` instead of actually
+deferring the check for the feature to runtime. This means that, if you
+_did_ want a check at the start of your program, to confirm that all the
+assumed features are present and error out when the assumptions don’t hold,
+you can’t use that macro. You gotta use CPUID and check manually. rip.
+Hopefully we can make that process easier in a future version of this crate.
+
+[steam-survey]:
+https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam
+[feature_detected]:
+https://doc.rust-lang.org/std/index.html?search=feature_detected
+[rustc_docs]: https://doc.rust-lang.org/rustc/targets/known-issues.html
+
+### A Note On Working With Cfg
+
+There’s two main ways to use `cfg`:
+* Via an attribute placed on an item, block, or expression:
+  * `#[cfg(debug_assertions)] println!("hello");`
+* Via a macro used within an expression position:
+  * `if cfg!(debug_assertions) { println!("hello"); }`
+
+The difference might seem small but it’s actually very important:
+* The attribute form will include code or not _before_ deciding if all the
+  items named and so forth really exist or not. This means that code that is
+  configured via attribute can safely name things that don’t always exist as
+  long as the things they name do exist whenever that code is configured
+  into the build.
+* The macro form will include the configured code _no matter what_, and then
+  the macro resolves to a constant `true` or `false` and the compiler uses
+  dead code elimination to cut out the path not taken.
+
+This crate uses `cfg` via the attribute, so the functions it exposes don’t
+exist at all when the appropriate CPU target features aren’t enabled.
+Accordingly, if you plan to call this crate or not depending on what
+features are enabled in the build you’ll also need to control your use of
+this crate via cfg attribute, not cfg macro.

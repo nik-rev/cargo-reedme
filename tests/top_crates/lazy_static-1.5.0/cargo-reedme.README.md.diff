@@ -1,0 +1,33 @@
+@@ -7,7 +7,7 @@
+ 
+ # Syntax
+ 
+-```ignore
++```rust
+ lazy_static! {
+     [pub] static ref NAME_1: TYPE_1 = EXPR_1;
+     [pub] static ref NAME_2: TYPE_2 = EXPR_2;
+@@ -21,12 +21,10 @@
+ ```rust
+ use lazy_static::lazy_static;
+ 
+-# fn main() {
+ lazy_static! {
+     /// This is an example for using doc comment attributes
+     static ref EXAMPLE: u8 = 42;
+ }
+-# }
+ ```
+ 
+ # Semantics
+@@ -39,8 +37,8 @@
+ can return a reference to the same object. Note that this can lead to deadlocks
+ if you have multiple lazy statics that depend on each other in their initialization.
+ 
+-Apart from the lazy initialization, the resulting "static ref" variables
+-have generally the same properties as regular "static" variables:
++Apart from the lazy initialization, the resulting “static ref” variables
++have generally the same properties as regular “static” variables:
+ 
+ - Any type in them needs to fulfill the `Sync` trait.
+ - If the type has a destructor, then it will not run when the process exits.

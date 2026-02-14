@@ -1,13 +1,19 @@
-//! lmao
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use cargo_metadata::Package;
 
 use itertools::Either;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, insert_into_readme::ReadmeContents};
+use crate::{
+    config::Config,
+    insert_into_readme::{ReadmeContentsMeta, ReadmeFile},
+};
 use eyre::{Context as _, ContextCompat as _, Result};
+
+pub mod world;
+
+pub use world::World;
 
 mod config;
 mod insert_into_readme;
@@ -15,41 +21,37 @@ mod intralinks;
 mod markdown;
 mod replace_content;
 
-/// Represents all necessary inputs to the program
-#[allow(clippy::type_complexity)]
-pub struct World {
-    pub manifest: clap_cargo::Manifest,
-    pub workspace: clap_cargo::Workspace,
-    pub features: clap_cargo::Features,
-    /// Get rustdoc crate information about the given package
-    pub rustdoc_json_for_crate: Box<dyn Fn(&Package) -> Result<rustdoc_types::Crate> + Sync>,
-    /// Read the given file to a string
-    pub read_file: fn(&Utf8Path) -> std::io::Result<String>,
-}
-
 /// Output of the program, with all computed README paths
 #[derive(Serialize, Deserialize)]
 pub struct Output {
     /// Version of the cargo-reedme when it generated the output
     pub version: semver::Version,
     /// List of generated README files
-    pub generated_readmes: Vec<GeneratedReadme>,
+    pub readmes: Vec<GeneratedReadme>,
     /// Errors that were encountered while processing the READMEs
     #[serde(skip)]
     pub errors: Vec<eyre::Report>,
 }
 
+/// Data about individual README files
 #[derive(Serialize, Deserialize)]
 pub struct GeneratedReadme {
+    /// Path to the README file
     pub path: Utf8PathBuf,
+    /// Cargo package, to which this README belongs to
     pub package: String,
-    pub contents: ReadmeContents,
+    /// Full new contents of the README file
+    pub file: ReadmeFile,
+    /// Content extracted from documentation comments, with
+    /// zero processing applied
+    pub original_doc_comments: String,
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
     try_map_each_package(world, |pkg, workspace_metadata| {
-        let generated_readme = generate_readme_for_package(world, pkg, workspace_metadata)
-            .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
+        let (generated_readme, original_doc_comments) =
+            generate_readme_for_package(world, pkg, workspace_metadata)
+                .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
 
         let readme_path = get_readme_path_for_package(pkg).with_context(|| {
             format!("failed to get `README.md` path for package `{}`", pkg.name)
@@ -64,24 +66,33 @@ pub fn resolve(world: &World) -> Result<Output> {
 
         // NOTE: not .map() due to ownership issues
         let new_readme = match original_readme {
-            Some(original_readme) => ReadmeContents::InsertedIntoExisting(
-                insert_into_readme::ReadmeParts::new(&original_readme, &generated_readme)
-                    .with_context(|| {
-                        format!("failed to find edit location in README: {readme_path}")
-                    })?,
-            ),
-            None => ReadmeContents::NewlyCreated(generated_readme),
+            Some(original_readme) => {
+                let meta = match insert_into_readme::UsersReadmeParts::new(&original_readme) {
+                    Some(ok) => ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
+                    None => ReadmeContentsMeta::ErrorMarkerMissing,
+                };
+
+                ReadmeFile {
+                    contents: generated_readme,
+                    meta,
+                }
+            }
+            None => ReadmeFile {
+                contents: generated_readme.to_string(),
+                meta: ReadmeContentsMeta::NewlyCreated,
+            },
         };
 
         Ok(GeneratedReadme {
             path: readme_path,
-            contents: new_readme,
+            file: new_readme,
+            original_doc_comments,
             package: pkg.name.to_string(),
         })
     })
     .map(|(readmes, errors)| Output {
         version: VERSION,
-        generated_readmes: readmes,
+        readmes,
         errors,
     })
 }
@@ -127,7 +138,7 @@ fn generate_readme_for_package(
     world: &World,
     pkg: &Package,
     workspace_config: &Config,
-) -> Result<String> {
+) -> Result<(String, String)> {
     // Read configuration as specified in [package.metadata.cargo-reedme]
     let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
     // Inherit values from [workspace.metadata.cargo-reedme]
@@ -143,11 +154,10 @@ fn generate_readme_for_package(
     // Get the link map, which for [main function](main) creates: { "main": "https://example.com" }
     let links = intralinks::create_links(pkg, &config, &krate);
 
+    let docs = root.docs.as_deref().unwrap_or_default();
+
     // All links in the markdown are rewritten to consider the link map, e.g. [main function](https://example.com)
-    Ok(markdown::resolve_markdown(
-        root.docs.as_deref().unwrap_or_default(),
-        links,
-    ))
+    Ok((markdown::resolve_markdown(docs, links), docs.to_string()))
 }
 
 /// For the given Cargo package, gets the path to the package's README.md file

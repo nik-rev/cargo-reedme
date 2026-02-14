@@ -1,0 +1,85 @@
+@@ -7,7 +7,7 @@
+ 
+ Flip a coin:
+ 
+-```
++```rust
+ if fastrand::bool() {
+     println!("heads");
+ } else {
+@@ -17,13 +17,13 @@
+ 
+ Generate a random `i32`:
+ 
+-```
++```rust
+ let num = fastrand::i32(..);
+ ```
+ 
+ Choose a random element in an array:
+ 
+-```
++```rust
+ let v = vec![1, 2, 3, 4, 5];
+ let i = fastrand::usize(..v.len());
+ let elem = v[i];
+@@ -31,7 +31,7 @@
+ 
+ Sample values from an array with `O(n)` complexity (`n` is the length of array):
+ 
+-```
++```rust
+ fastrand::choose_multiple([1, 4, 5], 2);
+ fastrand::choose_multiple(0..20, 12);
+ ```
+@@ -39,14 +39,14 @@
+ 
+ Shuffle an array:
+ 
+-```
++```rust
+ let mut v = vec![1, 2, 3, 4, 5];
+ fastrand::shuffle(&mut v);
+ ```
+ 
+-Generate a random [`Vec`] or [`String`]:
++Generate a random [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html) or [`String`]:
+ 
+-```
++```rust
+ use std::iter::repeat_with;
+ 
+ let v: Vec<i32> = repeat_with(|| fastrand::i32(..)).take(10).collect();
+@@ -55,7 +55,7 @@
+ 
+ To get reproducible results on every run, initialize the generator with a seed:
+ 
+-```
++```rust
+ // Pick an arbitrary number as seed.
+ fastrand::seed(7);
+ 
+@@ -63,10 +63,10 @@
+ println!("{}", fastrand::u32(..));
+ ```
+ 
+-To be more efficient, create a new [`Rng`] instance instead of using the thread-local
++To be more efficient, create a new [`Rng`](https://docs.rs/fastrand/2.3.0/fastrand/struct.Rng.html) instance instead of using the thread-local
+ generator:
+ 
+-```
++```rust
+ use std::iter::repeat_with;
+ 
+ let mut rng = fastrand::Rng::new();
+@@ -79,8 +79,8 @@
+ # Features
+ 
+ - `std` (enabled by default): Enables the `std` library. This is required for the global
+-  generator and global entropy. Without this feature, [`Rng`] can only be instantiated using
+-  the [`with_seed`](Rng::with_seed) method.
++  generator and global entropy. Without this feature, [`Rng`](https://docs.rs/fastrand/2.3.0/fastrand/struct.Rng.html) can only be instantiated using
++  the [`with_seed`](https://docs.rs/fastrand/2.3.0/fastrand/struct.Rng.html#method.with_seed) method.
+ - `js`: Assumes that WebAssembly targets are being run in a JavaScript environment. See the
+   [WebAssembly Notes](#webassembly-notes) section for more information.
+ 

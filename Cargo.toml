@@ -32,6 +32,7 @@ konst = "0.2"
 
 [dev-dependencies]
 rust-playground-top-crates = { version = "=0.1.7", git = "https://github.com/rust-lang/rust-playground.git" }
+similar = "2.7"
 anstream = "0.6.21"
 ureq = "3.2.0"
 simply_colored = "0.1.4"

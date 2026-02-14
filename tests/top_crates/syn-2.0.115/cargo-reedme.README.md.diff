@@ -1,0 +1,130 @@
+@@ -1,4 +1,4 @@
+-[![github]](https://github.com/dtolnay/syn)&ensp;[![crates-io]](https://crates.io/crates/syn)&ensp;[![docs-rs]](crate)
++[![github]](https://github.com/dtolnay/syn) [![crates-io]](https://crates.io/crates/syn) [![docs-rs]](https://docs.rs/syn/2.0.115/syn/)
+ 
+ [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
+ [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
+@@ -32,18 +32,18 @@
+ - **Location information** — Every token parsed by Syn is associated with a
+   `Span` that tracks line and column information back to the source of that
+   token. These spans allow a procedural macro to display detailed error
+-  messages pointing to all the right places in the user's code. There is an
++  messages pointing to all the right places in the user’s code. There is an
+   example of this below.
+ 
+ - **Feature flags** — Functionality is aggressively feature gated so your
+   procedural macros enable only what they need, and do not pay in compile
+   time for all the rest.
+ 
+-[`syn::File`]: File
+-[`syn::Item`]: Item
+-[`syn::Expr`]: Expr
+-[`syn::Type`]: Type
+-[`syn::DeriveInput`]: DeriveInput
++[`syn::File`]: https://docs.rs/syn/2.0.115/syn/file/struct.File.html
++[`syn::Item`]: https://docs.rs/syn/2.0.115/syn/item/enum.Item.html
++[`syn::Expr`]: https://docs.rs/syn/2.0.115/syn/expr/enum.Expr.html
++[`syn::Type`]: https://docs.rs/syn/2.0.115/syn/ty/enum.Type.html
++[`syn::DeriveInput`]: https://docs.rs/syn/2.0.115/syn/derive/struct.DeriveInput.html
+ [parser functions]: mod@parse
+ 
+ <br>
+@@ -52,11 +52,11 @@
+ 
+ The canonical derive macro using Syn looks like this. We write an ordinary
+ Rust function tagged with a `proc_macro_derive` attribute and the name of
+-the trait we are deriving. Any time that derive appears in the user's code,
++the trait we are deriving. Any time that derive appears in the user’s code,
+ the Rust compiler passes their data structure as tokens into our macro. We
+ get to execute arbitrary Rust code to figure out what to do with those
+ tokens, then hand some tokens back to the compiler to compile into the
+-user's crate.
++user’s crate.
+ 
+ [`TokenStream`]: proc_macro::TokenStream
+ 
+@@ -69,16 +69,12 @@
+ proc-macro = true
+ ```
+ 
+-```
+-# extern crate proc_macro;
+-#
++```rust
+ use proc_macro::TokenStream;
+ use quote::quote;
+ use syn::{parse_macro_input, DeriveInput};
+ 
+-# const IGNORE_TOKENS: &str = stringify! {
+ #[proc_macro_derive(MyMacro)]
+-# };
+ pub fn my_macro(input: TokenStream) -> TokenStream {
+     // Parse the input tokens into a syntax tree
+     let input = parse_macro_input!(input as DeriveInput);
+@@ -99,7 +95,7 @@
+ 
+ [`heapsize`]: https://github.com/dtolnay/syn/tree/master/examples/heapsize
+ 
+-```
++```rust
+ pub trait HeapSize {
+     /// Total number of bytes of heap memory owned by `self`.
+     fn heap_size_of_children(&self) -> usize;
+@@ -109,10 +105,8 @@
+ The derive macro allows users to write `#[derive(HeapSize)]` on data
+ structures in their program.
+ 
+-```
+-# const IGNORE_TOKENS: &str = stringify! {
++```rust
+ #[derive(HeapSize)]
+-# };
+ struct Demo<'a, T: ?Sized> {
+     a: Box<T>,
+     b: u8,
+@@ -126,13 +120,11 @@
+ # Spans and error reporting
+ 
+ The token-based procedural macro API provides great control over where the
+-compiler's error messages are displayed in user code. Consider the error the
++compiler’s error messages are displayed in user code. Consider the error the
+ user sees if one of their field types does not implement `HeapSize`.
+ 
+-```
+-# const IGNORE_TOKENS: &str = stringify! {
++```rust
+ #[derive(HeapSize)]
+-# };
+ struct Broken {
+     ok: String,
+     bad: std::thread::Thread,
+@@ -158,18 +150,14 @@
+ 
+ The [`lazy-static`] example directory shows the implementation of a
+ `functionlike!(...)` procedural macro in which the input tokens are parsed
+-using Syn's parsing API.
++using Syn’s parsing API.
+ 
+ [`lazy-static`]: https://github.com/dtolnay/syn/tree/master/examples/lazy-static
+ 
+ The example reimplements the popular `lazy_static` crate from crates.io as a
+ procedural macro.
+ 
+-```
+-# macro_rules! lazy_static {
+-#     ($($tt:tt)*) => {}
+-# }
+-#
++```rust
+ lazy_static! {
+     static ref USERNAME: Regex = Regex::new("^[a-z0-9_-]{3,16}$").unwrap();
+ }
+@@ -217,7 +205,7 @@
+ argument is the name of the test file without the `.rs` extension.
+ 
+ This write-up by Brandon W Maister discusses debugging in more detail:
+-[Debugging Rust's new Custom Derive system][debugging].
++[Debugging Rust’s new Custom Derive system][debugging].
+ 
+ [debugging]: https://quodlibetor.github.io/posts/debugging-rusts-new-custom-derive-system/
+ 

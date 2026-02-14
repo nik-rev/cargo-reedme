@@ -1,0 +1,34 @@
+@@ -4,18 +4,18 @@
+ implements the [`digest`] crate traits. You can find compatible crates
+ (e.g. [`sha2`]) in the [`RustCrypto/hashes`] repository.
+ 
+-This crate provides two HMAC implementation [`Hmac`] and [`SimpleHmac`].
+-The first one is a buffered wrapper around block-level [`HmacCore`].
++This crate provides two HMAC implementation [`Hmac`](https://docs.rs/hmac/0.12.1/hmac/optim/type.Hmac.html) and [`SimpleHmac`](https://docs.rs/hmac/0.12.1/hmac/simple/struct.SimpleHmac.html).
++The first one is a buffered wrapper around block-level [`HmacCore`](https://docs.rs/hmac/0.12.1/hmac/optim/struct.HmacCore.html).
+ Internally it uses efficient state representation, but works only with
+ hash functions which expose block-level API and consume blocks eagerly
+ (e.g. it will not work with the BLAKE2 family of  hash functions).
+-On the other hand, [`SimpleHmac`] is a bit less efficient memory-wise,
++On the other hand, [`SimpleHmac`](https://docs.rs/hmac/0.12.1/hmac/simple/struct.SimpleHmac.html) is a bit less efficient memory-wise,
+ but works with all hash functions which implement the [`Digest`] trait.
+ 
+ # Examples
+ Let us demonstrate how to use HMAC using the SHA-256 hash function.
+ 
+-In the following examples [`Hmac`] is interchangeable with [`SimpleHmac`].
++In the following examples [`Hmac`](https://docs.rs/hmac/0.12.1/hmac/optim/type.Hmac.html) is interchangeable with [`SimpleHmac`](https://docs.rs/hmac/0.12.1/hmac/simple/struct.SimpleHmac.html).
+ 
+ To get authentication code:
+ 
+@@ -48,10 +48,6 @@
+ To verify the message:
+ 
+ ```rust
+-# use sha2::Sha256;
+-# use hmac::{Hmac, Mac};
+-# use hex_literal::hex;
+-# type HmacSha256 = Hmac<Sha256>;
+ let mut mac = HmacSha256::new_from_slice(b"my secret and secure key")
+     .expect("HMAC can take key of any size");
+ 

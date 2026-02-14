@@ -1,0 +1,22 @@
+@@ -1,16 +1,16 @@
+ Filtering for log records.
+ 
+-You can use the [`Filter`] type in your own logger implementation to use the same
++You can use the [`Filter`](https://docs.rs/env_filter/1.0.0/env_filter/filter/struct.Filter.html) type in your own logger implementation to use the same
+ filter parsing and matching as `env_logger`.
+ 
+ ## Using `env_filter` in your own logger
+ 
+-You can use `env_filter`'s filtering functionality with your own logger.
+-Call [`Builder::parse`] to parse directives from a string when constructing
+-your logger. Call [`Filter::matches`] to check whether a record should be
++You can use `env_filter`’s filtering functionality with your own logger.
++Call [`Builder::parse`](https://docs.rs/env_filter/1.0.0/env_filter/filter/struct.Builder.html#method.parse) to parse directives from a string when constructing
++your logger. Call [`Filter::matches`](https://docs.rs/env_filter/1.0.0/env_filter/filter/struct.Filter.html#method.matches) to check whether a record should be
+ logged based on the parsed filters when log records are received.
+ 
+-```
++```rust
+ use env_filter::Filter;
+ use log::{Log, Metadata, Record};
+ 

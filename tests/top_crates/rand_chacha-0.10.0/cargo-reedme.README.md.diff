@@ -1,0 +1,73 @@
+@@ -5,8 +5,8 @@
+ 
+ ## Generators
+ 
+-This crate provides 8-, 12- and 20-round variants of generators via a "core"
+-implementation (of [`block::Generator`]), each with an associated "RNG" type
++This crate provides 8-, 12- and 20-round variants of generators via a “core”
++implementation (of [`block::Generator`]), each with an associated “RNG” type
+ (implementing [`Rng`]).
+ 
+ These generators are all deterministic and portable (see [Reproducibility]
+@@ -15,11 +15,11 @@
+ ## Cryptographic (secure) usage
+ 
+ Where secure unpredictable generators are required, it is suggested to use
+-[`ChaCha12Rng`] or [`ChaCha20Rng`] and to seed via
++[`ChaCha12Rng`](https://docs.rs/rand_chacha/0.10.0/rand_chacha/chacha/struct.ChaCha12Rng.html) or [`ChaCha20Rng`](https://docs.rs/rand_chacha/0.10.0/rand_chacha/chacha/struct.ChaCha20Rng.html) and to seed via
+ [`SysRng`].
+ 
+ See also the [Security] chapter in the rand book. The crate is provided
+-"as is", without any form of guarantee, and without a security audit.
++“as is”, without any form of guarantee, and without a security audit.
+ 
+ ## Seeding (construction)
+ 
+@@ -28,19 +28,17 @@
+ important. Some suggestions:
+ 
+ 1.  With a fresh seed, **direct from the OS** (implies a syscall):
+-    ```
+-    # use {rand_core::SeedableRng, rand_chacha::ChaCha12Rng, getrandom::SysRng};
++    ```rust
+     let rng = ChaCha12Rng::try_from_rng(&mut SysRng).unwrap();
+-    # let _: ChaCha12Rng = rng;
+-    ```
++```
+ 2.  **From a master generator.** This could be [`rand::rng`]
+     (effectively a fresh seed without the need for a syscall on each usage)
+-    or a deterministic generator such as [`ChaCha20Rng`].
++    or a deterministic generator such as [`ChaCha20Rng`](https://docs.rs/rand_chacha/0.10.0/rand_chacha/chacha/struct.ChaCha20Rng.html).
+     Beware that should a weak master generator be used, correlations may be
+     detectable between the outputs of its child generators.
+-    ```ignore
++    ```rust
+     let rng = ChaCha12Rng::from_rng(&mut rand::rng());
+-    ```
++```
+ 
+ See also [Seeding RNGs] in the book.
+ 
+@@ -48,7 +46,7 @@
+ 
+ Generators implement [`Rng`], whose methods may be used directly to
+ generate unbounded integer or byte values.
+-```
++```rust
+ use rand_core::{SeedableRng, Rng};
+ use rand_chacha::ChaCha12Rng;
+ 
+@@ -65,9 +63,9 @@
+ [Seeding RNGs]: https://rust-random.github.io/book/guide-seeding.html
+ [Security]: https://rust-random.github.io/book/guide-rngs.html#security
+ [Random Values]: https://rust-random.github.io/book/guide-values.html
+-[`block::Generator`]: rand_core::block::Generator
+-[`Rng`]: rand_core::Rng
+-[`SeedableRng`]: rand_core::SeedableRng
++[`block::Generator`]: https://docs.rs/rand_core/latest/rand_core/block/trait.Generator.html
++[`Rng`]: https://docs.rs/rand_core/latest/rand_core/trait.Rng.html
++[`SeedableRng`]: https://docs.rs/rand_corhttps://docs.rs/rand_core/latest/rand_core/trait.Rng.htmlcore/seedable_rng/trait.SeedableRng.html
+ [`SysRng`]: https://docs.rs/rand/latest/rand/rngs/struct.SysRng.html
+ [`rand::rng`]: https://docs.rs/rand/latest/rand/fn.rng.html
+ [`rand::Rng`]: https://docs.rs/rand/latest/rand/trait.Rng.html
+\ No newline at end of file

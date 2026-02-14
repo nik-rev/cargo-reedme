@@ -1,0 +1,58 @@
+@@ -7,7 +7,7 @@
+ 
+ # Example: `WalkFields`
+ ### Trait Implementation
+-```
++```rust
+ pub trait WalkFields: std::any::Any {
+     fn walk_fields(&self, walk: &mut FnMut(&WalkFields));
+ }
+@@ -17,8 +17,7 @@
+ ```
+ 
+ ### Custom Derive
+-```
+-# use quote::quote;
++```rust
+ fn walkfields_derive(s: synstructure::Structure) -> proc_macro2::TokenStream {
+     let body = s.each(|bi| quote!{
+         walk(#bi)
+@@ -34,9 +33,7 @@
+         }
+     })
+ }
+-# const _IGNORE: &'static str = stringify!(
+ synstructure::decl_derive!([WalkFields] => walkfields_derive);
+-# );
+ 
+ /*
+  * Test Case
+@@ -75,7 +72,7 @@
+ 
+ # Example: `Interest`
+ ### Trait Implementation
+-```
++```rust
+ pub trait Interest {
+     fn interesting(&self) -> bool;
+ }
+@@ -85,8 +82,7 @@
+ ```
+ 
+ ### Custom Derive
+-```
+-# use quote::quote;
++```rust
+ fn interest_derive(mut s: synstructure::Structure) -> proc_macro2::TokenStream {
+     let body = s.fold(false, |acc, bi| quote!{
+         #acc || synstructure_test_traits::Interest::interesting(#bi)
+@@ -103,9 +99,7 @@
+         }
+     })
+ }
+-# const _IGNORE: &'static str = stringify!(
+ synstructure::decl_derive!([Interest] => interest_derive);
+-# );
+ 
+ /*
+  * Test Case

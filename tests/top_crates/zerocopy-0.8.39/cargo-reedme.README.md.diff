@@ -1,0 +1,123 @@
+@@ -2,9 +2,9 @@
+ style="color:red;">compile error</span>. Pick two.</span>***
+ 
+ Zerocopy makes zero-cost memory manipulation effortless. We write `unsafe`
+-so you don't have to.
++so you don’t have to.
+ 
+-*For an overview of what's changed from zerocopy 0.7, check out our [release
++*For an overview of what’s changed from zerocopy 0.7, check out our [release
+ notes][release-notes], which include a step-by-step upgrading guide.*
+ 
+ *Have questions? Need more out of zerocopy? Submit a [customer request
+@@ -21,29 +21,29 @@
+ ##### Conversion Traits
+ 
+ Zerocopy provides four derivable traits for zero-cost conversions:
+-- [`TryFromBytes`] indicates that a type may safely be converted from
++- [`TryFromBytes`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.TryFromBytes.html) indicates that a type may safely be converted from
+   certain byte sequences (conditional on runtime checks)
+-- [`FromZeros`] indicates that a sequence of zero bytes represents a valid
++- [`FromZeros`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.FromZeros.html) indicates that a sequence of zero bytes represents a valid
+   instance of a type
+-- [`FromBytes`] indicates that a type may safely be converted from an
++- [`FromBytes`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.FromBytes.html) indicates that a type may safely be converted from an
+   arbitrary byte sequence
+-- [`IntoBytes`] indicates that a type may safely be converted *to* a byte
++- [`IntoBytes`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.IntoBytes.html) indicates that a type may safely be converted *to* a byte
+   sequence
+ 
+ These traits support sized types, slices, and [slice DSTs][slice-dsts].
+ 
+-[slice-dsts]: KnownLayout#dynamically-sized-types
++[slice-dsts]: https://docs.rs/zerocopy/0.8.39/zerocopy/trait.KnownLayout.html
+ 
+ ##### Marker Traits
+ 
+ Zerocopy provides three derivable marker traits that do not provide any
+ functionality themselves, but are required to call certain methods provided
+ by the conversion traits:
+-- [`KnownLayout`] indicates that zerocopy can reason about certain layout
++- [`KnownLayout`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.KnownLayout.html) indicates that zerocopy can reason about certain layout
+   qualities of a type
+-- [`Immutable`] indicates that a type is free from interior mutability,
++- [`Immutable`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.Immutable.html) indicates that a type is free from interior mutability,
+   except by ownership or an exclusive (`&mut`) borrow
+-- [`Unaligned`] indicates that a type's alignment requirement is 1
++- [`Unaligned`](https://docs.rs/zerocopy/0.8.39/zerocopy/trait.Unaligned.html) indicates that a type’s alignment requirement is 1
+ 
+ You should generally derive these marker traits whenever possible.
+ 
+@@ -51,12 +51,12 @@
+ 
+ Zerocopy provides six macros for safe casting between types:
+ 
+-- ([`try_`][try_transmute])[`transmute`] (conditionally) converts a value of
++- ([try_transmute](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.try_transmute.html))[`transmute`](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.transmute.html) (conditionally) converts a value of
+   one type to a value of another type of the same size
+-- ([`try_`][try_transmute_mut])[`transmute_mut`] (conditionally) converts a
++- ([try_transmute_mut](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.try_transmute_mut.html))[`transmute_mut`](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.transmute_mut.html) (conditionally) converts a
+   mutable reference of one type to a mutable reference of another type of
+   the same size
+-- ([`try_`][try_transmute_ref])[`transmute_ref`] (conditionally) converts a
++- ([try_transmute_ref](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.try_transmute_ref.html))[`transmute_ref`](https://docs.rs/zerocopy/0.8.39/zerocopy/macro.transmute_ref.html) (conditionally) converts a
+   mutable or immutable reference of one type to an immutable reference of
+   another type of the same size
+ 
+@@ -70,7 +70,7 @@
+ ##### Byteorder-Aware Numerics
+ 
+ Zerocopy provides byte-order aware integer types that support these
+-conversions; see the [`byteorder`] module. These types are especially useful
++conversions; see the [`byteorder`](https://docs.rs/zerocopy/0.8.39/zerocopy/byteorder/) module. These types are especially useful
+ for network parsing.
+ 
+ # Cargo Features
+@@ -103,7 +103,7 @@
+   ```
+ 
+   To avoid the risk of [duplicate import errors][duplicate-import-errors] if
+-  one of your dependencies enables zerocopy's `derive` feature, import
++  one of your dependencies enables zerocopy’s `derive` feature, import
+   derives as `use zerocopy_derive::*` rather than by name (e.g., `use
+   zerocopy_derive::FromBytes`).
+ 
+@@ -130,19 +130,19 @@
+ # Security Ethos
+ 
+ Zerocopy is expressly designed for use in security-critical contexts. We
+-strive to ensure that that zerocopy code is sound under Rust's current
++strive to ensure that that zerocopy code is sound under Rust’s current
+ memory model, and *any future memory model*. We ensure this by:
+-- **...not 'guessing' about Rust's semantics.**
++- **…not ‘guessing’ about Rust’s semantics.**
+   We annotate `unsafe` code with a precise rationale for its soundness that
+-  cites a relevant section of Rust's official documentation. When Rust's
++  cites a relevant section of Rust’s official documentation. When Rust’s
+   documented semantics are unclear, we work with the Rust Operational
+-  Semantics Team to clarify Rust's documentation.
+-- **...rigorously testing our implementation.**
++  Semantics Team to clarify Rust’s documentation.
++- **…rigorously testing our implementation.**
+   We run tests using [Miri], ensuring that zerocopy is sound across a wide
+   array of supported target platforms of varying endianness and pointer
+   width, and across both current and experimental memory models of Rust.
+-- **...formally proving the correctness of our implementation.**
+-  We apply formal verification tools like [Kani][kani] to prove zerocopy's
++- **…formally proving the correctness of our implementation.**
++  We apply formal verification tools like [Kani][kani] to prove zerocopy’s
+   correctness.
+ 
+ For more information, see our full [soundness policy].
+@@ -162,9 +162,9 @@
+ another type. Once this functionality is sufficiently mature, zerocopy
+ intends to replace its internal transmutability analysis (implemented by our
+ custom derives) with the compiler-supported one. This change will likely be
+-an implementation detail that is invisible to zerocopy's users.
++an implementation detail that is invisible to zerocopy’s users.
+ 
+-Project Safe Transmute will not replace the need for most of zerocopy's
++Project Safe Transmute will not replace the need for most of zerocopy’s
+ higher-level abstractions. The experimental compiler analysis is a tool for
+ checking the soundness of `unsafe` code, not a tool to avoid writing
+ `unsafe` code altogether. For the foreseeable future, crates like zerocopy

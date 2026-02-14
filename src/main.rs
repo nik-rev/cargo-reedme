@@ -1,7 +1,6 @@
 use std::io::Write as _;
 
 use eyre::Context as _;
-use eyre::ContextCompat as _;
 use eyre::Result;
 use fs_err as fs;
 use rayon::prelude::*;
@@ -40,8 +39,10 @@ fn main() -> Result<()> {
         manifest: cli.manifest,
         workspace: cli.workspace,
         features: cli.features,
-        rustdoc_json_for_crate: Box::new(move |pkg| extract_rustdoc_json(pkg, &cli.toolchain)),
-        read_file: |a| fs::read_to_string(a),
+        rustdoc_json_for_crate: Box::new(move |pkg| {
+            cargo_reedme::world::extract_rustdoc_json(pkg, &cli.toolchain)
+        }),
+        read_file: |path| fs::read_to_string(path),
     };
 
     // Writes README.md files for each Cargo package
@@ -62,9 +63,7 @@ fn main() -> Result<()> {
     // Execute the actual function of the program
 
     if cli.json {
-        output
-            .generated_readmes
-            .sort_unstable_by(|a, b| a.path.cmp(&b.path));
+        output.readmes.sort_unstable_by(|a, b| a.path.cmp(&b.path));
 
         let json = colored_json::to_colored_json_auto(&output).context("failed to write json")?;
 
@@ -73,9 +72,20 @@ fn main() -> Result<()> {
             .context("failed to write JSON")?;
     } else {
         // Regular output
-        output.generated_readmes.par_iter().for_each(|readme| {
-            if let Err(err) = fs::write(&readme.path, readme.contents.to_string())
-                .context("failed to write `README.md` file")
+        output.readmes.par_iter().for_each(|readme| {
+            let Some(content) = readme.file.to_readme() else {
+                docstr::docstr!(eprintln!
+                    /// can't figure out where to insert generated content in: {}
+                    ///
+                    /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
+                    /// the generated portion from rustdoc comments will be inserted!
+                    readme.path,
+                );
+                return;
+            };
+
+            if let Err(err) =
+                fs::write(&readme.path, content).context("failed to write `README.md` file")
             {
                 println!("{err}");
             }
@@ -95,50 +105,4 @@ fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
         .without_time()
         .with_target(false)
         .init();
-}
-
-/// Run Rustdoc on the package, generate the JSON into a file
-///
-/// Returns path to the file
-fn extract_rustdoc_json(
-    pkg: &cargo_metadata::Package,
-    toolchain: &str,
-) -> Result<rustdoc_types::Crate> {
-    let builder = rustdoc_json::Builder::default()
-        .toolchain(toolchain)
-        .manifest_path(&pkg.manifest_path)
-        .document_private_items(true)
-        .no_default_features(true)
-        .all_features(false)
-        .features(pkg.features.keys())
-        .quiet(true)
-        .color(rustdoc_json::Color::Never)
-        .package_target(extract_package_target(pkg).context("failed to extract package target")?);
-
-    let mut stderr = Vec::new();
-    let rustdoc_json_path = builder
-        .build_with_captured_output(std::io::sink(), &mut stderr)
-        .with_context(|| {
-            format!(
-                "rustdoc stderr: {}",
-                String::from_utf8(stderr)
-                    .expect("rustdoc outputs valid utf-8")
-                    .trim()
-            )
-        })?;
-
-    let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
-    let mut rustdoc_json = std::io::Cursor::new(rustdoc_json);
-
-    serde_json::from_reader(&mut rustdoc_json).context("failed to deserialize rustdoc json")
-}
-
-fn extract_package_target(pkg: &cargo_metadata::Package) -> Result<rustdoc_json::PackageTarget> {
-    let target = pkg.targets.first().context("no cargo target")?;
-    let package_target = if target.is_kind(cargo_metadata::TargetKind::Bin) {
-        rustdoc_json::PackageTarget::Bin(target.name.clone())
-    } else {
-        rustdoc_json::PackageTarget::Lib
-    };
-    Ok(package_target)
 }

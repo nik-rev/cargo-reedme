@@ -29,12 +29,12 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         markdown,
         markdown_options(),
         Some(|broken_link: pulldown_cmark::BrokenLink<'_>| {
-            let url = links.get(dbg!(&*broken_link.reference))?;
+            let url = links.get(&*broken_link.reference)?;
             let url = match crate::intralinks::link_fragment(&broken_link.reference) {
                 None => CowStr::Borrowed(url),
                 Some(fragment) => format!("{url}#{fragment}").into(),
             };
-            Some((dbg!(url), "".into()))
+            Some((url, "".into()))
         }),
     )
     .into_offset_iter()

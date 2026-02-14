@@ -1,0 +1,53 @@
+@@ -1,4 +1,4 @@
+-[![github]](https://github.com/dtolnay/rustversion)&ensp;[![crates-io]](https://crates.io/crates/rustversion)&ensp;[![docs-rs]](https://docs.rs/rustversion)
++[![github]](https://github.com/dtolnay/rustversion) [![crates-io]](https://crates.io/crates/rustversion) [![docs-rs]](https://docs.rs/rustversion)
+ 
+ [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
+ [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
+@@ -110,9 +110,7 @@
+ 
+ [pin]: https://blog.rust-lang.org/2019/02/28/Rust-1.33.0.html#pinning
+ 
+-```
+-# trait MyTrait {}
+-#
++```rust
+ #[rustversion::since(1.33)]
+ use std::pin::Pin;
+ 
+@@ -127,7 +125,7 @@
+ 
+ [packed]: https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1330-2019-02-28
+ 
+-```
++```rust
+ #[rustversion::attr(before(1.33), repr(packed))]
+ #[rustversion::attr(since(1.33), repr(packed(2)))]
+ struct Six(i16, i32);
+@@ -141,7 +139,7 @@
+ library. This use of `const` as an attribute is recognized as a special case
+ by the rustversion::attr macro.
+ 
+-```
++```rust
+ use std::time::Duration;
+ 
+ #[rustversion::attr(since(1.32), const)]
+@@ -154,7 +152,7 @@
+ listing `rustversion` under `[build-dependencies]` in Cargo.toml, not
+ `[dependencies]`.
+ 
+-```
++```rust
+ // build.rs
+ 
+ fn main() {
+@@ -164,7 +162,7 @@
+ }
+ ```
+ 
+-```
++```rust
+ // src/lib.rs
+ 
+ #![cfg_attr(no_std, no_std)]

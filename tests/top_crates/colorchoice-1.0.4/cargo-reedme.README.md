@@ -1,0 +1,1 @@
+Global override of color control

@@ -1,0 +1,13 @@
+@@ -21,8 +21,8 @@
+ 
+ ## Guide
+ 
+-A getting started guide is available in the [`guide`] module.
++A getting started guide is available in the [`guide`](https://docs.rs/mio/1.1.1/mio/guide/) module.
+ 
+ ## Available features
+ 
+-The available features are described in the [`features`] module.
+\ No newline at end of file
++The available features are described in the [`features`](https://docs.rs/mio/1.1.1/mio/features/) module.
+\ No newline at end of file

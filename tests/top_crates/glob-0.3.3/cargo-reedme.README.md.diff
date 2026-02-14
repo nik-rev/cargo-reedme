@@ -1,0 +1,23 @@
+@@ -14,7 +14,7 @@
+ 
+ To print all jpg files in `/media/` and all of its subdirectories.
+ 
+-```rust,no_run
++```rust
+ use glob::glob;
+ 
+ for entry in glob("/media/**/*.jpg").expect("Failed to read glob pattern") {
+@@ -25,11 +25,11 @@
+ }
+ ```
+ 
+-To print all files containing the letter "a", case insensitive, in a `local`
++To print all files containing the letter “a”, case insensitive, in a `local`
+ directory relative to the current working directory. This ignores errors
+ instead of printing them.
+ 
+-```rust,no_run
++```rust
+ use glob::glob_with;
+ use glob::MatchOptions;
+ 

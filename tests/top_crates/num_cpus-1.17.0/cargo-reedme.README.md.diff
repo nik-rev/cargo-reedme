@@ -1,0 +1,9 @@
+@@ -16,7 +16,7 @@
+ 
+ Fetch the number of logical CPUs.
+ 
+-```
++```rust
+ let cpus = num_cpus::get();
+ ```
+ 

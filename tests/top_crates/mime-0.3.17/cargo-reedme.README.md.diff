@@ -1,0 +1,17 @@
+@@ -7,14 +7,14 @@
+ 
+ Example mime string: `text/plain`
+ 
+-```
++```rust
+ let plain_text: mime::Mime = "text/plain".parse().unwrap();
+ assert_eq!(plain_text, mime::TEXT_PLAIN);
+ ```
+ 
+ ## Inspecting Mimes
+ 
+-```
++```rust
+ let mime = mime::TEXT_PLAIN;
+ match (mime.type_(), mime.subtype()) {
+     (mime::TEXT, mime::PLAIN) => println!("plain text!"),

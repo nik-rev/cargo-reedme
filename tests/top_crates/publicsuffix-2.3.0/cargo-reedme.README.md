@@ -1,0 +1,1 @@
+A native Rust library for Mozilla’s Public Suffix List

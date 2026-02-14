@@ -1,0 +1,9 @@
+@@ -4,7 +4,7 @@
+ (`xattrs`) on modern Unix filesystems. See the `attr(5)`
+ manpage for more details.
+ 
+-An extension trait [`FileExt`] is provided to directly work with
++An extension trait [`FileExt`](https://docs.rs/xattr/1.6.1/xattr/trait.FileExt.html) is provided to directly work with
+ standard `File` objects and file descriptors.
+ 
+ If the path argument is a symlink, the get/set/list/remove functions

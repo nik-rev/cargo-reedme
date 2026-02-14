@@ -1,0 +1,13 @@
+@@ -8,7 +8,7 @@
+   allocating)
+ 
+ Full parsing is broken into three phases:
+-1. [Lexing tokens][lexer]
+-2. [Parsing tokens][parser] (push parser)
++1. [lexer](https://docs.rs/toml_parser/1.0.8+spec-1.1.0/toml_parser/lexer/)
++2. [parser](https://docs.rs/toml_parser/1.0.8+spec-1.1.0/toml_parser/parser/) (push parser)
+ 3. Organizing the physical layout into the logical layout,
+-   including [decoding keys and values][decoder]
+\ No newline at end of file
++   including [decoder](https://docs.rs/toml_parser/1.0.8+spec-1.1.0/toml_parser/decoder/)
+\ No newline at end of file
