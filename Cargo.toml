@@ -27,6 +27,8 @@ regex = "1.12.2"
 docstr = "0.4.6"
 rayon = "1.11.0"
 colored_json = "5.0.0"
+semver = { version = "1.0.27", features = ["serde"] }
+konst = "0.2"
 
 [dev-dependencies]
 rust-playground-top-crates = { version = "=0.1.7", git = "https://github.com/rust-lang/rust-playground.git" }

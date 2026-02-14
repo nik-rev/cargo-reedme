@@ -29,7 +29,9 @@ pub struct World {
 /// Output of the program, with all computed README paths
 #[derive(Serialize, Deserialize)]
 pub struct Output {
-    pub version: String,
+    /// Version of the cargo-reedme when it generated the output
+    pub version: semver::Version,
+    /// List of generated README files
     pub generated_readmes: Vec<GeneratedReadme>,
     /// Errors that were encountered while processing the READMEs
     #[serde(skip)]
@@ -77,11 +79,17 @@ pub fn resolve(world: &World) -> Result<Output> {
         })
     })
     .map(|(readmes, errors)| Output {
-        version: env!("CARGO_PKG_VERSION").to_string(),
+        version: VERSION,
         generated_readmes: readmes,
         errors,
     })
 }
+
+pub const VERSION: semver::Version = semver::Version::new(
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MAJOR"))),
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MINOR"))),
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_PATCH"))),
+);
 
 /// Calls the given function for each Cargo package in the workspace
 fn try_map_each_package<T: Send>(
