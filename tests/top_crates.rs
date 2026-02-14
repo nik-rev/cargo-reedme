@@ -49,8 +49,8 @@ fn download_top_crates() -> eyre::Result<()> {
         features.features = spec.features.into_iter().map(|s| s.to_string()).collect();
 
         let output = cargo_reedme::resolve(&cargo_reedme::World {
-            manifest,
-            features,
+            input_manifest: manifest,
+            input_features: features,
             ..Default::default()
         })
         .unwrap();

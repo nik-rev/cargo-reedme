@@ -36,11 +36,11 @@ fn main() -> Result<()> {
     init_logging(cli.verbosity);
 
     let world = cargo_reedme::World {
-        manifest: cli.manifest,
-        workspace: cli.workspace,
-        features: cli.features,
-        rustdoc_json_for_crate: Box::new(move |pkg| {
-            cargo_reedme::world::extract_rustdoc_json(pkg, &cli.toolchain)
+        input_manifest: cli.manifest,
+        input_workspace: cli.workspace,
+        input_features: cli.features,
+        rustdoc_json_for_crate: Box::new(move |pkg, metadata| {
+            cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &cli.toolchain)
         }),
         read_file: |path| fs::read_to_string(path),
     };

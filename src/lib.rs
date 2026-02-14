@@ -48,9 +48,9 @@ pub struct GeneratedReadme {
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
-    try_map_each_package(world, |pkg, workspace_metadata| {
+    try_map_each_package(world, |pkg, config, workspace_metadata| {
         let (generated_readme, original_doc_comments) =
-            generate_readme_for_package(world, pkg, workspace_metadata)
+            generate_readme_for_package(world, pkg, config, workspace_metadata)
                 .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
 
         let readme_path = get_readme_path_for_package(pkg).with_context(|| {
@@ -106,26 +106,26 @@ const VERSION: semver::Version = semver::Version::new(
 /// Calls the given function for each Cargo package in the workspace
 fn try_map_each_package<T: Send>(
     world: &World,
-    f: impl Fn(&cargo_metadata::Package, &Config) -> Result<T> + Sync,
+    f: impl Fn(&cargo_metadata::Package, &Config, &cargo_metadata::Metadata) -> Result<T> + Sync,
 ) -> Result<(Vec<T>, Vec<eyre::Report>)> {
-    let mut metadata_cmd = world.manifest.metadata();
+    let mut metadata_cmd = world.input_manifest.metadata();
 
     // Takes into account selected features via --feature
-    world.features.forward_metadata(&mut metadata_cmd);
+    world.input_features.forward_metadata(&mut metadata_cmd);
 
     let metadata = metadata_cmd
         .exec()
         .context("failed to obtain Cargo metadata")?;
 
     // This takes into account selected packages such as via --package
-    let (pkgs, _excluded_packages) = world.workspace.partition_packages(&metadata);
+    let (pkgs, _excluded_packages) = world.input_workspace.partition_packages(&metadata);
 
     // Config from [workspace.metadata.cargo-reedme]
     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
 
     let (oks, errs): (Vec<_>, Vec<_>) =
         pkgs.into_par_iter()
-            .partition_map(|pkg| match f(pkg, &config) {
+            .partition_map(|pkg| match f(pkg, &config, &metadata) {
                 Ok(ok) => Either::Left(ok),
                 Err(err) => Either::Right(err),
             });
@@ -138,13 +138,15 @@ fn generate_readme_for_package(
     world: &World,
     pkg: &Package,
     workspace_config: &Config,
+    workspace_metadata: &cargo_metadata::Metadata,
 ) -> Result<(String, String)> {
     // Read configuration as specified in [package.metadata.cargo-reedme]
     let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
     // Inherit values from [workspace.metadata.cargo-reedme]
     config.inherit_workspace_metadata(workspace_config.clone());
 
-    let krate = (world.rustdoc_json_for_crate)(pkg).context("failed to run rustdoc")?;
+    let krate =
+        (world.rustdoc_json_for_crate)(pkg, workspace_metadata).context("failed to run rustdoc")?;
 
     let root = krate
         .index
