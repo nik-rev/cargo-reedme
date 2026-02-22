@@ -3,6 +3,7 @@ use std::io::Write as _;
 use docstr::docstr;
 use eyre::Context as _;
 use eyre::Result;
+use eyre::bail;
 use fs_err as fs;
 use rayon::prelude::*;
 
@@ -22,13 +23,13 @@ pub struct Cli {
     #[arg(short, long)]
     pub check: bool,
 
-    /// Use colored output
-    #[arg(long, default_value = "auto")]
-    pub color: diff_file::Color,
-
     /// Output JSON to stdout, instead of writing README contents
-    #[arg(long)]
+    #[arg(short, long)]
     pub json: bool,
+
+    /// Use colored output
+    #[arg(hide = true, long, default_value = "auto")]
+    pub color: diff_file::Color,
 
     // cargo-specific flags for package resolution
     //
@@ -75,34 +76,58 @@ fn main() -> Result<()> {
     // flag is passed, but we actually don't read that field because it is marked `#[serde(skip)]`
     report_errors(std::mem::take(&mut output.errors));
 
-    if cli.json {
-        output.readmes.sort_unstable_by(|a, b| a.path.cmp(&b.path));
-
-        let json = colored_json::to_colored_json_auto(&output).context("failed to write json")?;
-
-        std::io::stdout()
-            .write_all(json.as_bytes())
-            .context("failed to write JSON")?;
-
-        return Ok(());
+    /// What action the program should take
+    enum Action {
+        /// Will output all JSON data to stdout
+        OutputJson,
+        /// Will write the README contents we emit to the file system
+        WriteFiles,
+        /// Will check that the README contents we emit is the same as
+        /// contents of the actual README files
+        RunCheck,
     }
 
-    let errors: Vec<_> = output
-        .readmes
-        .par_iter()
-        .map(|readme| -> Result<()> {
-            let Some(new_readme) = readme.file.to_readme(std::env::args().skip(1)) else {
-                docstr!(eprintln!
-                    /// can't figure out where to insert generated content in: {}
-                    ///
-                    /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
-                    /// the generated portion from rustdoc comments will be inserted!
-                    readme.path,
-                );
-                return Ok(());
-            };
+    let action = match [cli.json, cli.check] {
+        [true, true] => bail!("flags `--json` and `--check` are mutually exclusive"),
+        [true, false] => Action::OutputJson,
+        [false, true] => Action::RunCheck,
+        [false, false] => Action::WriteFiles,
+    };
 
-            if cli.check {
+    let errors = match action {
+        Action::OutputJson => {
+            output.readmes.sort_unstable_by(|a, b| a.path.cmp(&b.path));
+
+            let json =
+                colored_json::to_colored_json_auto(&output).context("failed to write json")?;
+
+            std::io::stdout()
+                .write_all(json.as_bytes())
+                .context("failed to write JSON")?;
+
+            Vec::new()
+        }
+        Action::WriteFiles => output
+            .readmes
+            .par_iter()
+            .map(|readme| -> Result<()> {
+                if let Err(err) = fs::write(&readme.path, read_readme_file(readme)?)
+                    .context("failed to write `README.md` file")
+                {
+                    println!("{err}");
+                }
+
+                Ok(())
+            })
+            .filter_map(|res| res.err())
+            .collect(),
+        Action::RunCheck => output
+            .readmes
+            // not par_iter because we want the diffs to be in a determined order
+            .iter()
+            .map(|readme| -> Result<()> {
+                let new_readme = read_readme_file(readme)?;
+
                 let current_readme =
                     fs::read_to_string(&readme.path).context("failed to read `README.md` file")?;
 
@@ -134,18 +159,12 @@ fn main() -> Result<()> {
                 } else {
                     std::process::exit(1);
                 }
-            } else {
-                if let Err(err) =
-                    fs::write(&readme.path, new_readme).context("failed to write `README.md` file")
-                {
-                    println!("{err}");
-                }
-            }
 
-            Ok(())
-        })
-        .filter_map(|res| res.err())
-        .collect();
+                Ok(())
+            })
+            .filter_map(|res| res.err())
+            .collect(),
+    };
 
     report_errors(errors);
 
@@ -178,4 +197,19 @@ fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
         .without_time()
         .with_target(false)
         .init();
+}
+
+fn read_readme_file(readme: &cargo_reedme::GeneratedReadme) -> Result<String> {
+    readme
+        .file
+        .to_readme(std::env::args().skip(1))
+        .ok_or_else(|| {
+            docstr!(eyre::format_err!
+                /// can't figure out where to insert generated content in: {}
+                ///
+                /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
+                /// the generated portion from rustdoc comments will be inserted!
+                readme.path,
+            )
+        })
 }
