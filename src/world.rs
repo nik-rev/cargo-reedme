@@ -32,9 +32,7 @@ impl Default for World {
     }
 }
 
-/// Run Rustdoc on the package, generate the JSON into a file
-///
-/// Returns path to the file
+/// Run `rustdoc` on the package and returns all available information
 pub fn extract_rustdoc_json(
     pkg: &cargo_metadata::Package,
     metadata: &cargo_metadata::Metadata,
@@ -43,11 +41,11 @@ pub fn extract_rustdoc_json(
     let node = metadata
         .resolve
         .as_ref()
-        .unwrap()
+        .context("cargo failed resolution")?
         .nodes
         .iter()
         .find(|node| node.id == pkg.id)
-        .unwrap();
+        .context("node ID does not exist")?;
 
     let builder = rustdoc_json::Builder::default()
         .toolchain(toolchain)
@@ -55,22 +53,12 @@ pub fn extract_rustdoc_json(
         .document_private_items(true)
         .no_default_features(true)
         .all_features(false)
+        // NOTE: this already includes information about --no-default-features,
+        // --features, --all-features etc so we disable those^^
         .features(node.features.as_slice())
-        .quiet(true)
-        .color(rustdoc_json::Color::Never)
         .package_target(extract_package_target(pkg).context("failed to extract package target")?);
 
-    let mut stderr = Vec::new();
-    let rustdoc_json_path = builder
-        .build_with_captured_output(std::io::sink(), &mut stderr)
-        .with_context(|| {
-            format!(
-                "rustdoc stderr: {}",
-                String::from_utf8(stderr)
-                    .expect("rustdoc outputs valid utf-8")
-                    .trim()
-            )
-        })?;
+    let rustdoc_json_path = builder.build().context("rustdoc error")?;
 
     let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
     let mut rustdoc_json = std::io::Cursor::new(rustdoc_json);

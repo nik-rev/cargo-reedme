@@ -1,6 +1,7 @@
 //! Handles logic for inserting generated README files into existing README files
 
 use docstr::docstr;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 /// Represents contents of the new README file
@@ -30,17 +31,40 @@ pub enum ReadmeContentsMeta {
 }
 
 impl ReadmeFile {
+    fn alert(args: impl IntoIterator<Item = impl std::fmt::Display>) -> String {
+        docstr!(format!
+            /// <!--
+            ///     Do not edit this region by hand
+            ///     ===============================
+            ///
+            ///     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+            ///
+            ///         cargo reedme {args}
+            ///
+            ///     for more info: https://github.com/nik-rev/cargo-reedme
+            /// -->
+            args = args.into_iter().join(" ")
+        )
+    }
+
     /// Creates the output README file string.
     ///
     /// Returns `false` as the 2nd return when we can't figure out what the contents should be,
     /// because the marker is not present
-    pub fn to_readme(&self) -> Option<String> {
+    pub fn to_readme(
+        &self,
+        args: impl IntoIterator<Item = impl std::fmt::Display>,
+    ) -> Option<String> {
         let contents = &self.contents;
+
+        let alert = Self::alert(args);
 
         match &self.meta {
             ReadmeContentsMeta::NewlyCreated => {
                 Some(docstr!(format!
                     /// {}
+                    ///
+                    /// {alert}
                     ///
                     /// {contents}
                     ///
@@ -52,6 +76,8 @@ impl ReadmeFile {
             ReadmeContentsMeta::InsertedIntoUsersReadme(parts) => {
                 Some(docstr!(format!
                     /// {}{}
+                    ///
+                    /// {alert}
                     ///
                     /// {}
                     ///
@@ -101,13 +127,17 @@ mod tests {
 
     use super::*;
 
+    fn alert() -> String {
+        ReadmeFile::alert([""])
+    }
+
     fn t(original: &str, insert: &str) -> Option<String> {
         UsersReadmeParts::new(original).and_then(|parts| {
             ReadmeFile {
                 contents: insert.to_string(),
                 meta: ReadmeContentsMeta::InsertedIntoUsersReadme(parts),
             }
-            .to_readme()
+            .to_readme([""])
         })
     }
 
@@ -138,15 +168,18 @@ mod tests {
                 .to_string(),
                 meta: ReadmeContentsMeta::NewlyCreated
             }
-            .to_readme()
+            .to_readme([""])
             .unwrap(),
-            docstr!(
+            docstr!(format!
                 /// <!-- cargo-reedme: start -->
+                ///
+                /// {}
                 ///
                 /// first
                 ///
                 /// <!-- cargo-reedme: end -->
                 ///
+                alert()
             )
         );
     }
@@ -167,16 +200,19 @@ mod tests {
 
         assert_str_eq!(
             output,
-            docstr!(
+            docstr!(format!
                 /// Header
                 ///
                 /// <!-- cargo-reedme: start -->
+                ///
+                /// {}
                 ///
                 /// hello world
                 ///
                 /// <!-- cargo-reedme: end -->
                 ///
                 /// Footer
+                alert()
             )
         );
     }
@@ -201,16 +237,19 @@ mod tests {
 
         assert_str_eq!(
             output,
-            docstr!(
+            docstr!(format!
                 /// Header
                 ///
                 /// <!-- cargo-reedme: start -->
+                ///
+                /// {}
                 ///
                 /// goodbye moon
                 ///
                 /// <!-- cargo-reedme: end -->
                 ///
                 /// Footer
+                alert()
             )
         );
     }

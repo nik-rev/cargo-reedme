@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// This is the `[package.metadata.cargo-reedme]` and `[workspace.package.metadata.cargo-reedme]`
 #[derive(Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct Config {
     #[serde(default)]
     pub docs_rs: IntralinksDocsRsConfig,
@@ -12,7 +13,6 @@ pub struct Config {
 #[derive(Default, Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct IntralinksDocsRsConfig {
     pub base_url: Option<String>,
-    pub version: Option<String>,
 }
 
 impl Config {
@@ -36,9 +36,6 @@ impl Config {
     pub fn inherit_workspace_metadata(&mut self, workspace_config: Self) {
         if let Some(base_url) = workspace_config.docs_rs.base_url {
             self.docs_rs.base_url = Some(base_url);
-        }
-        if let Some(version) = workspace_config.docs_rs.version {
-            self.docs_rs.version = Some(version);
         }
     }
 }

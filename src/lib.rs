@@ -1,8 +1,40 @@
+//! # Configuration
+//!
+//! You can configure the behavior of `cargo-reedme` via the `[metadata]` table in `Cargo.toml`:
+//!
+//! ```toml
+//! # project/crates/foo_bar/Cargo.toml
+//!
+//! [package.metadata.cargo-reedme]
+//! # ...
+//! ```
+//!
+//! ```toml
+//! # project//Cargo.toml
+//!
+//! [workspace.metadata.cargo-reedme]
+//! # ...
+//! ```
+//!
+//! ## `[metadata.cargo-reedme.format]`
+//!
+//! By default, generated links will forward to `docs.rs`. This `lib.rs`:
+//!
+//! ```rust
+//! //! This is an [Example]
+//! ```
+//!
+//! Will generate the following `README.md`:
+//!
+//! ```markdown
+//! This is an [Example](https://docs.rs/example/0.1.0/example/struct.Example.html)
+//! ```
+//!
+//! It's possible to use a custom format
+
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
 
-use itertools::Either;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -48,66 +80,6 @@ pub struct GeneratedReadme {
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
-    try_map_each_package(world, |pkg, config, workspace_metadata| {
-        let (generated_readme, original_doc_comments) =
-            generate_readme_for_package(world, pkg, config, workspace_metadata)
-                .with_context(|| format!("failed to generate README for package `{}`", pkg.name))?;
-
-        let readme_path = get_readme_path_for_package(pkg).with_context(|| {
-            format!("failed to get `README.md` path for package `{}`", pkg.name)
-        })?;
-
-        let original_readme = match (world.read_file)(&readme_path) {
-            Ok(contents) => Some(contents),
-            // if this file doesn't exist, we will create it
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
-            Err(err) => return Err(err.into()),
-        };
-
-        // NOTE: not .map() due to ownership issues
-        let new_readme = match original_readme {
-            Some(original_readme) => {
-                let meta = match insert_into_readme::UsersReadmeParts::new(&original_readme) {
-                    Some(ok) => ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
-                    None => ReadmeContentsMeta::ErrorMarkerMissing,
-                };
-
-                ReadmeFile {
-                    contents: generated_readme,
-                    meta,
-                }
-            }
-            None => ReadmeFile {
-                contents: generated_readme.to_string(),
-                meta: ReadmeContentsMeta::NewlyCreated,
-            },
-        };
-
-        Ok(GeneratedReadme {
-            path: readme_path,
-            file: new_readme,
-            original_doc_comments,
-            package: pkg.name.to_string(),
-        })
-    })
-    .map(|(readmes, errors)| Output {
-        version: VERSION,
-        readmes,
-        errors,
-    })
-}
-
-const VERSION: semver::Version = semver::Version::new(
-    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MAJOR"))),
-    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MINOR"))),
-    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_PATCH"))),
-);
-
-/// Calls the given function for each Cargo package in the workspace
-fn try_map_each_package<T: Send>(
-    world: &World,
-    f: impl Fn(&cargo_metadata::Package, &Config, &cargo_metadata::Metadata) -> Result<T> + Sync,
-) -> Result<(Vec<T>, Vec<eyre::Report>)> {
     let mut metadata_cmd = world.input_manifest.metadata();
 
     // Takes into account selected features via --feature
@@ -123,15 +95,72 @@ fn try_map_each_package<T: Send>(
     // Config from [workspace.metadata.cargo-reedme]
     let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
 
-    let (oks, errs): (Vec<_>, Vec<_>) =
-        pkgs.into_par_iter()
-            .partition_map(|pkg| match f(pkg, &config, &metadata) {
-                Ok(ok) => Either::Left(ok),
-                Err(err) => Either::Right(err),
-            });
+    let mut readmes = Vec::new();
+    let mut errors = Vec::new();
 
-    Ok((oks, errs))
+    for pkg in pkgs {
+        let result = (|| -> Result<GeneratedReadme> {
+            let (generated_readme, original_doc_comments) =
+                generate_readme_for_package(world, pkg, &config, &metadata).with_context(|| {
+                    format!("failed to generate README for package `{}`", pkg.name)
+                })?;
+
+            let readme_path = get_readme_path_for_package(pkg).with_context(|| {
+                format!("failed to get `README.md` path for package `{}`", pkg.name)
+            })?;
+
+            let original_readme = match (world.read_file)(&readme_path) {
+                Ok(contents) => Some(contents),
+                // if this file doesn't exist, we will create it
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
+                Err(err) => return Err(err.into()),
+            };
+
+            // NOTE: not .map() due to ownership issues
+            let new_readme = match original_readme {
+                Some(original_readme) => {
+                    let meta = match insert_into_readme::UsersReadmeParts::new(&original_readme) {
+                        Some(ok) => ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
+                        None => ReadmeContentsMeta::ErrorMarkerMissing,
+                    };
+
+                    ReadmeFile {
+                        contents: generated_readme,
+                        meta,
+                    }
+                }
+                None => ReadmeFile {
+                    contents: generated_readme.to_string(),
+                    meta: ReadmeContentsMeta::NewlyCreated,
+                },
+            };
+
+            Ok(GeneratedReadme {
+                path: readme_path,
+                file: new_readme,
+                original_doc_comments,
+                package: pkg.name.to_string(),
+            })
+        })();
+
+        match result {
+            Ok(ok) => readmes.push(ok),
+            Err(err) => errors.push(err),
+        }
+    }
+
+    Ok(Output {
+        version: VERSION,
+        readmes,
+        errors,
+    })
 }
+
+const VERSION: semver::Version = semver::Version::new(
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MAJOR"))),
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_MINOR"))),
+    konst::unwrap_ctx!(konst::primitive::parse_u64(env!("CARGO_PKG_VERSION_PATCH"))),
+);
 
 /// For a given Cargo package, returns contents of generated README.md
 fn generate_readme_for_package(

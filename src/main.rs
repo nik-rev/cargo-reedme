@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::io::Write as _;
 
 use eyre::Context as _;
 use eyre::Result;
 use fs_err as fs;
+use itertools::Itertools;
 use rayon::prelude::*;
 
 use clap::Parser;
@@ -14,9 +16,6 @@ pub struct Cli {
     /// Write JSON to stdout
     #[arg(long)]
     pub json: bool,
-    /// Specify a custom toolchain to use
-    #[arg(long, default_value = "nightly")]
-    pub toolchain: String,
 
     // cargo-specific flags for package resolution
     //
@@ -40,7 +39,18 @@ fn main() -> Result<()> {
         input_workspace: cli.workspace,
         input_features: cli.features,
         rustdoc_json_for_crate: Box::new(move |pkg, metadata| {
-            cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &cli.toolchain)
+            let toolchain = match std::env::var("RUSTUP_TOOLCHAIN") {
+                Ok(toolchain) if !toolchain.contains("nightly") => {
+                    println!(
+                        "`cargo-reedme` only works with a nightly Rust toolchain: using `nightly` instead of `{toolchain}`"
+                    );
+                    String::from("nightly")
+                }
+                Ok(toolchain) => toolchain,
+                Err(_) => String::from("nightly"),
+            };
+
+            cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &toolchain)
         }),
         read_file: |path| fs::read_to_string(path),
     };
@@ -73,7 +83,7 @@ fn main() -> Result<()> {
     } else {
         // Regular output
         output.readmes.par_iter().for_each(|readme| {
-            let Some(content) = readme.file.to_readme() else {
+            let Some(content) = readme.file.to_readme(std::env::args().skip(1)) else {
                 docstr::docstr!(eprintln!
                     /// can't figure out where to insert generated content in: {}
                     ///
