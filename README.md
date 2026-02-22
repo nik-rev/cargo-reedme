@@ -15,36 +15,24 @@ cargo-reedme: info-end -->
 
 # Configuration
 
-You can configure the behavior of `cargo-reedme` via the `[metadata]` table in `Cargo.toml`:
+You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 
 ```toml
 # project/crates/foo_bar/Cargo.toml
 
 [package.metadata.cargo-reedme]
-# ...
+# ... your settings go here ...
 ```
+
+…or the workspace-level `[workspace.metadata]` table
 
 ```toml
-# project//Cargo.toml
+# project/Cargo.toml
 
 [workspace.metadata.cargo-reedme]
-# ...
+# ... your settings go here ...
 ```
 
-## `[metadata.cargo-reedme.format]`
-
-By default, generated links will forward to `docs.rs`. This `lib.rs`:
-
-```rust
-//! This is an [Example]
-```
-
-Will generate the following `README.md`:
-
-```markdown
-This is an [Example](https://docs.rs/example/0.1.0/example/struct.Example.html)
-```
-
-It’s possible to use a custom format
+Crate-level configuration will take priority over workspace-level
 
 <!-- cargo-reedme: end -->
