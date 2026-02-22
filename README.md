@@ -34,9 +34,11 @@ Features:
 
 - **Cargo features**: supports `--all-features`, `--features`, and `--no-default-features`
 
-- **Code blocks transformation**: Code blocks will have `rust` language added, and hidden lines will be removed:
+- **Code blocks transformation**: Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
 
   ````rust
+  //! An example program:
+  //!
   //! ```
   //! # fn main() {
   //! // "hello world" in Rust
@@ -48,13 +50,15 @@ Features:
   Generates the following `README.md`:
 
   ````markdown
+  An example program:
+
   ```rust
   // "hello world" in Rust
   println!("Hello, world!");
   ```
   ````
 
-- **All doc comments work**: So, macros in doc comments get properly expanded. These doc comments:
+- **Full doc comments support**: Macros in doc comments get properly expanded. These doc comments:
 
   ````rust
   //! ```toml
