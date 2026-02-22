@@ -1,9 +1,0 @@
-@@ -2,7 +2,7 @@
- 
- # Examples
- 
--```
-+```rust
- use std::mem;
- 
- use aligned::{Aligned, A2, A4, A16};

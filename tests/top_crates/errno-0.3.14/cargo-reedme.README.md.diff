@@ -1,9 +1,0 @@
-@@ -1,7 +1,7 @@
- Cross-platform interface to the `errno` variable.
- 
- # Examples
--```
-+```rust
- use errno::{Errno, errno, set_errno};
- 
- // Get the current value of errno

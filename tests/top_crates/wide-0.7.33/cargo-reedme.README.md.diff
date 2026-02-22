@@ -1,8 +1,0 @@
-@@ -12,4 +12,4 @@
- 
- * `std`: This causes the feature to link to `std`.
-   * Currently this just improves the performance of `sqrt` when an explicit
--    SIMD `sqrt` isn't available.
-\ No newline at end of file
-+    SIMD `sqrt` isn’t available.
-\ No newline at end of file

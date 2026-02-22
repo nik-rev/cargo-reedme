@@ -1,9 +1,0 @@
-@@ -6,7 +6,7 @@
- 
- # Example
- 
--```
-+```rust
- use terminal_size::{Width, Height, terminal_size};
- 
- let size = terminal_size();

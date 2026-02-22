@@ -1,9 +1,0 @@
-@@ -54,7 +54,7 @@
-  pub fn parse_keyword(keyword: &str) -> Option<Keyword> {
-      KEYWORDS.get(keyword).cloned()
-  }
-- ```
-+```
- 
-  Alternatively, you can use the [`phf_codegen`] crate to generate PHF datatypes
-  in a build script.

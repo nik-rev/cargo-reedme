@@ -1,1 +1,0 @@
-A crate providing unvalidated string and character types.

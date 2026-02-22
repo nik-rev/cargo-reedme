@@ -1,8 +1,0 @@
-@@ -1,6 +1,6 @@
- A simple reference-counted DOM.
- 
--This is sufficient as a static parse tree, but don't build a
-+This is sufficient as a static parse tree, but don’t build a
- web browser using it. :)
- 
- A DOM is a [tree structure] with ordered children that can be represented in an XML-like

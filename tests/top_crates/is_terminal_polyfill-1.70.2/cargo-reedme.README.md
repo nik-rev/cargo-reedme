@@ -1,1 +1,0 @@
-> Polyfill for `is_terminal` stdlib feature for use with older MSRVs

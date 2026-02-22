@@ -1,9 +1,0 @@
-@@ -8,7 +8,7 @@
- Put another way, given a `(tx, rx)` from `futures::sync::mpsc::channel()`,
- how can the sender (`tx`) know when the receiver (`rx`) actually wants more
- work to be produced? Just because there is room in the channel buffer
--doesn't mean the work would be used by the receiver.
-+doesn’t mean the work would be used by the receiver.
- 
- This is where something like `want` comes in. Added to a channel, you can
- make sure that the `tx` only creates the message and sends it when the `rx`

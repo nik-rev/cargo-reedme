@@ -1,9 +1,0 @@
-@@ -14,7 +14,7 @@
- 
- # Usage
- 
--```no_run
-+```rust
- use std::fs;
- use filetime::FileTime;
- 

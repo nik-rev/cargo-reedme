@@ -1,1 +1,0 @@
-A cross-platform Rust API for memory mapped buffers.
