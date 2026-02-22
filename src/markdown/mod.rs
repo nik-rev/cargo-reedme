@@ -42,6 +42,8 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
+            println!("{}", &markdown[span.clone()]);
+
             code_block_ranges.insert(span.clone());
 
             // Only consider code blocks that contain Rust from here on out
@@ -82,6 +84,22 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
             let code_block_content_lines =
                 &code_block_lines[1..code_block_lines.len().saturating_sub(1)];
 
+            // The finishing code block may be indented:
+            //
+            // - this is a list
+            //
+            //   ```
+            //   this code block is in a list
+            //   ```
+            // ^^
+            //
+            // It is this indentation (marked by ^^) that this variable stores,
+            // we will need it when we re-insert the code block
+            let last_line_indentation = code_block_lines[code_block_lines.len().saturating_sub(1)]
+                .chars()
+                .take_while(|ch| ch.is_whitespace())
+                .collect::<String>();
+
             // Remove all commented lines - lines that start with a `#`
             //
             // ```
@@ -113,7 +131,10 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
             Some(ReplaceContent {
                 range: span,
-                content: format!("{code_fence}rust\n{code_block_content}\n{code_fence}").into(),
+                content: format!(
+                    "{code_fence}rust\n{code_block_content}\n{last_line_indentation}{code_fence}"
+                )
+                .into(),
             })
         }
         // This was a broken link, but we fixed it with our broken link callback
@@ -520,5 +541,28 @@ mod tests {
             .all(|s| !super::is_rust_code_block(s));
 
         assert!(fail);
+    }
+
+    #[test]
+    fn indented_code_block() {
+        t(
+            docstr! {
+                /// - this is a list item
+                ///
+                ///   ```ignore
+                ///   I am inside of a code block
+                ///   ```
+            },
+            links! {
+                "..." => "..."
+            },
+            docstr! {
+                /// - this is a list item
+                ///
+                ///   ```rust
+                ///   I am inside of a code block
+                ///   ```
+            },
+        );
     }
 }
