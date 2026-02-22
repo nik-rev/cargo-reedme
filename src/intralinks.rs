@@ -4,9 +4,9 @@
 //! including modifications
 //!
 //! Original Author: Diogo Sousa
-//! PR: https://github.com/orium/cargo-rdme/pull/236
+//! PR: <https://github.com/orium/cargo-rdme/pull/236>
 //! Commit: c0d579139660b4bf65334b86bd36580fcff8db84
-//! Repo: https://github.com/orium/cargo-rdme
+//! Repo: <https://github.com/orium/cargo-rdme>
 //! License: MIT
 //!
 //! MIT License
@@ -112,8 +112,10 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
 
 /// Extracts link fragment from the link
 ///
+/// ```text
 /// https://doc.rust-lang.org/std/vec/struct.Vec.html#method.push
 ///                                                   ^^^^^^^^^^^
+/// ```
 pub fn link_fragment(link: &str) -> Option<&str> {
     link.strip_prefix('`')
         .unwrap_or(link)

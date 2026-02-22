@@ -1,3 +1,6 @@
+//! This is the main binary that calls cargo-reedme API. Major logic is implemented in `lib.rs`,
+//! this just provides a command-line interface
+
 use std::io::Write as _;
 
 use docstr::docstr;

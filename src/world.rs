@@ -1,3 +1,6 @@
+//! The [`World`] is the single input that the program receives,
+//! essentially the program is almost entirely a pure function
+
 use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;

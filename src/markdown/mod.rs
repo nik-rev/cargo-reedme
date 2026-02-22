@@ -263,7 +263,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
 
 /// If this markdown fence language can be considered to be a "rust" language
 ///
-/// All attributes: https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#attributes
+/// All attributes: <https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html#attributes>
 fn is_rust_code_block(tags: &str) -> bool {
     tags.split(',').all(|tag| {
         tag.is_empty()
