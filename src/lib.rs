@@ -1,5 +1,7 @@
 //! # Configuration
 //!
+//! hello world
+//!
 //! You can configure the behavior of `cargo-reedme` via the `[metadata]` table in `Cargo.toml`:
 //!
 //! ```toml
@@ -26,6 +28,8 @@
 //!
 //! Will generate the following `README.md`:
 //!
+//! goodbye moon
+//!
 //! ```markdown
 //! This is an [Example](https://docs.rs/example/0.1.0/example/struct.Example.html)
 //! ```
@@ -48,7 +52,7 @@ pub mod world;
 pub use world::World;
 
 mod config;
-mod insert_into_readme;
+pub mod insert_into_readme;
 mod intralinks;
 mod markdown;
 mod replace_content;

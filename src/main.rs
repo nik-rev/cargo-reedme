@@ -1,17 +1,36 @@
+use core::fmt;
 use std::io::Write as _;
 
+use console::Style;
+use console::style;
 use eyre::Context as _;
 use eyre::Result;
 use fs_err as fs;
+use itertools::Itertools;
 use rayon::prelude::*;
 
 use clap::Parser;
+use similar::ChangeTag;
+
+mod diff_file;
 
 /// Cargo plugin that generates `README.md` files from documentation comments in `lib.rs` or `main.rs`
 #[derive(Parser)]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
 pub struct Cli {
-    /// Write JSON to stdout
+    /// Check that running will not modify any files. Use this in CI
+    ///
+    /// This command will succeed if no modifications will be made to any README files
+    /// when they are generated. It otherwise fails, printing a diff between the current files and
+    /// what `cargo-reedme` would have written
+    #[arg(short, long)]
+    pub check: bool,
+
+    /// Use colored output
+    #[arg(long, default_value = "auto")]
+    pub color: diff_file::Color,
+
+    /// Output JSON to stdout, instead of writing README contents
     #[arg(long)]
     pub json: bool,
 
@@ -81,7 +100,7 @@ fn main() -> Result<()> {
     } else {
         // Regular output
         output.readmes.par_iter().for_each(|readme| {
-            let Some(content) = readme.file.to_readme(std::env::args().skip(1)) else {
+            let Some(new_readme) = readme.file.to_readme(std::env::args().skip(1)) else {
                 docstr::docstr!(eprintln!
                     /// can't figure out where to insert generated content in: {}
                     ///
@@ -92,10 +111,71 @@ fn main() -> Result<()> {
                 return;
             };
 
-            if let Err(err) =
-                fs::write(&readme.path, content).context("failed to write `README.md` file")
-            {
-                println!("{err}");
+            if cli.check {
+                let current_readme = fs::read_to_string(&readme.path)
+                    .context("failed to read `README.md` file")
+                    .unwrap();
+
+                let new_readme = new_readme.trim_end();
+                let current_readme = current_readme.trim_end();
+
+                // line range of the INFO
+                let new_readme_info_section_range =
+                    cargo_reedme::insert_into_readme::locate_info_section(new_readme)
+                        .unwrap_or_default();
+
+                // line range of the INFO
+                let current_readme_info_section_range =
+                    cargo_reedme::insert_into_readme::locate_info_section(current_readme)
+                        .unwrap_or_default();
+
+                // Contains INFO itself
+                let new_readme_info_section_lines =
+                    new_readme.lines().enumerate().filter_map(|(i, line)| {
+                        new_readme_info_section_range.contains(&i).then_some(line)
+                    });
+
+                let current_readme_lines = current_readme.lines().collect_vec();
+
+                let current_readme = current_readme_lines
+                    [..current_readme_info_section_range.start]
+                    .iter()
+                    .copied()
+                    .chain(new_readme_info_section_lines)
+                    .chain(
+                        current_readme_lines[current_readme_info_section_range.end..]
+                            .iter()
+                            .copied(),
+                    )
+                    .join("\n");
+
+                let diff = diff_file::make_diff(new_readme, &current_readme, 3);
+
+                let display_path = if let Ok(cwd) = std::env::current_dir()
+                    && let Ok(path) = readme.path.strip_prefix(cwd)
+                {
+                    path.to_path_buf()
+                } else {
+                    readme.path.clone()
+                };
+
+                let has_diff = !diff.is_empty();
+
+                if has_diff {
+                    diff_file::print_diff(
+                        diff,
+                        |line_num| format!("\n\ndiff in {display_path}:{line_num}:\n"),
+                        cli.color,
+                    );
+                } else {
+                    std::process::exit(1);
+                }
+            } else {
+                if let Err(err) =
+                    fs::write(&readme.path, new_readme).context("failed to write `README.md` file")
+                {
+                    println!("{err}");
+                }
             }
         });
     }

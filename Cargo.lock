@@ -442,6 +442,8 @@ dependencies = [
  "clap-verbosity-flag",
  "color-eyre",
  "colored_json",
+ "console",
+ "diff",
  "docstr",
  "eyre",
  "flate2",
@@ -463,6 +465,7 @@ dependencies = [
  "similar",
  "simply_colored",
  "tar",
+ "term",
  "tracing",
  "tracing-subscriber",
  "ureq",
@@ -717,6 +720,19 @@ checksum = "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd"
 dependencies = [
  "bytes",
  "memchr",
+]
+
+[[package]]
+name = "console"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03e45a4a8926227e4197636ba97a9fc9b00477e9f4bd711395687c5f0734bec4"
+dependencies = [
+ "encode_unicode",
+ "libc",
+ "once_cell",
+ "unicode-width",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1020,6 +1036,12 @@ dependencies = [
  "subtle",
  "zeroize",
 ]
+
+[[package]]
+name = "encode_unicode"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "encoding_rs"
@@ -4269,6 +4291,15 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "term"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8c27177b12a6399ffc08b98f76f7c9a1f4fe9fc967c784c5a071fa8d93cf7e1"
+dependencies = [
  "windows-sys 0.61.2",
 ]
 

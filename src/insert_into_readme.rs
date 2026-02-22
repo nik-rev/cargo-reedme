@@ -1,5 +1,7 @@
 //! Handles logic for inserting generated README files into existing README files
 
+use std::ops::Range;
+
 use docstr::docstr;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -30,20 +32,41 @@ pub enum ReadmeContentsMeta {
     ErrorMarkerMissing,
 }
 
+/// This locates range of lines for the INFO section in the README file
+///
+/// This section is ignored by us when comparing diffs
+pub fn locate_info_section(content: &str) -> Option<Range<usize>> {
+    let lines = content.lines().collect_vec();
+
+    let (first, _) = lines
+        .iter()
+        .find_position(|line| line.contains(ReadmeFile::INFO_START))?;
+    let (last, _) = lines
+        .iter()
+        .find_position(|line| line.contains(ReadmeFile::INFO_END))?;
+
+    Some(first..last)
+}
+
 impl ReadmeFile {
+    const INFO_START: &str = "cargo-reedme: info-start";
+    const INFO_END: &str = "cargo-reedme: info-end";
+
     fn alert(args: impl IntoIterator<Item = impl std::fmt::Display>) -> String {
         docstr!(format!
-            /// <!--
+            /// <!-- {}
+            ///
             ///     Do not edit this region by hand
             ///     ===============================
             ///
             ///     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
             ///
-            ///         cargo reedme {args}
+            ///         cargo reedme {}
             ///
             ///     for more info: https://github.com/nik-rev/cargo-reedme
-            /// -->
-            args = args.into_iter().join(" ")
+            ///
+            /// {} -->
+            Self::INFO_START, args.into_iter().join(" "), Self::INFO_END
         )
     }
 
