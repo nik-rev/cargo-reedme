@@ -2,7 +2,7 @@
 //!
 //! - Everything is resolved by rustdoc, so all the links will work
 //!
-//! - **All** doc comments work. So, macros in doc comments expanded. These doc comments:
+//! - **All** doc comments work. So, macros in doc comments get properly expanded. These doc comments:
 //!
 //!   ````rust,ignore
 //!   //! ```toml
@@ -19,6 +19,8 @@
 //!   derive_aliases = '0.4'
 //!   ```
 //!   ````
+//!
+//!   Notice that the `concat!` and inner `env!` macro was expanded appropriately.
 //!
 //! Inspired by:
 //!
