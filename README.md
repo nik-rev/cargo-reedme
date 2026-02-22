@@ -18,21 +18,21 @@ Features:
 - Everything is resolved by rustdoc, so all the links will work
 - **All** doc comments work. So, macros in doc comments expanded. These doc comments:
 
-  ````rust
-  //! ```toml
-  //! [dependencies]
-  #[doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
-  //! ```
+ ````rust
+ //! ```toml
+ //! [dependencies]
+ #[doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
+ //! ```
 ````
 
-  Generate the following `README.md`:
+ Generate the following `README.md`:
 
-  ````markdown
-  ```toml
-  [dependencies]
-  derive_aliases = '0.4'
-  ```
-  ````
+ ````markdown
+ ```toml
+ [dependencies]
+ derive_aliases = '0.4'
+ ```
+ ````
 
 Inspired by:
 
