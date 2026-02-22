@@ -172,7 +172,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
             link_type: LinkType::Reference | LinkType::Shortcut,
             dest_url,
-            title,
+            title: _,
             id,
         }) if !id.is_empty() => {
             reference_definitions.push((dest_url, id));

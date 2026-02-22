@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 use std::io::Write as _;
 
 use eyre::Context as _;
 use eyre::Result;
 use fs_err as fs;
-use itertools::Itertools;
 use rayon::prelude::*;
 
 use clap::Parser;
