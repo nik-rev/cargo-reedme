@@ -1,69 +1,81 @@
-//! Features:
+//! # Features
 //!
-//! - **Link mapping:** Intra-doc links will be transformed into absolute URLs. These doc comments:
+//! ## Link mapping
 //!
-//!   ```rust,ignore
-//!   /// This data structure is [`serde_json::Value`](Value).
-//!   struct Value;
-//!   ```
+//! Intra-doc links will be transformed into absolute URLs:
 //!
-//!   Generate the following `README.md`:
+//! ```rust,ignore
+//! /// This data structure is [`serde_json::Value`](Value).
+//! struct Value;
+//! ```
 //!
-//!   ```markdown
-//!   This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
-//!   ```
+//! The above generate the following `README.md`:
 //!
-//!   The generated link format is fully configurable.
+//! ```markdown
+//! This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
+//! ```
 //!
-//! - **Workspace support**: Generate `README.md`s for all crates in your workspace with a single command! Supports `--workspace`, `--exclude`, and `--package`
+//! The generated link format is fully configurable.
 //!
-//! - **Cargo features**: supports `--all-features`, `--features`, and `--no-default-features`
+//! ## Workspace support
 //!
-//! - **Code blocks transformation**: Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
+//! Generate `README.md`s for all crates in your workspace with a single command!
 //!
-//!   ````rust,ignore
-//!   //! An example program:
-//!   //!
-//!   //! ```
-//!   //! # fn main() {
-//!   //! // "hello world" in Rust
-//!   //! println!("Hello, world!");
-//!   //! # }
-//!   //! ```
-//!   ````
+//! Supports `--workspace`, `--exclude`, and `--package`
 //!
-//!   Generates the following `README.md`:
+//! ## Cargo features
 //!
-//!   ````markdown
-//!   An example program:
+//! Supports `--all-features`, `--features`, and `--no-default-features`
 //!
-//!   ```rust
-//!   // "hello world" in Rust
-//!   println!("Hello, world!");
-//!   ```
-//!   ````
+//! ## Code blocks transformation
 //!
-//! - **Full doc comments support**: Macros in doc comments get properly expanded. These doc comments:
+//! Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
 //!
-//!   ````rust,ignore
-//!   //! ```toml
-//!   //! [dependencies]
-//!   #![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
-//!   //! ```
-//!   ````
+//! ````rust,ignore
+//! //! An example program:
+//! //!
+//! //! ```
+//! //! # fn main() {
+//! //! // "hello world" in Rust
+//! //! println!("Hello, world!");
+//! //! # }
+//! //! ```
+//! ````
 //!
-//!   Generate the following `README.md`:
+//! The above generates the following `README.md`:
 //!
-//!   ````markdown
-//!   ```toml
-//!   [dependencies]
-//!   derive_aliases = '0.4'
-//!   ```
-//!   ````
+//! ````markdown
+//! An example program:
 //!
-//!   Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+//! ```rust
+//! // "hello world" in Rust
+//! println!("Hello, world!");
+//! ```
+//! ````
 //!
-//! Inspired by:
+//! ## Full doc comments support
+//!
+//! Macros in doc comments get properly expanded:
+//!
+//! ````rust,ignore
+//! //! ```toml
+//! //! [dependencies]
+//! #![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
+//! //! ```
+//! ````
+//!
+//! The above generates the following `README.md`:
+//!
+//! ````markdown
+//! ```toml
+//! [dependencies]
+//! derive_aliases = '0.4'
+//! ```
+//! ````
+//!
+//! Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+//!
+//! # Inspired by
 //!
 //! - [`cargo-readme`](https://github.com/webern/cargo-readme)
 //! - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
