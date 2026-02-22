@@ -53,7 +53,7 @@
 //! ```
 //! ````
 //!
-//! ## Full doc comments support
+//! ## Macro expansion
 //!
 //! Macros in doc comments get properly expanded:
 //!
@@ -74,6 +74,38 @@
 //! ````
 //!
 //! Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+//!
+//! ## Check mode
+//!
+//! Run `cargo-reedme` as part of your CI pipeline!
+//!
+//! The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
+//!
+//! An example workflow that runs `cargo reedme --check` on every commit and PR:
+//!
+//! ```yaml
+//! # .github/workflows/cargo-reedme.yaml
+//! name: cargo-reedme
+//! on:
+//!   pull_request:
+//!   push:
+//!     branches:
+//!       - main
+//!
+//! jobs:
+//!   cargo-reedme:
+//!     runs-on: ubuntu-latest
+//!     steps:
+//!       - uses: actions/checkout@v6
+//!
+//!       - uses: actions-rust-lang/setup-rust-toolchain@v1
+//!
+//!       - run: cargo install --locked cargo-reedme
+//!
+//!       - run: cargo-reedme --check
+//! ```
+//!
+//! On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
 //!
 //! # Inspired by
 //!
