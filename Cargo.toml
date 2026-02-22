@@ -2,6 +2,13 @@
 name = "cargo-reedme"
 version = "0.1.0"
 edition = "2024"
+description = "Generate README.md from doc comments in lib.rs"
+rust-version = "1.93"
+authors = ["Nik Revenco <pm@nikrev.com>"]
+repository = "https://github.com/nik-rev/cargo-reedme"
+keywords = ["readme", "documentation", "cargo", "subcommand", "tool"]
+categories = ["development-tools::cargo-plugins", "development-tools", "text-processing", "command-line-interface", "development-tools"]
+license = "MIT OR Apache-2.0"
 
 [features]
 __failing_links = []
