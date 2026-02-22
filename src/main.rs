@@ -1,5 +1,6 @@
 use std::io::Write as _;
 
+use docstr::docstr;
 use eyre::Context as _;
 use eyre::Result;
 use fs_err as fs;
@@ -70,19 +71,9 @@ fn main() -> Result<()> {
     // Writes README.md files for each Cargo package
     let mut output = cargo_reedme::resolve(&world)?;
 
-    // Errors are sorted by their display, so we show the same errors at the same time
-    output.errors.sort_by_key(|x| x.to_string());
-
-    // Let's report each individual error rather than just the first one
-    for err in &output.errors {
-        eprintln!("{err:?}");
-    }
-
-    if !output.errors.is_empty() {
-        std::process::exit(1);
-    }
-
-    // Execute the actual function of the program
+    // take becase we need ownership of `output` to pretty-print it if `--json`
+    // flag is passed, but we actually don't read that field because it is marked `#[serde(skip)]`
+    report_errors(std::mem::take(&mut output.errors));
 
     if cli.json {
         output.readmes.sort_unstable_by(|a, b| a.path.cmp(&b.path));
@@ -92,24 +83,28 @@ fn main() -> Result<()> {
         std::io::stdout()
             .write_all(json.as_bytes())
             .context("failed to write JSON")?;
-    } else {
-        // Regular output
-        output.readmes.par_iter().for_each(|readme| {
+
+        return Ok(());
+    }
+
+    let errors: Vec<_> = output
+        .readmes
+        .par_iter()
+        .map(|readme| -> Result<()> {
             let Some(new_readme) = readme.file.to_readme(std::env::args().skip(1)) else {
-                docstr::docstr!(eprintln!
+                docstr!(eprintln!
                     /// can't figure out where to insert generated content in: {}
                     ///
                     /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
                     /// the generated portion from rustdoc comments will be inserted!
                     readme.path,
                 );
-                return;
+                return Ok(());
             };
 
             if cli.check {
-                let current_readme = fs::read_to_string(&readme.path)
-                    .context("failed to read `README.md` file")
-                    .unwrap();
+                let current_readme =
+                    fs::read_to_string(&readme.path).context("failed to read `README.md` file")?;
 
                 let current_readme = current_readme.trim_end();
 
@@ -146,10 +141,31 @@ fn main() -> Result<()> {
                     println!("{err}");
                 }
             }
-        });
-    }
+
+            Ok(())
+        })
+        .filter_map(|res| res.err())
+        .collect();
+
+    report_errors(errors);
 
     Ok(())
+}
+
+/// Reports errors, exits if there are any
+fn report_errors(mut errors: Vec<eyre::Report>) {
+    // Errors are sorted by their display, so we show the same errors at the same time
+    errors.sort_by_key(|err| err.to_string());
+
+    // Let's report each individual error rather than just the first one
+    for err in &errors {
+        eprintln!("{err:?}");
+    }
+
+    if !errors.is_empty() {
+        // We encountered errors, reported, exit with a non-zero exit code
+        std::process::exit(1);
+    }
 }
 
 fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
