@@ -1,8 +1,45 @@
 //! Features:
 //!
-//! - Everything is resolved by rustdoc, so all the links will work
+//! - **Link mapping:** Intra-doc links will be transformed into absolute URLs. These doc comments:
 //!
-//! - **All** doc comments work. So, macros in doc comments get properly expanded. These doc comments:
+//!   ```rust,ignore
+//!   /// This data structure is [`serde_json::Value`](Value).
+//!   struct Value;
+//!   ```
+//!
+//!   Generate the following `README.md`:
+//!
+//!   ```markdown
+//!   This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
+//!   ```
+//!
+//!   The generated link format is fully configurable.
+//!
+//! - **Workspace support**: Generate `README.md`s for all crates in your workspace with a single command! Supports `--workspace`, `--exclude`, and `--package`
+//!
+//! - **Cargo features**: supports `--all-features`, `--features`, and `--no-default-features`
+//!
+//! - **Code blocks transformation**: Code blocks will have `rust` language added, and hidden lines will be removed:
+//!
+//!   ````rust,ignore
+//!   //! ```
+//!   //! # fn main() {
+//!   //! // "hello world" in Rust
+//!   //! println!("Hello, world!");
+//!   //! # }
+//!   //! ```
+//!   ````
+//!
+//!   Generates the following `README.md`:
+//!
+//!   ````markdown
+//!   ```rust
+//!   // "hello world" in Rust
+//!   println!("Hello, world!");
+//!   ```
+//!   ````
+//!
+//! - **All doc comments work**: So, macros in doc comments get properly expanded. These doc comments:
 //!
 //!   ````rust,ignore
 //!   //! ```toml
