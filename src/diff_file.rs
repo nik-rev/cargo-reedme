@@ -331,7 +331,7 @@ impl Mismatch {
 }
 
 // Produces a diff between the expected output and actual output of rustfmt.
-pub(crate) fn make_diff(expected: &str, actual: &str, context_size: usize) -> Vec<Mismatch> {
+pub(crate) fn make_diff(actual: &str, expected: &str, context_size: usize) -> Vec<Mismatch> {
     let mut line_number = 1;
     let mut line_number_orig = 1;
     let mut context_queue: VecDeque<&str> = VecDeque::with_capacity(context_size);

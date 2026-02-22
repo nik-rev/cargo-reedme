@@ -1,5 +1,7 @@
 //! # Configuration
 //!
+//! world
+//!
 //! You can configure the behavior of `cargo-reedme` via the `[metadata]` table in `Cargo.toml`:
 //!
 //! ```toml
@@ -23,6 +25,8 @@
 //! ```rust
 //! //! This is an [Example]
 //! ```
+//!
+//! hello
 //!
 //! Will generate the following `README.md`:
 //!

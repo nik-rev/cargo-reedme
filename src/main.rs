@@ -1,16 +1,11 @@
-use core::fmt;
 use std::io::Write as _;
 
-use console::Style;
-use console::style;
 use eyre::Context as _;
 use eyre::Result;
 use fs_err as fs;
-use itertools::Itertools;
 use rayon::prelude::*;
 
 use clap::Parser;
-use similar::ChangeTag;
 
 mod diff_file;
 
@@ -116,40 +111,14 @@ fn main() -> Result<()> {
                     .context("failed to read `README.md` file")
                     .unwrap();
 
-                let new_readme = new_readme.trim_end();
                 let current_readme = current_readme.trim_end();
 
-                // line range of the INFO
-                let new_readme_info_section_range =
-                    cargo_reedme::insert_into_readme::locate_info_section(new_readme)
-                        .unwrap_or_default();
+                let new_readme = cargo_reedme::insert_into_readme::normalize_new_readme(
+                    current_readme,
+                    &new_readme,
+                );
 
-                // line range of the INFO
-                let current_readme_info_section_range =
-                    cargo_reedme::insert_into_readme::locate_info_section(current_readme)
-                        .unwrap_or_default();
-
-                // Contains INFO itself
-                let new_readme_info_section_lines =
-                    new_readme.lines().enumerate().filter_map(|(i, line)| {
-                        new_readme_info_section_range.contains(&i).then_some(line)
-                    });
-
-                let current_readme_lines = current_readme.lines().collect_vec();
-
-                let current_readme = current_readme_lines
-                    [..current_readme_info_section_range.start]
-                    .iter()
-                    .copied()
-                    .chain(new_readme_info_section_lines)
-                    .chain(
-                        current_readme_lines[current_readme_info_section_range.end..]
-                            .iter()
-                            .copied(),
-                    )
-                    .join("\n");
-
-                let diff = diff_file::make_diff(new_readme, &current_readme, 3);
+                let diff = diff_file::make_diff(current_readme, &new_readme, 3);
 
                 let display_path = if let Ok(cwd) = std::env::current_dir()
                     && let Ok(path) = readme.path.strip_prefix(cwd)

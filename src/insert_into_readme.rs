@@ -48,6 +48,36 @@ pub fn locate_info_section(content: &str) -> Option<Range<usize>> {
     Some(first..last)
 }
 
+/// Normalizes the current README by making its INFO section
+/// be the same as the new readme
+///
+/// We want to have the freedom to update the INFO section anytime,
+/// so changes to it should not fail the CI
+pub fn normalize_new_readme(current_readme: &str, new_readme: &str) -> String {
+    let new_readme = new_readme.trim_end();
+
+    // where the INFO section sits in both versions
+    let current_info_range = locate_info_section(current_readme).unwrap_or_default();
+    let new_info_range = locate_info_section(new_readme).unwrap_or_default();
+
+    // extract the INFO lines from the CURRENT readme
+    let current_info_lines = current_readme
+        .lines()
+        .enumerate()
+        .filter_map(|(i, line)| current_info_range.contains(&i).then_some(line));
+
+    let new_readme_lines = new_readme.lines().collect_vec();
+
+    // reconstruct the README:
+    // [new content before INFO] + [old INFO section] + [new content after INFO]
+    new_readme_lines[..new_info_range.start]
+        .iter()
+        .copied()
+        .chain(current_info_lines)
+        .chain(new_readme_lines[new_info_range.end..].iter().copied())
+        .join("\n")
+}
+
 impl ReadmeFile {
     const INFO_START: &str = "cargo-reedme: info-start";
     const INFO_END: &str = "cargo-reedme: info-end";
