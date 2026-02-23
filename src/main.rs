@@ -134,49 +134,62 @@ fn main() -> Result<()> {
             })
             .filter_map(|res| res.err())
             .collect(),
-        Action::RunCheck => output
-            .readmes
-            // not par_iter because we want the diffs to be in a determined order
-            .iter()
-            .map(|readme| -> Result<()> {
-                let new_readme = read_readme_file(&world, readme)?;
+        Action::RunCheck => {
+            let mut has_diff_any = false;
 
-                let current_readme =
-                    fs::read_to_string(&readme.path).context("failed to read `README.md` file")?;
+            let errors = output
+                .readmes
+                // not par_iter because we want the diffs to be in a determined order
+                .iter()
+                .map(|readme| -> Result<()> {
+                    let new_readme = read_readme_file(&world, readme)?;
 
-                let current_readme = current_readme.trim_end();
+                    let current_readme = fs::read_to_string(&readme.path)
+                        .context("failed to read `README.md` file")?;
 
-                let new_readme = cargo_reedme::insert_into_readme::normalize_new_readme(
-                    current_readme,
-                    &new_readme,
-                );
+                    let current_readme = current_readme.trim_end();
 
-                let diff = diff_file::make_diff(current_readme, &new_readme, 3);
-
-                let display_path = if let Ok(cwd) = std::env::current_dir()
-                    && let Ok(path) = readme.path.strip_prefix(cwd)
-                {
-                    path.to_path_buf()
-                } else {
-                    readme.path.clone()
-                };
-
-                let has_diff = !diff.is_empty();
-
-                if has_diff {
-                    diff_file::print_diff(
-                        diff,
-                        |line_num| format!("\n\ndiff in {display_path}:{line_num}:\n"),
-                        cli.color,
+                    let new_readme = cargo_reedme::insert_into_readme::normalize_new_readme(
+                        current_readme,
+                        &new_readme,
                     );
-                } else {
-                    std::process::exit(1);
-                }
 
-                Ok(())
-            })
-            .filter_map(|res| res.err())
-            .collect(),
+                    let diff = diff_file::make_diff(current_readme, &new_readme, 3);
+
+                    let display_path = if let Ok(cwd) = std::env::current_dir()
+                        && let Ok(path) = readme.path.strip_prefix(cwd)
+                    {
+                        path.to_path_buf()
+                    } else {
+                        readme.path.clone()
+                    };
+
+                    let has_diff = !diff.is_empty();
+
+                    if has_diff {
+                        diff_file::print_diff(
+                            diff,
+                            |line_num| format!("\n\ndiff in {display_path}:{line_num}:\n"),
+                            cli.color,
+                        );
+                        has_diff_any = has_diff;
+                    }
+
+                    Ok(())
+                })
+                .filter_map(|res| res.err())
+                .collect();
+
+            if has_diff_any {
+                bail!(
+                    "README files need to be updated (with https://github.com/nik-rev/cargo-reedme)"
+                )
+            } else {
+                println!("all READMEs are up-to-date!")
+            }
+
+            errors
+        }
     };
 
     report_errors(errors);
