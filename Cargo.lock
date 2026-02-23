@@ -432,7 +432,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-reedme"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "anstream",
  "camino",
