@@ -78,6 +78,7 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
 
             #[cfg(feature = "__failing_links")]
             {
+                use std::io::Write;
                 let mut file = std::fs::File::options()
                     .append(true)
                     .create(true)
