@@ -254,6 +254,7 @@ pub fn inline_link_destination(input: &str) -> Option<Range<usize>> {
 
 /// Returns position of the matching opening parentheses
 ///
+/// ```text
 /// a ( () \( )
 ///
 ///           ^ if we start here
@@ -269,6 +270,7 @@ pub fn inline_link_destination(input: &str) -> Option<Range<usize>> {
 /// a ( () \( )
 ///
 ///     ^ position of this parentheses will be returned
+/// ```
 fn locate_matching_opening_parentheses(
     chars: &mut std::iter::Peekable<std::iter::Rev<std::str::CharIndices<'_>>>,
 ) -> Option<usize> {
