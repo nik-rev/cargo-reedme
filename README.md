@@ -326,7 +326,7 @@ base-url = "https://docs.rs"
 # The note that appears at the beginning of the generated section.
 #
 # When running with `--check`, the note can differ. 2 README files are considered the same
-# if the only difference between them is their "note" section.
+# regardless of the difference between them is their "note" section.
 #
 # Available values for interpolation:
 #
