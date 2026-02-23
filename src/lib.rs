@@ -204,7 +204,7 @@
 //!
 //! ## Check mode
 //!
-//! Run `cargo-reedme` as part of your CI pipeline!
+//! Run `cargo reedme` as part of your CI pipeline!
 //!
 //! The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
 //!
@@ -229,7 +229,7 @@
 //!
 //!       - run: cargo install --locked cargo-reedme
 //!
-//!       - run: cargo-reedme --check
+//!       - run: cargo reedme --check
 //! ```
 //!
 //! On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
@@ -275,7 +275,7 @@
 //!
 //! ## Config
 //!
-//! You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
+//! You can configure the behavior of `cargo reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 //!
 //! ```toml
 //! # project/crates/foo_bar/Cargo.toml
@@ -307,10 +307,10 @@
 //!
 //! ## Use programmatically from scripts
 //!
-//! The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
+//! The `--json` flag can be used to have `cargo reedme` do all computation but not write any files, so you can
 //! do with that data as you please.
 //!
-//! You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`'s logic lives in a single, pure function [`cargo_reedme::resolve`](resolve)
+//! You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`'s logic lives in a single, pure function [`cargo_reedme::resolve`](resolve)
 //! which does no IO. It has the following signature:
 //!
 //! ```ignore
