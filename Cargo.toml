@@ -45,6 +45,8 @@ term = "1.2.1"
 similar = "2.7"
 console = "0.16.2"
 simply_colored = "0.1.4"
+microtemplate = "1.0.3"
+toml = "1.0.3"
 
 [dev-dependencies]
 rust-playground-top-crates = { version = "=0.1.7", git = "https://github.com/rust-lang/rust-playground.git" }

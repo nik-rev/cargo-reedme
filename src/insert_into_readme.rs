@@ -6,6 +6,8 @@ use docstr::docstr;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
+use crate::{World, config::Config};
+
 /// Represents contents of the new README file
 #[derive(Serialize, Deserialize)]
 pub struct ReadmeFile {
@@ -82,21 +84,36 @@ impl ReadmeFile {
     const INFO_START: &str = "cargo-reedme: info-start";
     const INFO_END: &str = "cargo-reedme: info-end";
 
-    fn alert(args: impl IntoIterator<Item = impl std::fmt::Display>) -> String {
+    /// Generate the NOTE that will be used to let users know about where
+    /// the generated README section came from
+    fn generate_note(world: &World, config: &Config) -> String {
+        #[derive(microtemplate::Substitutions)]
+        struct Substitute<'a> {
+            args: &'a str,
+        }
+
+        let note = microtemplate::render(
+            &config.note,
+            Substitute {
+                args: &world.args.iter().join(" "),
+            },
+        );
+
+        // indent every line so it stands out more
+        //
+        // + remove trailing whitespace
+        let note = note
+            .lines()
+            .map(|line| format!("    {line}").trim_end().to_string())
+            .join("\n");
+
         docstr!(format!
             /// <!-- {}
             ///
-            ///     Do not edit this region by hand
-            ///     ===============================
-            ///
-            ///     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
-            ///
-            ///         cargo reedme {}
-            ///
-            ///     for more info: https://github.com/nik-rev/cargo-reedme
+            /// {note}
             ///
             /// {} -->
-            Self::INFO_START, args.into_iter().join(" "), Self::INFO_END
+            Self::INFO_START, Self::INFO_END
         )
     }
 
@@ -104,13 +121,10 @@ impl ReadmeFile {
     ///
     /// Returns `false` as the 2nd return when we can't figure out what the contents should be,
     /// because the marker is not present
-    pub fn to_readme(
-        &self,
-        args: impl IntoIterator<Item = impl std::fmt::Display>,
-    ) -> Option<String> {
+    pub fn to_readme(&self, world: &World, config: &Config) -> Option<String> {
         let contents = &self.contents;
 
-        let alert = Self::alert(args);
+        let alert = Self::generate_note(world, config);
 
         match &self.meta {
             ReadmeContentsMeta::NewlyCreated => {
@@ -156,16 +170,13 @@ impl UsersReadmeParts {
 
     pub fn new(original_readme: &str) -> Option<Self> {
         let (before, after) = original_readme
-            .split_once(Self::MARKER_INSERT)
-            .or_else(|| {
-                original_readme
-                    .split_once(Self::MARKER_INSERT_START)
-                    .and_then(|(before, remaining)| {
-                        remaining
-                            .split_once(Self::MARKER_INSERT_END)
-                            .map(|(_previously_inserted_by_us, after)| (before, after))
-                    })
-            })?;
+            .split_once(Self::MARKER_INSERT_START)
+            .and_then(|(before, remaining)| {
+                remaining
+                    .rsplit_once(Self::MARKER_INSERT_END)
+                    .map(|(_previously_inserted_by_us, after)| (before, after))
+            })
+            .or_else(|| original_readme.split_once(Self::MARKER_INSERT))?;
 
         Some(Self {
             before: before.to_string(),
@@ -181,7 +192,7 @@ mod tests {
     use super::*;
 
     fn alert() -> String {
-        ReadmeFile::alert([""])
+        ReadmeFile::generate_note(&World::default(), &Config::default())
     }
 
     fn t(original: &str, insert: &str) -> Option<String> {
@@ -190,7 +201,7 @@ mod tests {
                 contents: insert.to_string(),
                 meta: ReadmeContentsMeta::InsertedIntoUsersReadme(parts),
             }
-            .to_readme([""])
+            .to_readme(&World::default(), &Config::default())
         })
     }
 
@@ -221,7 +232,7 @@ mod tests {
                 .to_string(),
                 meta: ReadmeContentsMeta::NewlyCreated
             }
-            .to_readme([""])
+            .to_readme(&World::default(), &Config::default())
             .unwrap(),
             docstr!(format!
                 /// <!-- cargo-reedme: start -->

@@ -3,6 +3,7 @@
 
 use std::io::Write as _;
 
+use cargo_reedme::World;
 use docstr::docstr;
 use eyre::Context as _;
 use eyre::Result;
@@ -70,6 +71,7 @@ fn main() -> Result<()> {
             cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &toolchain)
         }),
         read_file: |path| fs::read_to_string(path),
+        ..Default::default()
     };
 
     // Writes README.md files for each Cargo package
@@ -114,7 +116,7 @@ fn main() -> Result<()> {
             .readmes
             .par_iter()
             .map(|readme| -> Result<()> {
-                if let Err(err) = fs::write(&readme.path, read_readme_file(readme)?)
+                if let Err(err) = fs::write(&readme.path, read_readme_file(&world, readme)?)
                     .context("failed to write `README.md` file")
                 {
                     println!("{err}");
@@ -129,7 +131,7 @@ fn main() -> Result<()> {
             // not par_iter because we want the diffs to be in a determined order
             .iter()
             .map(|readme| -> Result<()> {
-                let new_readme = read_readme_file(readme)?;
+                let new_readme = read_readme_file(&world, readme)?;
 
                 let current_readme =
                     fs::read_to_string(&readme.path).context("failed to read `README.md` file")?;
@@ -202,17 +204,14 @@ fn init_logging(verbosity: clap_verbosity_flag::Verbosity) {
         .init();
 }
 
-fn read_readme_file(readme: &cargo_reedme::GeneratedReadme) -> Result<String> {
-    readme
-        .file
-        .to_readme(std::env::args().skip(1))
-        .ok_or_else(|| {
-            docstr!(eyre::format_err!
-                /// can't figure out where to insert generated content in: {}
-                ///
-                /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
-                /// the generated portion from rustdoc comments will be inserted!
-                readme.path,
-            )
-        })
+fn read_readme_file(world: &World, readme: &cargo_reedme::GeneratedReadme) -> Result<String> {
+    readme.file.to_readme(world, &readme.config).ok_or_else(|| {
+        docstr!(eyre::format_err!
+            /// can't figure out where to insert generated content in: {}
+            ///
+            /// please add `<!-- cargo-reedme -->` somewhere in your README, as that's where
+            /// the generated portion from rustdoc comments will be inserted!
+            readme.path,
+        )
+    })
 }

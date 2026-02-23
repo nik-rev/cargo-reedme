@@ -233,6 +233,8 @@ pub struct GeneratedReadme {
     /// Content extracted from documentation comments, with
     /// zero processing applied
     pub original_doc_comments: String,
+    /// Configuration that was used to generate this README file
+    pub config: Config,
 }
 
 pub fn resolve(world: &World) -> Result<Output> {
@@ -248,14 +250,13 @@ pub fn resolve(world: &World) -> Result<Output> {
     // This takes into account selected packages such as via --package
     let (pkgs, _excluded_packages) = world.input_workspace.partition_packages(&metadata);
 
-    // Config from [workspace.metadata.cargo-reedme]
-    let config = Config::from_cargo_metadata(metadata.workspace_metadata.clone());
-
     let mut readmes = Vec::new();
     let mut errors = Vec::new();
 
     for pkg in pkgs {
         let result = (|| -> Result<GeneratedReadme> {
+            let config = Config::new(metadata.workspace_metadata.clone(), pkg.metadata.clone());
+
             let (generated_readme, original_doc_comments) =
                 generate_readme_for_package(world, pkg, &config, &metadata).with_context(|| {
                     format!("failed to generate README for package `{}`", pkg.name)
@@ -296,6 +297,7 @@ pub fn resolve(world: &World) -> Result<Output> {
                 file: new_readme,
                 original_doc_comments,
                 package: pkg.name.to_string(),
+                config,
             })
         })();
 
@@ -322,14 +324,9 @@ const VERSION: semver::Version = semver::Version::new(
 fn generate_readme_for_package(
     world: &World,
     pkg: &Package,
-    workspace_config: &Config,
+    config: &Config,
     workspace_metadata: &cargo_metadata::Metadata,
 ) -> Result<(String, String)> {
-    // Read configuration as specified in [package.metadata.cargo-reedme]
-    let mut config = Config::from_cargo_metadata(pkg.metadata.clone());
-    // Inherit values from [workspace.metadata.cargo-reedme]
-    config.inherit_workspace_metadata(workspace_config.clone());
-
     let krate =
         (world.rustdoc_json_for_crate)(pkg, workspace_metadata).context("failed to run rustdoc")?;
 
@@ -339,7 +336,7 @@ fn generate_readme_for_package(
         .expect("rustdoc's root item is a valid item");
 
     // Get the link map, which for [main function](main) creates: { "main": "https://example.com" }
-    let links = intralinks::create_links(pkg, &config, &krate);
+    let links = intralinks::create_links(pkg, config, &krate);
 
     let docs = root.docs.as_deref().unwrap_or_default();
 

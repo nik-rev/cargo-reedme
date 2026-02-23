@@ -19,6 +19,7 @@ pub struct World {
     >,
     /// Read the given file to a string
     pub read_file: fn(&camino::Utf8Path) -> std::io::Result<String>,
+    pub args: Vec<String>,
 }
 
 impl Default for World {
@@ -31,6 +32,7 @@ impl Default for World {
                 extract_rustdoc_json(pkg, metadata, "nightly")
             }),
             read_file: |path| fs::read_to_string(path),
+            args: std::env::args().skip(1).collect(),
         }
     }
 }

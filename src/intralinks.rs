@@ -42,7 +42,7 @@ use rustdoc_types::{
 };
 use tracing::{error, trace};
 
-use crate::{Config, config::IntralinksDocsRsConfig};
+use crate::Config;
 
 /// This maps link contents to link URLs.
 ///
@@ -97,7 +97,7 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
             item_info.url(
                 f,
                 &krate.external_crates,
-                &config.docs_rs,
+                &config.base_url,
                 &pkg.name,
                 &pkg.version,
             )
@@ -331,12 +331,10 @@ impl<'a> ItemInfo<'a> {
         &self,
         f: &mut fmt::Formatter,
         external_crates: &HashMap<u32, ExternalCrate>,
-        config: &IntralinksDocsRsConfig,
+        base_url: &str,
         package_name: &str,
         package_version: &Version,
     ) -> fmt::Result {
-        let base_url = config.base_url.as_deref().unwrap_or("https://docs.rs");
-
         if self.is_from_current_crate() {
             f.write_fmt(format_args!("{base_url}/{package_name}/{package_version}/"))?;
             self.url_path(f)?;
