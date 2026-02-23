@@ -28,11 +28,12 @@ Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 The following documentation in `lib.rs`:
 
 ````rust
-//! This crate provides a procedural macro [`docstr!`] for ergonomically creating multi-line string literals.
+//! This crate provides a procedural macro [`docstr!`] for
+//! ergonomically creating multi-line string literals.
 //!
 //! ```toml
 //! [dependencies]
-//! docstr = "0.4"
+#![doc = concat!("docstr = '", env!("CARGO_PKG_VERSION"), "'")]
 //! ```
 //!
 //! # Usage
@@ -61,11 +62,12 @@ The following documentation in `lib.rs`:
 Generates the following `README.md`:
 
 ````markdown
-This crate provides a procedural macro [`docstr!`](https://docs.rs/docstr/0.4.6/docstr/macro.docstr.html) for ergonomically creating multi-line string literals.
+This crate provides a procedural macro [`docstr!`](https://docs.rs/docstr/0.4.6/docstr/macro.docstr.html) for
+ergonomically creating multi-line string literals.
 
 ```toml
 [dependencies]
-docstr = "0.4"
+docstr = '0.4.6'
 ```
 
 # Usage
