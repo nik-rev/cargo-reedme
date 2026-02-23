@@ -6,6 +6,72 @@
 //!
 //! Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 //!
+//! # Example
+//!
+//! The following documentation in `lib.rs`:
+//!
+//! ````rust
+//! //! This crate provides a procedural macro [`docstr!`] for ergonomically creating multi-line string literals.
+//! //!
+//! //! ```toml
+//! //! [dependencies]
+//! //! docstr = "0.4"
+//! //! ```
+//! //!
+//! //! # Usage
+//! //!
+//! //! ```
+//! //! # use docstr::docstr;
+//! //! #
+//! //! let hello_world_in_c: &'static str = docstr!(
+//! //!     /// #include <stdio.h>
+//! //!     ///
+//! //!     /// int main(int argc, char **argv) {
+//! //!     ///     printf("hello world\n");
+//! //!     ///     return 0;
+//! //!     /// }
+//! //! );
+//! //!
+//! //! assert_eq!(hello_world_in_c, r#"#include <stdio.h>
+//! //!
+//! //! int main(int argc, char **argv) {
+//! //!     printf("hello world\n");
+//! //!     return 0;
+//! //! }"#)
+//! //! ```
+//! ````
+//!
+//! Generates the following `README.md`:
+//!
+//! ````markdown
+//! This crate provides a procedural macro [`docstr!`](https://docs.rs/docstr/0.4.6/docstr/macro.docstr.html) for ergonomically creating multi-line string literals.
+//!
+//! ```toml
+//! [dependencies]
+//! docstr = "0.4"
+//! ```
+//!
+//! # Usage
+//!
+//! ```rust
+//! let hello_world_in_c: &'static str = docstr!(
+//!     /// #include <stdio.h>
+//!     ///
+//!     /// int main(int argc, char **argv) {
+//!     ///     printf("hello world\n");
+//!     ///     return 0;
+//!     /// }
+//! );
+//!
+//! assert_eq!(hello_world_in_c, r#"#include <stdio.h>
+//!
+//! int main(int argc, char **argv) {
+//!     printf("hello world\n");
+//!     return 0;
+//! }"#)
+//! ```
+//! ````
+//!
 //! # Getting started
 //!
 //! Installation:
