@@ -176,12 +176,7 @@ pub fn resolve(world: &World) -> Result<Output>
 
 You can take a look at `main.rs` to see how this function is called
 
-# Inspired by
-
-- [`cargo-readme`](https://github.com/webern/cargo-readme)
-- [`cargo-rdme`](https://github.com/orium/cargo-rdme)
-
-# Configuration
+# Config
 
 You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 
@@ -202,5 +197,44 @@ You can configure the behavior of `cargo-reedme` via the crate-level `[package.m
 ```
 
 Crate-level configuration will take priority over workspace-level
+
+## Default config
+
+```toml
+#! This is the default configuration for `cargo-reedme`
+#!
+#! These fields can be overridden in `[package.metadata.cargo-reedme]` or `[workspace.metadata.cargo-reedme]`
+
+# The base URL for every generated URL in the README
+#
+# https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html
+# ^^^^^^^^^^^^^^^
+base-url = "https://docs.rs"
+
+# The note that appears at the beginning of the generated section.
+#
+# When running with `--check`, the note can differ. 2 README files are considered the same
+# if the only difference between them is their "note" section.
+#
+# Available values for interpolation:
+#
+# - `args`: Command-line arguments received
+note = """
+Do not edit this region by hand
+===============================
+
+This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+
+    cargo reedme {args}
+
+for more info: https://github.com/nik-rev/cargo-reedme
+"""
+```
+
+# Inspired by
+
+- [`cargo-readme`](https://github.com/webern/cargo-readme)
+- [`cargo-rdme`](https://github.com/orium/cargo-rdme)
+
 
 <!-- cargo-reedme: end -->
