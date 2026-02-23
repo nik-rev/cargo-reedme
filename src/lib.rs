@@ -310,7 +310,7 @@
 //! The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
 //! do with that data as you please.
 //!
-//! You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`'s logic lives in a single, pure function `cargo_reedme::resolve`
+//! You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`'s logic lives in a single, pure function [`cargo_reedme::resolve`](resolve)
 //! which does no IO. It has the following signature:
 //!
 //! ```ignore
