@@ -11,7 +11,7 @@ pub struct Config {
     pub note: String,
 }
 
-pub const DEFAULT_CONFIG_STR: &str = include_str!("../default_config.toml");
+pub const DEFAULT_CONFIG_STR: &str = include_str!("default_config.toml");
 
 static DEFAULT_CONFIG: LazyLock<Config> =
     LazyLock::new(|| toml::from_str(DEFAULT_CONFIG_STR).unwrap());
