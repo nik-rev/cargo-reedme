@@ -23,6 +23,10 @@ cargo-reedme: info-end -->
 
 Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 
+- [Example](#example)
+- [Installation](#installation)
+- [Features](#features)
+
 # Example
 
 The following documentation in `lib.rs`:
@@ -59,7 +63,7 @@ The following documentation in `lib.rs`:
 //! ```
 ````
 
-Generates the following `README.md`:
+Generates the following `README.md` when running `cargo reedme`:
 
 ````markdown
 This crate provides a procedural macro [`docstr!`](https://docs.rs/docstr/0.4.6/docstr/macro.docstr.html) for
@@ -91,18 +95,10 @@ int main(int argc, char **argv) {
 ```
 ````
 
-# Getting started
-
-Installation:
+# Installation
 
 ```sh
 cargo install cargo-reedme
-```
-
-Usage:
-
-```sh
-cargo reedme
 ```
 
 # Features
