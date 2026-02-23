@@ -1,3 +1,5 @@
+# my_crate
+
 <!-- cargo-reedme: start -->
 
 <!-- cargo-reedme: info-start
@@ -15,12 +17,446 @@ cargo-reedme: info-end -->
 
 # Features
 
+## Generate `README.md` from documentation comments in `lib.rs`
+
+Running `cargo reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
+
+```rust
+//! Hello, world!
+```
+
+Generates the following `README.md`:
+
+```markdown
+Hello, world!
+```
+
+If the `README.md` file already existed, it must have a `<!-- cargo-reedme: start -->
+
+<!-- cargo-reedme: info-start
+
+    Do not edit this region by hand
+    ===============================
+
+    This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+
+        cargo reedme 
+
+    for more info: https://github.com/nik-rev/cargo-reedme
+
+cargo-reedme: info-end -->
+
+# Features
+
+## Generate `README.md` from documentation comments in `lib.rs`
+
+Running `cargo reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
+
+```rust
+//! Hello, world!
+```
+
+Generates the following `README.md`:
+
+```markdown
+<!-- cargo-reedme: start -->
+
+Hello, world!
+
+<!-- cargo-reedme: end -->
+```
+
+If the `README.md` file already exists, it must have a `<!-- cargo-reedme: start -->
+
+<!-- cargo-reedme: info-start
+
+    Do not edit this region by hand
+    ===============================
+
+    This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+
+        cargo reedme 
+
+    for more info: https://github.com/nik-rev/cargo-reedme
+
+cargo-reedme: info-end -->
+
+# Features
+
+## Generate `README.md` from documentation comments in `lib.rs`
+
+Running `cargo reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
+
+```rust
+//! Hello, world!
+```
+
+Generates the following `README.md`:
+
+```markdown
+<!-- cargo-reedme: start -->
+
+Hello, world!
+
+<!-- cargo-reedme: end -->
+```
+
+If the `README.md` file already exists, it must have a `<!-- cargo-reedme -->` somewhere inside of it. If the `README.md` contains the following:
+
+```markdown
+# my_crate
+
+<!-- cargo-reedme -->
+```
+
+Running `cargo reedme` will replace that `<!-- cargo-reedme -->` with documentation from `lib.rs`:
+
+```markdown
+# my_crate
+
+<!-- cargo-reedme: start -->
+
+Hello, world!
+
+<!-- cargo-reedme: end -->
+```
+
+Further invocations of `cargo reedme` update the inserted region
+
 ## Link mapping
 
 Intra-doc links will be transformed into absolute URLs:
 
 ```rust
-/// This data structure is [`serde_json::Value`](Value).
+//! This data structure is [`serde_json::Value`](Value).
+struct Value;
+```
+
+The above generate the following `README.md`:
+
+```markdown
+This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
+```
+
+The generated link format is fully configurable.
+
+## Workspace support
+
+Generate `README.md`s for all crates in your workspace with a single command!
+
+Supports `--workspace`, `--exclude`, and `--package`
+
+## Cargo features
+
+Supports `--all-features`, `--features`, and `--no-default-features`
+
+## Code blocks transformation
+
+Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
+
+````rust
+//! An example program:
+//!
+//! ```
+//! # fn main() {
+//! // "hello world" in Rust
+//! println!("Hello, world!");
+//! # }
+//! ```
+````
+
+The above generates the following `README.md`:
+
+````markdown
+An example program:
+
+```rust
+// "hello world" in Rust
+println!("Hello, world!");
+```
+````
+
+## Macro expansion
+
+Macros in doc comments get properly expanded:
+
+````rust
+//! ```toml
+//! [dependencies]
+#![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
+//! ```
+````
+
+The above generates the following `README.md`:
+
+````markdown
+```toml
+[dependencies]
+derive_aliases = '0.4'
+```
+````
+
+Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+
+## Check mode
+
+Run `cargo-reedme` as part of your CI pipeline!
+
+The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
+
+An example workflow that runs `cargo reedme --check` on every commit and PR:
+
+```yaml
+# .github/workflows/cargo-reedme.yaml
+name: cargo-reedme
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  cargo-reedme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - run: cargo install --locked cargo-reedme
+
+      - run: cargo-reedme --check
+```
+
+On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
+
+## Use programmatically from scripts
+
+The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
+do with that data as you please.
+
+You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`’s logic lives in a single, pure function `cargo_reedme::resolve`
+which does no IO. It has the following signature:
+
+```rust
+pub fn resolve(world: &World) -> Result<Output>
+```
+
+You can take a look at `main.rs` to see how this function is called
+
+# Inspired by
+
+- [`cargo-readme`](https://github.com/webern/cargo-readme)
+- [`cargo-rdme`](https://github.com/orium/cargo-rdme)
+
+# Configuration
+
+You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
+
+```toml
+# project/crates/foo_bar/Cargo.toml
+
+[package.metadata.cargo-reedme]
+# ... your settings go here ...
+```
+
+…or the workspace-level `[workspace.metadata]` table
+
+```toml
+# project/Cargo.toml
+
+[workspace.metadata.cargo-reedme]
+# ... your settings go here ...
+```
+
+Crate-level configuration will take priority over workspace-level
+
+<!-- cargo-reedme: end -->` somewhere inside of it. If the `README.md` contains the following:
+
+```markdown
+# my_crate
+
+<!-- cargo-reedme -->
+```
+
+Running `cargo reedme` will replace that `<!-- cargo-reedme -->` with documentation from `lib.rs`:
+
+```markdown
+# my_crate
+
+<!-- cargo-reedme: start -->
+
+Hello, world!
+
+<!-- cargo-reedme: end -->
+```
+
+Further invocations of `cargo reedme` update the inserted region
+
+## Link mapping
+
+Intra-doc links will be transformed into absolute URLs:
+
+```rust
+//! This data structure is [`serde_json::Value`](Value).
+struct Value;
+```
+
+The above generate the following `README.md`:
+
+```markdown
+This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
+```
+
+The generated link format is fully configurable.
+
+## Workspace support
+
+Generate `README.md`s for all crates in your workspace with a single command!
+
+Supports `--workspace`, `--exclude`, and `--package`
+
+## Cargo features
+
+Supports `--all-features`, `--features`, and `--no-default-features`
+
+## Code blocks transformation
+
+Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
+
+````rust
+//! An example program:
+//!
+//! ```
+//! # fn main() {
+//! // "hello world" in Rust
+//! println!("Hello, world!");
+//! # }
+//! ```
+````
+
+The above generates the following `README.md`:
+
+````markdown
+An example program:
+
+```rust
+// "hello world" in Rust
+println!("Hello, world!");
+```
+````
+
+## Macro expansion
+
+Macros in doc comments get properly expanded:
+
+````rust
+//! ```toml
+//! [dependencies]
+#![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
+//! ```
+````
+
+The above generates the following `README.md`:
+
+````markdown
+```toml
+[dependencies]
+derive_aliases = '0.4'
+```
+````
+
+Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+
+## Check mode
+
+Run `cargo-reedme` as part of your CI pipeline!
+
+The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
+
+An example workflow that runs `cargo reedme --check` on every commit and PR:
+
+```yaml
+# .github/workflows/cargo-reedme.yaml
+name: cargo-reedme
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  cargo-reedme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - run: cargo install --locked cargo-reedme
+
+      - run: cargo-reedme --check
+```
+
+On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
+
+## Use programmatically from scripts
+
+The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
+do with that data as you please.
+
+You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`’s logic lives in a single, pure function `cargo_reedme::resolve`
+which does no IO. It has the following signature:
+
+```rust
+pub fn resolve(world: &World) -> Result<Output>
+```
+
+You can take a look at `main.rs` to see how this function is called
+
+# Inspired by
+
+- [`cargo-readme`](https://github.com/webern/cargo-readme)
+- [`cargo-rdme`](https://github.com/orium/cargo-rdme)
+
+# Configuration
+
+You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
+
+```toml
+# project/crates/foo_bar/Cargo.toml
+
+[package.metadata.cargo-reedme]
+# ... your settings go here ...
+```
+
+…or the workspace-level `[workspace.metadata]` table
+
+```toml
+# project/Cargo.toml
+
+[workspace.metadata.cargo-reedme]
+# ... your settings go here ...
+```
+
+Crate-level configuration will take priority over workspace-level
+
+<!-- cargo-reedme: end -->` somewhere inside of it. If the `README.md` contains this:
+
+```markdown
+# my_crate
+
+<!-- cargo-reedme -->
+```
+
+Running `cargo reedme` will replace that `<!-- cargo-reedme -->
+
+## Link mapping
+
+Intra-doc links will be transformed into absolute URLs:
+
+```rust
+//! This data structure is [`serde_json::Value`](Value).
 struct Value;
 ```
 

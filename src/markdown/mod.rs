@@ -42,8 +42,6 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
-            println!("{}", &markdown[span.clone()]);
-
             code_block_ranges.insert(span.clone());
 
             // Only consider code blocks that contain Rust from here on out

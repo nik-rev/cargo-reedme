@@ -1,11 +1,51 @@
 //! # Features
 //!
+//! ## Generate `README.md` from documentation comments in `lib.rs`
+//!
+//! Running `cargo reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
+//!
+//! ```rust
+//! //! Hello, world!
+//! ```
+//!
+//! Generates the following `README.md`:
+//!
+//! ```markdown
+//! <!-- cargo-reedme: start -->
+//!
+//! Hello, world!
+//!
+//! <!-- cargo-reedme: end -->
+//! ```
+//!
+//! If the `README.md` file already exists, it must have a `<!-- cargo-reedme -->` somewhere inside of it. If the `README.md` contains the following:
+//!
+//! ```markdown
+//! # my_crate
+//!
+//! <!-- cargo-reedme -->
+//! ```
+//!
+//! Running `cargo reedme` will replace that `<!-- cargo-reedme -->` with documentation from `lib.rs`:
+//!
+//! ```markdown
+//! # my_crate
+//!
+//! <!-- cargo-reedme: start -->
+//!
+//! Hello, world!
+//!
+//! <!-- cargo-reedme: end -->
+//! ```
+//!
+//! Further invocations of `cargo reedme` update the inserted region
+//!
 //! ## Link mapping
 //!
 //! Intra-doc links will be transformed into absolute URLs:
 //!
 //! ```rust,ignore
-//! /// This data structure is [`serde_json::Value`](Value).
+//! //! This data structure is [`serde_json::Value`](Value).
 //! struct Value;
 //! ```
 //!
