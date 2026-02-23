@@ -1,3 +1,25 @@
+//! [![crates.io](https://img.shields.io/crates/v/cargo-reedme?style=flat-square&logo=rust)](https://crates.io/crates/cargo-reedme)
+//! [![docs.rs](https://img.shields.io/badge/docs.rs-cargo-reedme-blue?style=flat-square&logo=docs.rs)](https://docs.rs/cargo-reedme)
+//! ![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)
+//! ![msrv](https://img.shields.io/badge/msrv-1.93-blue?style=flat-square&logo=rust)
+//! [![github](https://img.shields.io/github/stars/nik-rev/cargo-reedme)](https://github.com/nik-rev/cargo-reedme)
+//!
+//! Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
+//!
+//! # Getting started
+//!
+//! Installation:
+//!
+//! ```sh
+//! cargo install cargo-reedme
+//! ```
+//!
+//! Usage:
+//!
+//! ```sh
+//! cargo reedme
+//! ```
+//!
 //! # Features
 //!
 //! ## Generate `README.md` from documentation comments in `lib.rs`
@@ -56,16 +78,6 @@
 //! ```
 //!
 //! The generated link format is fully configurable.
-//!
-//! ## Workspace support
-//!
-//! Generate `README.md`s for all crates in your workspace with a single command!
-//!
-//! Supports `--workspace`, `--exclude`, and `--package`
-//!
-//! ## Cargo features
-//!
-//! Supports `--all-features`, `--features`, and `--no-default-features`
 //!
 //! ## Code blocks transformation
 //!
@@ -147,19 +159,42 @@
 //!
 //! On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
 //!
-//! ## Use programmatically from scripts
+//! ## Workspace support
 //!
-//! The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
-//! do with that data as you please.
+//! Generate `README.md`s for all crates in your workspace with a single command!
 //!
-//! You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`'s logic lives in a single, pure function `cargo_reedme::resolve`
-//! which does no IO. It has the following signature:
+//! Supports `--workspace`, `--exclude`, and `--package`
 //!
-//! ```ignore
-//! pub fn resolve(world: &World) -> Result<Output>
+//! ## Cargo features
+//!
+//! ## Informational note
+//!
+//! When `cargo reedme` generates your `README.md` file, it will insert a comment that explains how this section was generated:
+//!
+//! ```markdown
+//! # my_crate
+//!
+//! <!-- cargo-reedme: start -->
+//!
+//! <!-- cargo-reedme: info-start
+//!
+//!     Do not edit this region by hand
+//!     ===============================
+//!
+//!     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+//!
+//!         cargo reedme
+//!
+//!     for more info: https://github.com/nik-rev/cargo-reedme
+//!
+//! cargo-reedme: info-end -->
+//!
+//! Your documentation
+//!
+//! <!-- cargo-reedme: end -->
 //! ```
 //!
-//! You can take a look at `main.rs` to see how this function is called
+//! This note can be configured.
 //!
 //! ## Config
 //!
@@ -193,11 +228,26 @@
 //! #![doc = include_str!("../default_config.toml")]
 //! ```
 //!
+//! Supports `--all-features`, `--features`, and `--no-default-features`
+//!
+//! ## Use programmatically from scripts
+//!
+//! The `--json` flag can be used to have `cargo-reedme` do all computation but not write any files, so you can
+//! do with that data as you please.
+//!
+//! You can also use `cargo-reedme` as a crate. 95% of the `cargo-reedme`'s logic lives in a single, pure function `cargo_reedme::resolve`
+//! which does no IO. It has the following signature:
+//!
+//! ```ignore
+//! pub fn resolve(world: &World) -> Result<Output>
+//! ```
+//!
+//! You can take a look at `main.rs` to see how this function is called
+//!
 //! # Inspired by
 //!
 //! - [`cargo-readme`](https://github.com/webern/cargo-readme)
 //! - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
-//!
 
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
