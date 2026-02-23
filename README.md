@@ -169,11 +169,9 @@ The above generate the following `README.md`:
 This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
 ```
 
-The generated link format is fully configurable.
-
 ## Code blocks transformation
 
-Code blocks will have `rust` language added, and hidden lines (starting with `#`) will be removed:
+Code blocks will have `rust` language added, and hidden lines (lines starting with `#`) will be removed:
 
 ````rust
 //! An example program:
@@ -288,7 +286,7 @@ Your documentation
 <!-- cargo-reedme: end -->
 ```
 
-This note can be configured.
+This note can be customized via the `note` field in `metadata` table in `Cargo.toml`
 
 ## Config
 
@@ -363,7 +361,9 @@ pub fn resolve(world: &World) -> Result<Output>
 
 You can take a look at `main.rs` to see how this function is called
 
-# Inspired by
+# Credits
+
+This project was inspired by:
 
 - [`cargo-readme`](https://github.com/webern/cargo-readme)
 - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
