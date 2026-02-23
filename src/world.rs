@@ -1,6 +1,7 @@
 //! The [`World`] is the single input that the program receives,
 //! essentially the program is almost entirely a pure function
 
+use docstr::docstr;
 use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
@@ -68,7 +69,20 @@ pub fn extract_rustdoc_json(
     let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
     let mut rustdoc_json = std::io::Cursor::new(rustdoc_json);
 
-    serde_json::from_reader(&mut rustdoc_json).context("failed to deserialize rustdoc json")
+    serde_json::from_reader(&mut rustdoc_json).with_context(|| {
+        docstr!(format!
+            /// failed to deserialize rustdoc json
+            ///
+            /// this usually happens because rustdoc's JSON output is unstable and frequently changes
+            ///
+            /// the Rust version that `cargo reedme` was invoked with may be out of sync with
+            /// the version of the `rustdoc_types` crate that `cargo reedme` uses, which is `{0}`
+            ///
+            /// You can usually fix this by invoking `cargo reedme` with a Rust version that has
+            /// rustdoc version `{0}`. For example, try `cargo +nightly reedme` or another version: `cargo +nightly-YYYY-MM-DD reedme`
+            rustdoc_types::FORMAT_VERSION
+        )
+    })
 }
 
 pub fn extract_package_target(

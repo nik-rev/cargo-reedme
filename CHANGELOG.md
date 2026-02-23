@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.1...HEAD
+
+## [v0.3.1] - 2026-02-23
+
+[v0.3.1]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.0...v0.3.1
+
+- Improve error message when Rustdoc JSON fails to deserialize
 
 ## [v0.3.0] - 2026-02-23
 
