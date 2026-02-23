@@ -1,5 +1,3 @@
-# my_crate
-
 <!-- cargo-reedme: start -->
 
 <!-- cargo-reedme: info-start
