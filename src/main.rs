@@ -15,9 +15,17 @@ use clap::Parser;
 
 mod diff_file;
 
-/// Cargo plugin that generates `README.md` files from documentation comments in `lib.rs` or `main.rs`
 #[derive(Parser)]
+#[command(name = "cargo")]
+#[command(bin_name = "cargo")]
 #[command(styles = clap_cargo::style::CLAP_STYLING)]
+pub enum Command {
+    #[command(name = "reedme")]
+    #[command(about, author, version)]
+    Reedme(Cli),
+}
+
+#[derive(clap::Args)]
 pub struct Cli {
     /// Check that running will not modify any files. Use this in CI
     ///
@@ -48,7 +56,7 @@ pub struct Cli {
 }
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let Command::Reedme(cli) = Command::parse();
 
     init_logging(cli.verbosity);
 
@@ -60,7 +68,7 @@ fn main() -> Result<()> {
             let toolchain = match std::env::var("RUSTUP_TOOLCHAIN") {
                 Ok(toolchain) if !toolchain.contains("nightly") => {
                     println!(
-                        "`cargo-reedme` only works with a nightly Rust toolchain: using `nightly` instead of `{toolchain}`"
+                        "`cargo reedme` only works with a nightly Rust toolchain: using `nightly` instead of `{toolchain}`"
                     );
                     String::from("nightly")
                 }

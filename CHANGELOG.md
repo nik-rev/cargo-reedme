@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.0...HEAD
+
+## [v0.3.0] - 2026-02-23
+
+[v0.3.0]: https://github.com/nik-rev/cargo-reedme/compare/v0.2.0...v0.3.0
+
+- Make the command actually work as a `cargo` subcommand
 
 ## [v0.2.0] - 2026-02-23
 
