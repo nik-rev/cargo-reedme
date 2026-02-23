@@ -7,4 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.2.0...HEAD
+
+## [v0.2.0] - 2026-02-23
+
+[v0.2.0]: https://github.com/nik-rev/cargo-reedme/compare/v0.1.0...v0.2.0
+
+- Add config option `note` to configure the inserted note
