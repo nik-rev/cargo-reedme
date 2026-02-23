@@ -161,12 +161,7 @@
 //!
 //! You can take a look at `main.rs` to see how this function is called
 //!
-//! # Inspired by
-//!
-//! - [`cargo-readme`](https://github.com/webern/cargo-readme)
-//! - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
-//!
-//! # Configuration
+//! # Config
 //!
 //! You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 //!
@@ -187,6 +182,18 @@
 //! ```
 //!
 //! Crate-level configuration will take priority over workspace-level
+//!
+//! ## Default config
+//!
+//! ```toml
+#![doc = include_str!("../default_config.toml")]
+//! ```
+//!
+//! # Inspired by
+//!
+//! - [`cargo-readme`](https://github.com/webern/cargo-readme)
+//! - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
+//!
 
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
