@@ -176,7 +176,7 @@ pub fn resolve(world: &World) -> Result<Output>
 
 You can take a look at `main.rs` to see how this function is called
 
-# Config
+## Config
 
 You can configure the behavior of `cargo-reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 
@@ -196,9 +196,7 @@ You can configure the behavior of `cargo-reedme` via the crate-level `[package.m
 # ... your settings go here ...
 ```
 
-Crate-level configuration will take priority over workspace-level
-
-## Default config
+The default config is this:
 
 ```toml
 #! This is the default configuration for `cargo-reedme`
