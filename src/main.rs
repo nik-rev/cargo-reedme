@@ -85,7 +85,7 @@ fn main() -> Result<()> {
     // Writes README.md files for each Cargo package
     let mut output = cargo_reedme::resolve(&world)?;
 
-    // take becase we need ownership of `output` to pretty-print it if `--json`
+    // take because we need ownership of `output` to pretty-print it if `--json`
     // flag is passed, but we actually don't read that field because it is marked `#[serde(skip)]`
     report_errors(std::mem::take(&mut output.errors));
 

@@ -95,7 +95,7 @@ pub fn inline_link_destination(input: &str) -> Option<Range<usize>> {
                     // [link](\(foo\))
                     //              ^
                     //
-                    // we don't want to stop there. teh link destination is:
+                    // we don't want to stop there. the link destination is:
                     //
                     // [link](\(foo\))
                     //        ^^^^^^^

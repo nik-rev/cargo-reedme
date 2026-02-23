@@ -91,7 +91,7 @@
 //! - [Cargo features](#cargo-features)
 //! - [Informational note](#informational-note)
 //! - [Config](#config)
-//! - [Use programatically from scripts](#use-programatically-from-scripts)
+//! - [Use programmatically from scripts](#use-programmatically-from-scripts)
 //!
 //! ## Generate `README.md` from documentation comments in `lib.rs`
 //!

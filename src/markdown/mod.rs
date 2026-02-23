@@ -182,7 +182,7 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
         // links obtained from the "links" map.
         //
         // That is tricky, because `pulldown_cmark` does not generate any events
-        // for those reference definitions. Their existance is simply erased.
+        // for those reference definitions. Their existence is simply erased.
         //
         // So what we do is mostly a hack. We remember every reference ID and its URL,
         // then we do a 2nd search over the entire input to find all reference links.
