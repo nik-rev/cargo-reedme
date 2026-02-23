@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.2...HEAD
+
+## [v0.3.2] - 2026-02-23
+
+[v0.3.2]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.1...v0.3.2
+
+- Skip first 2 arguments when computing `{args}` interpolation in `note` field
 
 ## [v0.3.1] - 2026-02-23
 
