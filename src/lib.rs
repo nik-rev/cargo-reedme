@@ -1,4 +1,4 @@
-#![doc = nik_rev::badges!(repo = "cargo-reedme")]
+#![doc = include_str!(concat!(env!("OUT_DIR"), "/GENERATED_BADGES"))]
 //!
 //! Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 //!
