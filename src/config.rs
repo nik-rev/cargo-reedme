@@ -63,5 +63,8 @@ impl ConfigToml {
         if let Some(base_url) = workspace_config.base_url {
             self.base_url = Some(base_url);
         }
+        if let Some(note) = workspace_config.note {
+            self.note = Some(note);
+        }
     }
 }

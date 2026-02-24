@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.6...HEAD
 
+### Fixed
+
+- Inherit `note` field from the workspace
+
 ## [v0.3.6] - 2026-02-24
 
 [v0.3.6]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.5...v0.3.6
