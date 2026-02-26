@@ -64,7 +64,7 @@ fn main() -> Result<()> {
         input_manifest: cli.manifest,
         input_workspace: cli.workspace,
         input_features: cli.features,
-        rustdoc_json_for_crate: Box::new(move |pkg, metadata| {
+        rustdoc_json_for_crate: Box::new(move |pkg, metadata, config| {
             let toolchain = match std::env::var("RUSTUP_TOOLCHAIN") {
                 Ok(toolchain) if !toolchain.contains("nightly") => {
                     println!(
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
                 Err(_) => String::from("nightly"),
             };
 
-            cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &toolchain)
+            cargo_reedme::world::extract_rustdoc_json(pkg, metadata, &toolchain, config)
         }),
         read_file: |path| fs::read_to_string(path),
         ..Default::default()

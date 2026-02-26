@@ -335,7 +335,7 @@ pub mod world;
 
 pub use world::World;
 
-mod config;
+pub mod config;
 pub mod insert_into_readme;
 mod intralinks;
 mod markdown;
@@ -358,7 +358,7 @@ pub struct Output {
 pub struct GeneratedReadme {
     /// Path to the README file
     pub path: Utf8PathBuf,
-    /// Cargo package, to which this README belongs to
+    /// Name of cargo package, to which this README belongs to
     pub package: String,
     /// Full new contents of the README file
     pub file: ReadmeFile,
@@ -386,13 +386,18 @@ pub fn resolve(world: &World) -> Result<Output> {
     let mut errors = Vec::new();
 
     for pkg in pkgs {
-        let result = (|| -> Result<GeneratedReadme> {
+        let result = (|| -> Result<Option<GeneratedReadme>> {
             let config = Config::new(metadata.workspace_metadata.clone(), pkg.metadata.clone());
 
             let (generated_readme, original_doc_comments) =
                 generate_readme_for_package(world, pkg, &config, &metadata).with_context(|| {
                     format!("failed to generate README for package `{}`", pkg.name)
                 })?;
+
+            // skip READMEs that have empty content
+            if generated_readme.is_empty() {
+                return Ok(None);
+            }
 
             let readme_path = get_readme_path_for_package(pkg).with_context(|| {
                 format!("failed to get `README.md` path for package `{}`", pkg.name)
@@ -424,17 +429,18 @@ pub fn resolve(world: &World) -> Result<Output> {
                 },
             };
 
-            Ok(GeneratedReadme {
+            Ok(Some(GeneratedReadme {
                 path: readme_path,
                 file: new_readme,
                 original_doc_comments,
                 package: pkg.name.to_string(),
                 config,
-            })
+            }))
         })();
 
         match result {
-            Ok(ok) => readmes.push(ok),
+            Ok(Some(ok)) => readmes.push(ok),
+            Ok(None) => {}
             Err(err) => errors.push(err),
         }
     }
@@ -459,8 +465,8 @@ fn generate_readme_for_package(
     config: &Config,
     workspace_metadata: &cargo_metadata::Metadata,
 ) -> Result<(String, String)> {
-    let krate =
-        (world.rustdoc_json_for_crate)(pkg, workspace_metadata).context("failed to run rustdoc")?;
+    let krate = (world.rustdoc_json_for_crate)(pkg, workspace_metadata, config)
+        .context("failed to run rustdoc")?;
 
     let root = krate
         .index

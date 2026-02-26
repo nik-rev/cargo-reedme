@@ -1,7 +1,10 @@
 //! Handles configuration in the `Cargo.toml` `[workspace.metadata]` and `[package.metadata]` sections
 
-use std::sync::LazyLock;
+use core::fmt;
+use std::{str::FromStr, sync::LazyLock};
 
+use eyre::{ContextCompat, Result, bail};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Serialize, Deserialize)]
@@ -9,6 +12,104 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub base_url: String,
     pub note: String,
+    pub target: Target,
+}
+
+#[derive(Default, Clone, serde_with::SerializeDisplay, serde_with::DeserializeFromStr)]
+pub enum Target {
+    BinOnly,
+    BinExact(String),
+    Lib,
+    #[default]
+    Heuristic,
+}
+
+impl Target {
+    pub fn select<'a>(
+        &self,
+        targets: &'a [cargo_metadata::Target],
+        is_target_empty: impl Fn(&'a cargo_metadata::Target) -> bool,
+    ) -> Result<&'a cargo_metadata::Target> {
+        let get_library_target = || {
+            targets
+                .iter()
+                .filter(|target| {
+                    target.is_lib()
+                        || target.is_rlib()
+                        || target.is_cdylib()
+                        || target.is_proc_macro()
+                        || target.is_staticlib()
+                })
+                .exactly_one()
+        };
+
+        match self {
+            Target::BinOnly => targets
+                .iter()
+                .filter(|target| target.is_bin())
+                .exactly_one()
+                .ok()
+                .wrap_err("expected exactly 1 binary target (main.rs)"),
+            Target::BinExact(name) => targets
+                .iter()
+                .filter(|target| target.is_bin())
+                .find(|target| target.name == *name)
+                .wrap_err_with(|| format!("binary target with the name `{name}` not found")),
+            Target::Lib => get_library_target()
+                .ok()
+                .wrap_err("expected a library target (lib.rs)"),
+            Target::Heuristic => {
+                if let Ok(target) = get_library_target() {
+                    if is_target_empty(target) {
+                        bail!(
+                            "found library target: {}, but it has no docs (//!)",
+                            target.name
+                        )
+                    } else {
+                        Ok(target)
+                    }
+                } else if let Some(target) = targets.iter().find(|target| target.is_bin()) {
+                    Ok(target)
+                } else {
+                    bail!(
+                        "no binary target (main.rs) or library target (lib.rs) found with documentation comments"
+                    )
+                }
+            }
+        }
+    }
+}
+
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Target::BinOnly => f.write_str("bin"),
+            Target::BinExact(name) => f.write_fmt(format_args!("bin:{name}")),
+            Target::Lib => f.write_str("lib"),
+            Target::Heuristic => f.write_str("heuristic"),
+        }
+    }
+}
+
+impl FromStr for Target {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "lib" => Ok(Self::Lib),
+            "bin" => Ok(Self::BinOnly),
+            "heuristic" => Ok(Self::Heuristic),
+            s => {
+                if let Some(("bin", bin_name)) = s.split_once(':') {
+                    return Ok(Self::BinExact(bin_name.to_string()));
+                };
+
+                bail!(
+                    r#"valid values for `target` are: "lib", "bin", "bin:bin-name", or "heuristic""#
+                )
+            }
+        }
+    }
 }
 
 pub const DEFAULT_CONFIG_STR: &str = include_str!("default_config.toml");
@@ -29,6 +130,9 @@ impl Config {
                 .base_url
                 .unwrap_or_else(|| DEFAULT_CONFIG.base_url.clone()),
             note: config.note.unwrap_or_else(|| DEFAULT_CONFIG.note.clone()),
+            target: config
+                .target
+                .unwrap_or_else(|| DEFAULT_CONFIG.target.clone()),
         }
     }
 }
@@ -39,6 +143,7 @@ impl Config {
 struct ConfigToml {
     base_url: Option<String>,
     note: Option<String>,
+    target: Option<Target>,
 }
 
 impl ConfigToml {
@@ -65,6 +170,9 @@ impl ConfigToml {
         }
         if let Some(note) = workspace_config.note {
             self.note = Some(note);
+        }
+        if let Some(target) = workspace_config.target {
+            self.target = Some(target);
         }
     }
 }

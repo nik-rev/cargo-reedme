@@ -26,3 +26,14 @@ This region was generated from Rust documentation comments by `cargo-reedme` usi
 
 for more info: https://github.com/nik-rev/cargo-reedme
 """
+
+# Which target to generate the README for
+#
+# Possible values:
+#
+# - "lib": README will be generated for the library target (lib.rs)
+# - "bin": README will be generated for the binary target (main.rs)
+# - "bin:<name>": README will be generated for the binary target with the given name
+# - "heuristic": README will be generated for the library target (lib.rs), and if it doesn't exist or
+#   its documentation is empty, the README will be generated for the first binary target (main.rs)
+target = "heuristic"
