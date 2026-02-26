@@ -59,15 +59,10 @@ impl Target {
                 .ok()
                 .wrap_err("expected a library target (lib.rs)"),
             Target::Heuristic => {
-                if let Ok(target) = get_library_target() {
-                    if is_target_empty(target) {
-                        bail!(
-                            "found library target: {}, but it has no docs (//!)",
-                            target.name
-                        )
-                    } else {
-                        Ok(target)
-                    }
+                if let Ok(target) = get_library_target()
+                    && !is_target_empty(target)
+                {
+                    Ok(target)
                 } else if let Some(target) = targets.iter().find(|target| target.is_bin()) {
                     Ok(target)
                 } else {
