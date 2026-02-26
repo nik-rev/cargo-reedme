@@ -12,13 +12,19 @@ use assert2::assert;
 use docstr::docstr;
 use eyre::Result;
 
+/// A single test case
 #[allow(clippy::type_complexity)]
 struct Case<'a> {
+    dependencies: Option<&'a str> = None,
+    /// cargo-reedme specific config
     config: Option<&'a str> = None,
+    /// Contents of `lib.rs` file
     lib_rs: Option<&'a str> = None,
+    /// Contents of `main.rs` file
     main_rs: Option<&'a str> = None,
     /// Arbitrary initialization logic
     init: Option<Box<dyn Fn(&TempDir) -> Result<()>>> = None,
+    /// Expected README file contents
     readme: &'a str,
 }
 
@@ -29,6 +35,7 @@ fn test(
         lib_rs,
         main_rs,
         init,
+        dependencies,
         readme: expected_readme,
     }: Case,
 ) -> Result<()> {
@@ -42,12 +49,17 @@ fn test(
         )
     });
 
+    let dependencies = dependencies.unwrap_or_default();
+
     dir.child("Cargo.toml").write_str(&docstr!(format!
         /// [package]
         /// edition = "2024"
         /// name = "test_case"
         ///
         /// {config}
+        ///
+        /// [dependencies]
+        /// {dependencies}
     ))?;
 
     if let Some(file) = lib_rs {
@@ -487,5 +499,64 @@ fn generic_path_ignoring() -> Result<()> {
         "struct Vec<T> { a: [T] } impl<T> Vec<T> { fn push(&mut self, x: T) {} }",
         "struct.Vec.html#method.push",
     )?;
+    Ok(())
+}
+
+#[test]
+fn base_url() -> Result<()> {
+    test(Case {
+        config: Some(docstr!(
+            /// base-url = "https://example.com"
+        )),
+        lib_rs: Some(docstr!(
+            /// //! [x]
+            ///
+            /// fn x() {}
+        )),
+        readme: &docstr!(format!
+            /// [x](https://example.com/test_case/0.0.0/test_case/fn.x.html)
+        ),
+        ..
+    })?;
+    Ok(())
+}
+
+/// `base-url` Doesn't affect stuff from STD
+#[test]
+fn base_url_on_std() -> Result<()> {
+    test(Case {
+        config: Some(docstr!(
+            /// base-url = "https://example.com"
+        )),
+        lib_rs: Some(docstr!(
+            /// //! [Option]
+        )),
+        readme: &docstr!(format!
+            /// [Option](https://doc.rust-lang.org/stable/core/option/enum.Option.html)
+        ),
+        ..
+    })?;
+    Ok(())
+}
+
+/// `base-url` Doesn't affect stuff from external dependencies
+/// because they have their own HTML root URL
+#[test]
+fn base_url_on_external_crate() -> Result<()> {
+    test(Case {
+        dependencies: Some(docstr!(
+            /// serde_core = "=1.0.228"
+        )),
+        config: Some(docstr!(
+            /// base-url = "https://example.com"
+        )),
+        lib_rs: Some(docstr!(
+            /// //! [serde_core::Serialize]
+        )),
+        readme: &docstr!(format!
+            /// [serde_core::Serialize](https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html)
+        ),
+        ..
+    })?;
     Ok(())
 }
