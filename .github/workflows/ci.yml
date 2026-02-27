@@ -64,6 +64,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
       - uses: taiki-e/install-action@cargo-hack
 
       - run: cargo test --workspace --no-run
