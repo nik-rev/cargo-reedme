@@ -41,3 +41,18 @@ target = "heuristic"
 # If `true`, increases level of all headings by 1 when inserting into a README
 # that already has a level 1 heading before the inserted region
 increment-headings = true
+
+# Features to pass to Cargo
+features = []
+
+# Whether to pass `--all-features` to Cargo
+all-features = false
+
+# Whether to pass `--no-default-features` to Cargo
+no-default-features = false
+
+# Additional `RUSTFLAGS` to set
+rustc-args = []
+
+# Additional `RUSTDOCFLAGS` to set
+rustdoc-args = []

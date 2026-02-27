@@ -1,6 +1,8 @@
 //! The [`World`] is the single input that the program receives,
 //! essentially the program is almost entirely a pure function
 
+use std::env;
+
 use docstr::docstr;
 use eyre::Context as _;
 use eyre::ContextCompat as _;
@@ -64,11 +66,27 @@ pub fn extract_rustdoc_json(
         let builder = rustdoc_json::Builder::default()
             .toolchain(toolchain)
             .manifest_path(&pkg.manifest_path)
+            .env(
+                "RUSTFLAGS",
+                format!(
+                    "{} {}",
+                    env::var("RUSTFLAGS").unwrap_or_default(),
+                    config.rustc_args.join(" ")
+                ),
+            )
+            .env(
+                "RUSTDOCFLAGS",
+                format!(
+                    "{} {}",
+                    env::var("RUSTDOCFLAGS").unwrap_or_default(),
+                    config.rustdoc_args.join(" ")
+                ),
+            )
             .document_private_items(true)
             .no_default_features(true)
             .all_features(false)
-            // NOTE: this already includes information about --no-default-features,
-            // --features, --all-features etc so we disable those^^
+            // NOTE: this already includes information about passed CLI arguments + config
+            // (e.g. --no-default-features, --features, --all-features etc) so we disable those^^
             .features(node.features.as_slice())
             .package_target(convert_package_target(target));
         let rustdoc_json_path = builder.build().context("rustdoc error")?;
@@ -122,34 +140,3 @@ fn convert_package_target(target: &cargo_metadata::Target) -> rustdoc_json::Pack
         rustdoc_json::PackageTarget::Lib
     }
 }
-
-// let builder = rustdoc_json::Builder::default()
-//     .toolchain(toolchain)
-//     .manifest_path(&pkg.manifest_path)
-//     .document_private_items(true)
-//     .no_default_features(true)
-//     .all_features(false)
-//     // NOTE: this already includes information about --no-default-features,
-//     // --features, --all-features etc so we disable those^^
-//     .features(node.features.as_slice())
-//     .package_target(extract_package_target(pkg).context("failed to extract package target")?);
-
-// let rustdoc_json_path = builder.build().context("rustdoc error")?;
-
-// let rustdoc_json = fs::read(rustdoc_json_path).context("failed to open rustdoc json file")?;
-// let mut rustdoc_json = std::io::Cursor::new(rustdoc_json);
-
-// serde_json::from_reader(&mut rustdoc_json).with_context(|| {
-//     docstr!(format!
-//         /// failed to deserialize rustdoc json
-//         ///
-//         /// this usually happens because rustdoc's JSON output is unstable and frequently changes
-//         ///
-//         /// the Rust version that `cargo reedme` was invoked with may be out of sync with
-//         /// the version of the `rustdoc_types` crate that `cargo reedme` uses, which is `{0}`
-//         ///
-//         /// You can usually fix this by invoking `cargo reedme` with a Rust version that has
-//         /// rustdoc version `{0}`. For example, try `cargo +nightly reedme` or another version: `cargo +nightly-YYYY-MM-DD reedme`
-//         rustdoc_types::FORMAT_VERSION
-//     )
-// })

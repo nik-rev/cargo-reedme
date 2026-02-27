@@ -191,6 +191,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "auto-default"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46a1c9d03913be7d785af1fe92ed92427bf45aa55405736ec364536e9e808e10"
+dependencies = [
+ "nik-rev",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -493,6 +502,7 @@ dependencies = [
  "assert2",
  "assert_cli",
  "assert_fs",
+ "auto-default",
  "camino",
  "cargo_metadata",
  "clap",

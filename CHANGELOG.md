@@ -17,10 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added an option `target` that allows specifying whether doc comments should be used from `lib.rs` or `main.rs`
+- Config: added `features` field, which are `--features` passed to Cargo
+- Config: added `all-features` field, which is `--all-features` passed to Cargo
+- Config: added `no-default-features` field, which is `--no-default-features` passed to Cargo
+- Config: added `rustc-args` field, which are the additional `RUSTFLAGS` to set
+- Config: added `rustdoc-args` field, which are the additional `RUSTFLAGS` to set
 
 ### Fixed
 
 - Inherit `note` field from the workspace
+- Fixed options not being inherited from the workspace config
 
 ## [v0.3.6] - 2026-02-24
 

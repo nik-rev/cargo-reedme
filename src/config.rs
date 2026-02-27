@@ -14,6 +14,19 @@ pub struct Config {
     pub note: String,
     pub target: Target,
     pub increment_headings: bool,
+    pub features: Option<Vec<String>>,
+    pub all_features: Option<bool>,
+    pub no_default_features: Option<bool>,
+    pub rustc_args: Vec<String>,
+    pub rustdoc_args: Vec<String>,
+}
+
+impl Config {
+    /// Whether this config affects the Cargo metadata,
+    /// in which case it will need to be re-computed
+    pub fn affects_cargo_metadata(&self) -> bool {
+        self.all_features.is_some() || self.features.is_some() || self.no_default_features.is_some()
+    }
 }
 
 #[derive(Default, Clone, serde_with::SerializeDisplay, serde_with::DeserializeFromStr)]
@@ -132,6 +145,15 @@ impl Config {
             increment_headings: config
                 .increment_headings
                 .unwrap_or_else(|| DEFAULT_CONFIG.increment_headings),
+            features: config.features,
+            all_features: config.all_features,
+            no_default_features: config.no_default_features,
+            rustc_args: config
+                .rustc_args
+                .unwrap_or_else(|| DEFAULT_CONFIG.rustc_args.clone()),
+            rustdoc_args: config
+                .rustdoc_args
+                .unwrap_or_else(|| DEFAULT_CONFIG.rustdoc_args.clone()),
         }
     }
 }
@@ -144,6 +166,11 @@ struct ConfigToml {
     note: Option<String>,
     target: Option<Target>,
     increment_headings: Option<bool>,
+    features: Option<Vec<String>>,
+    all_features: Option<bool>,
+    no_default_features: Option<bool>,
+    rustc_args: Option<Vec<String>>,
+    rustdoc_args: Option<Vec<String>>,
 }
 
 impl ConfigToml {
@@ -165,17 +192,32 @@ impl ConfigToml {
     /// Merges contents of `[package.metadata]` with `[workspace.metadata]`,
     /// package metadata takes priority
     fn inherit_workspace_metadata(&mut self, workspace_config: Self) {
-        if let Some(base_url) = workspace_config.base_url {
-            self.base_url = Some(base_url);
+        if self.base_url.is_none() {
+            self.base_url = workspace_config.base_url;
         }
-        if let Some(note) = workspace_config.note {
-            self.note = Some(note);
+        if self.note.is_none() {
+            self.note = workspace_config.note;
         }
-        if let Some(target) = workspace_config.target {
-            self.target = Some(target);
+        if self.target.is_none() {
+            self.target = workspace_config.target;
         }
-        if let Some(target) = workspace_config.increment_headings {
-            self.increment_headings = Some(target);
+        if self.increment_headings.is_none() {
+            self.increment_headings = workspace_config.increment_headings;
+        }
+
+        if self.features.is_none() {
+            self.features = workspace_config.features;
+        }
+        self.all_features = self.all_features.or(workspace_config.all_features);
+        self.no_default_features = self
+            .no_default_features
+            .or(workspace_config.no_default_features);
+
+        if self.rustc_args.is_none() {
+            self.rustc_args = workspace_config.rustc_args;
+        }
+        if self.rustdoc_args.is_none() {
+            self.rustdoc_args = workspace_config.rustdoc_args;
         }
     }
 }

@@ -1,6 +1,12 @@
 #![feature(default_field_values)]
 #![feature(result_option_map_or_default)]
 #![feature(exit_status_error)]
+#![feature(const_trait_impl)]
+#![feature(const_default)]
+#![feature(derive_const)]
+
+#[macro_use(auto_default)]
+extern crate auto_default;
 
 use std::process::Command;
 
@@ -12,25 +18,30 @@ use assert2::assert;
 use docstr::docstr;
 use eyre::Result;
 
+mod features;
 mod link_resolution;
 mod setting;
 
 /// A single test case
 #[allow(clippy::type_complexity)]
+#[auto_default]
 struct Case<'a> {
-    dependencies: Option<&'a str> = None,
+    args: Vec<&'a str>,
+    dependencies: Option<&'a str>,
+    features: Option<&'a str>,
     /// cargo-reedme specific config
-    config: Option<&'a str> = None,
+    config: Option<&'a str>,
     /// Contents of `lib.rs` file
-    lib_rs: Option<&'a str> = None,
+    lib_rs: Option<&'a str>,
     /// Contents of `main.rs` file
-    main_rs: Option<&'a str> = None,
+    main_rs: Option<&'a str>,
     /// Contents of `main.rs` file
-    readme_md: Option<&'a str> = None,
+    readme_md: Option<&'a str>,
     /// Arbitrary initialization logic
-    init: Option<Box<dyn Fn(&TempDir) -> Result<()>>> = None,
+    init: Option<Box<dyn Fn(&TempDir) -> Result<()>>>,
     /// Expected README file contents that we generated. Does not include any processing done after,
     /// such as adding the "note" message
+    #[auto_default(skip)]
     generated: &'a str,
 }
 
@@ -40,7 +51,9 @@ fn test(
         config,
         lib_rs,
         main_rs,
+        args,
         readme_md,
+        features,
         init,
         dependencies,
         generated: expected_readme,
@@ -57,6 +70,7 @@ fn test(
     });
 
     let dependencies = dependencies.unwrap_or_default();
+    let features = features.unwrap_or_default();
 
     dir.child("Cargo.toml").write_str(&docstr!(format!
         /// [package]
@@ -67,6 +81,9 @@ fn test(
         ///
         /// [dependencies]
         /// {dependencies}
+        ///
+        /// [features]
+        /// {features}
     ))?;
 
     if let Some(file) = lib_rs {
@@ -92,6 +109,7 @@ fn test(
     let output = Command::new(env!("CARGO_BIN_EXE_cargo-reedme"))
         .arg("reedme")
         .arg("--json")
+        .args(args)
         .env("RUST_TOOLCHAIN", "nightly")
         .current_dir(dir)
         .output()?;

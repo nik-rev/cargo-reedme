@@ -372,7 +372,7 @@ pub struct GeneratedReadme {
 pub fn resolve(world: &World) -> Result<Output> {
     let mut metadata_cmd = world.input_manifest.metadata();
 
-    // Takes into account selected features via --feature
+    // Takes into account selected features via CLI via --feature flags for example
     world.input_features.forward_metadata(&mut metadata_cmd);
 
     let metadata = metadata_cmd
@@ -388,6 +388,18 @@ pub fn resolve(world: &World) -> Result<Output> {
     for pkg in pkgs {
         let result = (|| -> Result<Option<GeneratedReadme>> {
             let config = Config::new(metadata.workspace_metadata.clone(), pkg.metadata.clone());
+
+            // We run `cargo metadata` AGAIN for each package because contents of `[metadata.cargo-reedme]`
+            // will actually affect the Cargo metadata, since users can choose different features.
+            //
+            // Only compute metadata agains if it makes sense to - no need to do extra work
+            let updated_metadata = if config.affects_cargo_metadata() {
+                Some(compute_cargo_metadata_again(world, &config)?)
+            } else {
+                None
+            };
+
+            let metadata = updated_metadata.as_ref().unwrap_or(&metadata);
 
             let readme_path = get_readme_path_for_package(pkg).with_context(|| {
                 format!("failed to get `README.md` path for package `{}`", pkg.name)
@@ -428,7 +440,7 @@ pub fn resolve(world: &World) -> Result<Output> {
             let increment_headings = increment_headings && config.increment_headings;
 
             let (contents, original_doc_comments) =
-                generate_readme_for_package(world, pkg, &config, &metadata, increment_headings)
+                generate_readme_for_package(world, pkg, &config, metadata, increment_headings)
                     .with_context(|| {
                         format!("failed to generate README for package `{}`", pkg.name)
                     })?;
@@ -459,6 +471,56 @@ pub fn resolve(world: &World) -> Result<Output> {
         readmes,
         errors,
     })
+}
+
+/// Computes cargo metadata. This time, taking settings like `default-features` into account
+fn compute_cargo_metadata_again(
+    world: &World,
+    config: &Config,
+) -> Result<cargo_metadata::Metadata> {
+    // Takes into account selected features via passed CLI arguments --feature
+    //
+    // Note that CLI overrides any configuration arguments (in `[metadata.cargo-reedme]`)
+    //
+    // For example, specifying `all-features = false` in configuration
+    // but `--all-features` in CLI will override the configuration values
+    let mut features = clap_cargo::Features::default();
+
+    // extract all values from config
+
+    if let Some(all_features) = config.all_features {
+        features.all_features = all_features;
+    }
+
+    if let Some(no_default_features) = config.no_default_features {
+        features.no_default_features = no_default_features;
+    }
+
+    if let Some(config_features) = &config.features {
+        features.features = config_features.clone();
+    }
+
+    // CLI options take presedence over config options
+
+    if world.input_features.all_features {
+        features.all_features = true;
+    }
+
+    if world.input_features.no_default_features {
+        features.no_default_features = true;
+    }
+
+    if !world.input_features.features.is_empty() {
+        features.features = world.input_features.features.clone();
+    }
+
+    let mut metadata_cmd = world.input_manifest.metadata();
+
+    features.forward_metadata(&mut metadata_cmd);
+
+    metadata_cmd
+        .exec()
+        .context("failed to obtain Cargo metadata")
 }
 
 const VERSION: semver::Version = semver::Version::new(
