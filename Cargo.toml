@@ -19,7 +19,6 @@ cargo_metadata = "0.23.1"
 clap = { version = "4.5.54", features = ["derive", "unstable-markdown", "wrap_help"] }
 clap-cargo = { version = "0.18.3", features = ["cargo_metadata"] }
 camino = { version = "1.2.2", features = ["serde1"] }
-color-eyre = "0.6.5"
 eyre = "0.6.12"
 rustdoc-json = "0.9.8"
 fs-err = "3.2.2"
@@ -27,9 +26,7 @@ serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
 rustdoc-types = "0.57.0"
 pulldown-cmark = "0.13.0"
-pulldown-cmark-to-cmark = "22.0.0"
 itertools = "0.14.0"
-pretty_assertions = "1.4.1"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 clap-verbosity-flag = { version = "3.0.4", default-features = false, features = ["tracing"] }
@@ -42,26 +39,16 @@ semver = { version = "1.0.27", features = ["serde"] }
 konst = "0.2"
 anstream = "0.6.21"
 term = "1.2.1"
-similar = "2.7"
-console = "0.16.2"
-simply_colored = "0.1.4"
 microtemplate = "1.0.3"
 toml = "1.0.3"
-serde-extras = "0.1.1"
 serde_with = "3.16.1"
-assert_cli = "0.6.3"
 
 [dev-dependencies]
 rust-playground-top-crates = { version = "=0.1.7", git = "https://github.com/rust-lang/rust-playground.git" }
-similar = "2.7"
 anstream = "0.6.21"
 ureq = "3.2.0"
-simply_colored = "0.1.4"
 flate2 = "1.0"
 tar = "0.4"
 assert_fs = { version = "1.1.3", features = ["color-auto"] }
 assert2 = "0.4.0"
 auto-default = "0.2.3"
-
-[build-dependencies]
-nik-rev = "0.1.7"
