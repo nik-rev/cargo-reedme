@@ -11,66 +11,30 @@
 //! The following documentation in `lib.rs`:
 //!
 //! ````rust
-//! //! This crate provides a procedural macro [`docstr!`] for
-//! //! ergonomically creating multi-line string literals.
-//! //!
-//! //! ```toml
-//! //! [dependencies]
-//! #![doc = concat!("docstr = '", env!("CARGO_PKG_VERSION"), "'")]
-//! //! ```
-//! //!
-//! //! # Usage
+//! //! This prints all prime numbers:
 //! //!
 //! //! ```
-//! //! # use docstr::docstr;
-//! //! #
-//! //! let hello_world_in_c: &'static str = docstr!(
-//! //!     /// #include <stdio.h>
-//! //!     ///
-//! //!     /// int main(int argc, char **argv) {
-//! //!     ///     printf("hello world\n");
-//! //!     ///     return 0;
-//! //!     /// }
-//! //! );
-//! //!
-//! //! assert_eq!(hello_world_in_c, r#"#include <stdio.h>
-//! //!
-//! //! int main(int argc, char **argv) {
-//! //!     printf("hello world\n");
-//! //!     return 0;
-//! //! }"#)
+//! //! # fn main() {
+//! //! for i in 2.. {
+//! //!     if is_prime(i) {
+//! //!         println!("{i}");
+//! //!     }
+//! //! }
+//! //! # }
 //! //! ```
 //! ````
 //!
 //! Generates the following `README.md` when running `cargo reedme`:
 //!
 //! ````markdown
-//! This crate provides a procedural macro [`docstr!`](https://docs.rs/docstr/0.4.6/docstr/macro.docstr.html) for
-//! ergonomically creating multi-line string literals.
-//!
-//! ```toml
-//! [dependencies]
-//! docstr = '0.4.6'
-//! ```
-//!
-//! # Usage
+//! This prints all prime numbers:
 //!
 //! ```rust
-//! let hello_world_in_c: &'static str = docstr!(
-//!     /// #include <stdio.h>
-//!     ///
-//!     /// int main(int argc, char **argv) {
-//!     ///     printf("hello world\n");
-//!     ///     return 0;
-//!     /// }
-//! );
-//!
-//! assert_eq!(hello_world_in_c, r#"#include <stdio.h>
-//!
-//! int main(int argc, char **argv) {
-//!     printf("hello world\n");
-//!     return 0;
-//! }"#)
+//! for i in 2.. {
+//!     if is_prime(i) {
+//!         println!("{i}");
+//!     }
+//! }
 //! ```
 //! ````
 //!
