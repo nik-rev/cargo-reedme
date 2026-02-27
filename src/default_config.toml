@@ -16,13 +16,14 @@ base-url = "https://docs.rs"
 # Available values for interpolation:
 #
 # - `args`: Command-line arguments received
+# - `toolchain`: Value of RUST_TOOLCHAIN environment variable
 note = """
 Do not edit this region by hand
 ===============================
 
 This region was generated from Rust documentation comments by `cargo-reedme` using this command:
 
-    cargo reedme {args}
+    cargo +{toolchain} reedme {args}
 
 for more info: https://github.com/nik-rev/cargo-reedme
 """

@@ -23,11 +23,14 @@ pub struct World {
                 &cargo_metadata::Package,
                 &cargo_metadata::Metadata,
                 &Config,
+                &str,
             ) -> Result<rustdoc_types::Crate>
             + Sync,
     >,
     /// Read the given file to a string
     pub read_file: fn(&camino::Utf8Path) -> std::io::Result<String>,
+    /// Rust Toolchain
+    pub toolchain: String,
     pub args: Vec<String>,
 }
 
@@ -37,10 +40,11 @@ impl Default for World {
             input_manifest: Default::default(),
             input_workspace: Default::default(),
             input_features: Default::default(),
-            rustdoc_json_for_crate: Box::new(move |pkg, metadata, config| {
-                extract_rustdoc_json(pkg, metadata, "nightly", config)
+            rustdoc_json_for_crate: Box::new(move |pkg, metadata, config, toolchain| {
+                extract_rustdoc_json(pkg, metadata, toolchain, config)
             }),
             read_file: |path| fs::read_to_string(path),
+            toolchain: "nightly".to_string(),
             args: std::env::args().skip(2).collect(),
         }
     }

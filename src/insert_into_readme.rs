@@ -90,12 +90,14 @@ impl ReadmeFile {
         #[derive(microtemplate::Substitutions)]
         struct Substitute<'a> {
             args: &'a str,
+            toolchain: &'a str,
         }
 
         let note = microtemplate::render(
             &config.note,
             Substitute {
                 args: &world.args.iter().join(" "),
+                toolchain: &world.toolchain,
             },
         );
 
