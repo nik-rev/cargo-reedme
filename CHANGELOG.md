@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.3.6...HEAD
 
+- Increment all headings by 1 level when it makes sense to do so. Use `increment-headings = false` to disable
+- Made detection of whether to generate README from `lib.rs` or `main.rs` comments smarter
+- Added an option `target` that allows specifying whether doc comments should be used from `lib.rs` or `main.rs`
+
 ### Fixed
 
 - Inherit `note` field from the workspace
