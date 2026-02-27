@@ -13,6 +13,7 @@ pub struct Config {
     pub base_url: String,
     pub note: String,
     pub target: Target,
+    pub increment_headings: bool,
 }
 
 #[derive(Default, Clone, serde_with::SerializeDisplay, serde_with::DeserializeFromStr)]
@@ -128,6 +129,9 @@ impl Config {
             target: config
                 .target
                 .unwrap_or_else(|| DEFAULT_CONFIG.target.clone()),
+            increment_headings: config
+                .increment_headings
+                .unwrap_or_else(|| DEFAULT_CONFIG.increment_headings),
         }
     }
 }
@@ -139,6 +143,7 @@ struct ConfigToml {
     base_url: Option<String>,
     note: Option<String>,
     target: Option<Target>,
+    increment_headings: Option<bool>,
 }
 
 impl ConfigToml {
@@ -168,6 +173,9 @@ impl ConfigToml {
         }
         if let Some(target) = workspace_config.target {
             self.target = Some(target);
+        }
+        if let Some(target) = workspace_config.increment_headings {
+            self.increment_headings = Some(target);
         }
     }
 }

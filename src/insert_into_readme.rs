@@ -159,7 +159,7 @@ impl ReadmeFile {
 
 #[derive(Serialize, Deserialize)]
 pub struct UsersReadmeParts {
-    before: String,
+    pub before: String,
     after: String,
 }
 

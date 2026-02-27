@@ -37,3 +37,7 @@ for more info: https://github.com/nik-rev/cargo-reedme
 # - "heuristic": README will be generated for the library target (lib.rs), and if it doesn't exist or
 #   its documentation is empty, the README will be generated for the first binary target (main.rs)
 target = "heuristic"
+
+# If `true`, increases level of all headings by 1 when inserting into a README
+# that already has a level 1 heading before the inserted region
+increment-headings = true

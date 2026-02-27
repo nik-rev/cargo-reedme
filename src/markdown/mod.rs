@@ -16,7 +16,7 @@ mod locate;
 /// - Strips rustdoc-specific tags from code fences, such as "edition2024,compile_fail"
 /// - Makes text have "smart punctuation", since rustdoc does the same
 /// - Labels code blocks without a language as "Rust"
-pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
+pub fn resolve_markdown(markdown: &str, links: Links<'_>, increment_headings: bool) -> String {
     let mut reference_definitions = Vec::new();
     // When searching for reference definitions, anything we find that
     // touches this set will be excluded because it is inside of a code block
@@ -39,6 +39,14 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>) -> String {
     )
     .into_offset_iter()
     .filter_map(|(event, span)| match event {
+        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading { level, .. })
+            if increment_headings && level != pulldown_cmark::HeadingLevel::H6 =>
+        {
+            Some(ReplaceContent {
+                range: span.clone(),
+                content: format!("#{}", &markdown[span.clone()]).into(),
+            })
+        }
         // Code blocks are transformed to use Rust language, and
         // hidden lines are removed
         pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
@@ -314,6 +322,8 @@ fn markdown_options() -> Options {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use docstr::docstr;
     use pretty_assertions::assert_str_eq;
 
@@ -332,7 +342,7 @@ mod tests {
 
     #[track_caller]
     fn t(input: &str, links: Links<'_>, expected: &str) {
-        let out = resolve_markdown(input, links);
+        let out = resolve_markdown(input, links, true);
         assert_str_eq!(out, expected);
     }
 
@@ -362,9 +372,7 @@ mod tests {
             docstr! {
                 /// just a [link]
             },
-            links! {
-                "..." => "..."
-            },
+            HashMap::new(),
             docstr! {
                 /// just a [link]
             },
@@ -469,9 +477,7 @@ mod tests {
             docstr! {
                 /// just a [link](where?)
             },
-            links! {
-                "..." => "..."
-            },
+            HashMap::new(),
             docstr! {
                 /// just a [link](where?)
             },
@@ -551,15 +557,46 @@ mod tests {
                 ///   I am inside of a code block
                 ///   ```
             },
-            links! {
-                "..." => "..."
-            },
+            HashMap::new(),
             docstr! {
                 /// - this is a list item
                 ///
                 ///   ```rust
                 ///   I am inside of a code block
                 ///   ```
+            },
+        );
+    }
+
+    #[test]
+    fn increment_headings() {
+        t(
+            docstr! {
+                /// # a
+                ///
+                ///  ## b
+                ///
+                /// ### c
+                ///
+                /// #### d
+                ///
+                /// ##### e
+                ///
+                /// ###### f
+            },
+            HashMap::new(),
+            docstr! {
+                /// ## a
+                ///
+                ///  ### b
+                ///
+                /// #### c
+                ///
+                /// ##### d
+                ///
+                /// ###### e
+                ///
+                /// ###### f
             },
         );
     }

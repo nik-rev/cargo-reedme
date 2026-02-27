@@ -389,16 +389,6 @@ pub fn resolve(world: &World) -> Result<Output> {
         let result = (|| -> Result<Option<GeneratedReadme>> {
             let config = Config::new(metadata.workspace_metadata.clone(), pkg.metadata.clone());
 
-            let (generated_readme, original_doc_comments) =
-                generate_readme_for_package(world, pkg, &config, &metadata).with_context(|| {
-                    format!("failed to generate README for package `{}`", pkg.name)
-                })?;
-
-            // skip READMEs that have empty content
-            if generated_readme.is_empty() {
-                return Ok(None);
-            }
-
             let readme_path = get_readme_path_for_package(pkg).with_context(|| {
                 format!("failed to get `README.md` path for package `{}`", pkg.name)
             })?;
@@ -410,28 +400,47 @@ pub fn resolve(world: &World) -> Result<Output> {
                 Err(err) => return Err(err.into()),
             };
 
-            // NOTE: not .map() due to ownership issues
-            let new_readme = match original_readme {
-                Some(original_readme) => {
-                    let meta = match insert_into_readme::UsersReadmeParts::new(&original_readme) {
-                        Some(ok) => ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
-                        None => ReadmeContentsMeta::ErrorMarkerMissing,
-                    };
+            /// Returns whether the passed markdown has any h1 headings
+            fn has_h1_heading(content: &str) -> bool {
+                let mut parser = pulldown_cmark::Parser::new(content);
+                parser.any(|event| {
+                    matches!(
+                        event,
+                        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading {
+                            level: pulldown_cmark::HeadingLevel::H1,
+                            ..
+                        })
+                    )
+                })
+            }
 
-                    ReadmeFile {
-                        contents: generated_readme,
-                        meta,
-                    }
-                }
-                None => ReadmeFile {
-                    contents: generated_readme.to_string(),
-                    meta: ReadmeContentsMeta::NewlyCreated,
+            let (increment_headings, meta) = original_readme.as_ref().map_or(
+                (false, ReadmeContentsMeta::NewlyCreated),
+                |original_readme| match insert_into_readme::UsersReadmeParts::new(original_readme) {
+                    Some(ok) => (
+                        has_h1_heading(&ok.before),
+                        ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
+                    ),
+                    None => (false, ReadmeContentsMeta::ErrorMarkerMissing),
                 },
-            };
+            );
+
+            let increment_headings = increment_headings && config.increment_headings;
+
+            let (contents, original_doc_comments) =
+                generate_readme_for_package(world, pkg, &config, &metadata, increment_headings)
+                    .with_context(|| {
+                        format!("failed to generate README for package `{}`", pkg.name)
+                    })?;
+
+            // skip READMEs that have empty content
+            if contents.is_empty() {
+                return Ok(None);
+            }
 
             Ok(Some(GeneratedReadme {
                 path: readme_path,
-                file: new_readme,
+                file: ReadmeFile { contents, meta },
                 original_doc_comments,
                 package: pkg.name.to_string(),
                 config,
@@ -464,6 +473,7 @@ fn generate_readme_for_package(
     pkg: &Package,
     config: &Config,
     workspace_metadata: &cargo_metadata::Metadata,
+    increment_headings: bool,
 ) -> Result<(String, String)> {
     let krate = (world.rustdoc_json_for_crate)(pkg, workspace_metadata, config)
         .context("failed to run rustdoc")?;
@@ -479,7 +489,10 @@ fn generate_readme_for_package(
     let docs = root.docs.as_deref().unwrap_or_default();
 
     // All links in the markdown are rewritten to consider the link map, e.g. [main function](https://example.com)
-    Ok((markdown::resolve_markdown(docs, links), docs.to_string()))
+    Ok((
+        markdown::resolve_markdown(docs, links, increment_headings),
+        docs.to_string(),
+    ))
 }
 
 /// For the given Cargo package, gets the path to the package's README.md file
