@@ -4,9 +4,6 @@ use super::*;
 #[test]
 fn target_heuristic_lib_rs() -> Result<()> {
     test(Case {
-        config: Some(docstr!(
-            /// target = "heuristic"
-        )),
         main_rs: Some(docstr!(
             /// //! bin
         )),
@@ -25,9 +22,6 @@ fn target_heuristic_lib_rs() -> Result<()> {
 #[test]
 fn target_heuristic_lib_rs_empty() -> Result<()> {
     test(Case {
-        config: Some(docstr!(
-            /// target = "heuristic"
-        )),
         main_rs: Some(docstr!(
             /// //! bin
         )),
@@ -45,9 +39,6 @@ fn target_heuristic_lib_rs_empty() -> Result<()> {
 #[test]
 fn target_heuristic_main_rs() -> Result<()> {
     test(Case {
-        config: Some(docstr!(
-            /// target = "heuristic"
-        )),
         main_rs: Some(docstr!(
             /// //! bin
         )),
@@ -62,9 +53,6 @@ fn target_heuristic_main_rs() -> Result<()> {
 #[test]
 fn target_heuristic_lib_rs_only() -> Result<()> {
     test(Case {
-        config: Some(docstr!(
-            /// target = "heuristic"
-        )),
         lib_rs: Some(docstr!(
             /// //! lib
         )),
