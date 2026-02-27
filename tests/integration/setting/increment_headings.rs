@@ -5,15 +5,12 @@ use super::*;
 fn increment_headings() -> Result<()> {
     test(Case {
         lib_rs: Some(INPUT),
-        readme: INCREMENTED,
-        init: Some(Box::new(|dir| {
-            dir.child("README.md").write_str(docstr!(
-                /// # h1
-                ///
-                /// <!-- cargo-reedme -->
-            ))?;
-            Ok(())
-        })),
+        generated: INCREMENTED,
+        readme_md: Some(docstr!(
+            /// # h1
+            ///
+            /// <!-- cargo-reedme -->
+        )),
         ..
     })?;
     Ok(())
@@ -27,15 +24,12 @@ fn no_increment_if_option_is_turned_off() -> Result<()> {
         config: Some(docstr!(
             /// increment-headings = false
         )),
-        readme: NOT_INCREMENTED,
-        init: Some(Box::new(|dir| {
-            dir.child("README.md").write_str(docstr!(
-                /// # h1
-                ///
-                /// <!-- cargo-reedme -->
-            ))?;
-            Ok(())
-        })),
+        generated: NOT_INCREMENTED,
+        readme_md: Some(docstr!(
+            /// # h1
+            ///
+            /// <!-- cargo-reedme -->
+        )),
         ..
     })?;
     Ok(())
@@ -47,15 +41,12 @@ fn no_increment_if_option_is_turned_off() -> Result<()> {
 fn no_increment_when_h1_after() -> Result<()> {
     test(Case {
         lib_rs: Some(INPUT),
-        readme: NOT_INCREMENTED,
-        init: Some(Box::new(|dir| {
-            dir.child("README.md").write_str(docstr!(
-                /// <!-- cargo-reedme -->
-                ///
-                /// # h1
-            ))?;
-            Ok(())
-        })),
+        generated: NOT_INCREMENTED,
+        readme_md: Some(docstr!(
+            /// <!-- cargo-reedme -->
+            ///
+            /// # h1
+        )),
         ..
     })?;
     Ok(())
@@ -66,15 +57,12 @@ fn no_increment_when_h1_after() -> Result<()> {
 fn no_increment_when_no_h1_in_original() -> Result<()> {
     test(Case {
         lib_rs: Some(INPUT),
-        readme: NOT_INCREMENTED,
-        init: Some(Box::new(|dir| {
-            dir.child("README.md").write_str(docstr!(
-                /// ## h2
-                ///
-                /// <!-- cargo-reedme -->
-            ))?;
-            Ok(())
-        })),
+        generated: NOT_INCREMENTED,
+        readme_md: Some(docstr!(
+            /// ## h2
+            ///
+            /// <!-- cargo-reedme -->
+        )),
         ..
     })?;
     Ok(())

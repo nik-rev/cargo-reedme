@@ -17,7 +17,7 @@ fn test_link_full(link: &str, item: &str, result: &str) -> Result<()> {
             ///
             /// {item}
         )),
-        readme: &docstr!(format!
+        generated: &docstr!(format!
             /// {link}({result})
         ),
         ..

@@ -10,7 +10,7 @@ fn target_heuristic_lib_rs() -> Result<()> {
         lib_rs: Some(docstr!(
             /// //! lib
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// lib
         ),
         ..
@@ -28,7 +28,7 @@ fn target_heuristic_lib_rs_empty() -> Result<()> {
         lib_rs: Some(docstr!(
             ///
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// bin
         ),
         ..
@@ -42,7 +42,7 @@ fn target_heuristic_main_rs() -> Result<()> {
         main_rs: Some(docstr!(
             /// //! bin
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// bin
         ),
         ..
@@ -56,7 +56,7 @@ fn target_heuristic_lib_rs_only() -> Result<()> {
         lib_rs: Some(docstr!(
             /// //! lib
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// lib
         ),
         ..
@@ -76,7 +76,7 @@ fn target_lib() -> Result<()> {
         main_rs: Some(docstr!(
             /// //! bin
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// lib
         ),
         ..
@@ -96,7 +96,7 @@ fn target_bin() -> Result<()> {
         main_rs: Some(docstr!(
             /// //! bin
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// bin
         ),
         ..
@@ -126,7 +126,7 @@ fn target_bin_exact() -> Result<()> {
         config: Some(docstr!(
             /// target = "bin:first"
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// first
         ),
         init: Some(init()),
@@ -136,7 +136,7 @@ fn target_bin_exact() -> Result<()> {
         config: Some(docstr!(
             /// target = "bin:second"
         )),
-        readme: docstr!(
+        generated: docstr!(
             /// second
         ),
         init: Some(init()),

@@ -11,7 +11,7 @@ fn base_url() -> Result<()> {
             ///
             /// fn x() {}
         )),
-        readme: &docstr!(format!
+        generated: &docstr!(format!
             /// [x](https://example.com/test_case/0.0.0/test_case/fn.x.html)
         ),
         ..
@@ -29,7 +29,7 @@ fn base_url_on_std() -> Result<()> {
         lib_rs: Some(docstr!(
             /// //! [Option]
         )),
-        readme: &docstr!(format!
+        generated: &docstr!(format!
             /// [Option](https://doc.rust-lang.org/stable/core/option/enum.Option.html)
         ),
         ..
@@ -51,7 +51,7 @@ fn base_url_on_external_crate() -> Result<()> {
         lib_rs: Some(docstr!(
             /// //! [serde_core::Serialize]
         )),
-        readme: &docstr!(format!
+        generated: &docstr!(format!
             /// [serde_core::Serialize](https://docs.rs/serde_core/1.0.228/serde_core/ser/trait.Serialize.html)
         ),
         ..

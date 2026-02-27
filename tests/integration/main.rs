@@ -25,10 +25,13 @@ struct Case<'a> {
     lib_rs: Option<&'a str> = None,
     /// Contents of `main.rs` file
     main_rs: Option<&'a str> = None,
+    /// Contents of `main.rs` file
+    readme_md: Option<&'a str> = None,
     /// Arbitrary initialization logic
     init: Option<Box<dyn Fn(&TempDir) -> Result<()>>> = None,
-    /// Expected README file contents
-    readme: &'a str,
+    /// Expected README file contents that we generated. Does not include any processing done after,
+    /// such as adding the "note" message
+    generated: &'a str,
 }
 
 #[track_caller]
@@ -37,9 +40,10 @@ fn test(
         config,
         lib_rs,
         main_rs,
+        readme_md,
         init,
         dependencies,
-        readme: expected_readme,
+        generated: expected_readme,
     }: Case,
 ) -> Result<()> {
     let dir = TempDir::new()?.into_persistent();
@@ -75,6 +79,10 @@ fn test(
             ///
             /// fn main() {{}}
         ))?;
+    }
+
+    if let Some(file) = readme_md {
+        dir.child("README.md").write_str(file)?;
     }
 
     if let Some(init) = init {
