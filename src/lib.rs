@@ -356,7 +356,7 @@ pub fn resolve(world: &World) -> Result<Output> {
             // We run `cargo metadata` AGAIN for each package because contents of `[metadata.cargo-reedme]`
             // will actually affect the Cargo metadata, since users can choose different features.
             //
-            // Only compute metadata agains if it makes sense to - no need to do extra work
+            // Only compute metadata again if it makes sense to - no need to do extra work
             let updated_metadata = if config.affects_cargo_metadata() {
                 Some(compute_cargo_metadata_again(world, &config)?)
             } else {
@@ -464,7 +464,7 @@ fn compute_cargo_metadata_again(
         features.features = config_features.clone();
     }
 
-    // CLI options take presedence over config options
+    // CLI options take precedence over config options
 
     if world.input_features.all_features {
         features.all_features = true;
