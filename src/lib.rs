@@ -514,7 +514,7 @@ fn generate_readme_for_package(
         .expect("rustdoc's root item is a valid item");
 
     // Get the link map, which for [main function](main) creates: { "main": "https://example.com" }
-    let links = intralinks::create_links(pkg, config, &krate);
+    let links = intralinks::create_links(world, pkg, config, &krate);
 
     let docs = root.docs.as_deref().unwrap_or_default();
 

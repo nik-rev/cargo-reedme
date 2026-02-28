@@ -35,14 +35,15 @@ use core::fmt;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
 use cargo_metadata::{Package, semver::Version};
+use eyre::Context;
 use itertools::Itertools;
 use rustdoc_types::{
     Crate, Enum, ExternalCrate, Id, Impl, Item, ItemEnum, ItemSummary, MacroKind, Primitive,
     ProcMacro, Struct, StructKind, Trait, Type, Union,
 };
-use tracing::{error, trace};
+use tracing::{error, trace, warn};
 
-use crate::Config;
+use crate::{Config, World};
 
 /// This maps link contents to link URLs.
 ///
@@ -62,7 +63,12 @@ use crate::Config;
 pub type Links<'a> = HashMap<&'a str, String>;
 
 /// Creates a map from link contents to link URLs
-pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Links<'a> {
+pub fn create_links<'a>(
+    world: &World,
+    pkg: &Package,
+    config: &Config,
+    krate: &'a Crate,
+) -> Links<'a> {
     let root = krate
         .index
         .get(&krate.root)
@@ -72,23 +78,34 @@ pub fn create_links<'a>(pkg: &Package, config: &Config, krate: &'a Crate) -> Lin
 
     let mut links = HashMap::new();
 
+    let mut rustdoc_html = None;
+
     for (link, item_id) in &root.links {
         let Some(item_info) = items_info.get(item_id) else {
-            error!(item = link, "failed to generate link");
+            // Note: Only actually compute rustdoc HTML if we have a broken link
+            let rustdoc_html = rustdoc_html.get_or_insert_with(|| {
+                match (world.rustdoc_html_for_crate)(&pkg.name, &world.toolchain)
+                    .context("failed to generate rustdoc HTML")
+                {
+                    Ok(html) => html,
+                    Err(err) => {
+                        eprintln!("{err:#?}");
+                        String::new()
+                    }
+                }
+            });
 
-            #[cfg(feature = "__failing_links")]
-            {
-                use std::io::Write;
-                let mut file = std::fs::File::options()
-                    .append(true)
-                    .create(true)
-                    .open(concat!(
-                        env!("CARGO_MANIFEST_DIR"),
-                        "/tests/top_crates_failing"
-                    ))
-                    .unwrap();
-                file.write_fmt(format_args!("{}: {link:?}\n\n", pkg.name))
-                    .unwrap();
+            if let Some(href) = extract_rustdoc_link(link, rustdoc_html) {
+                links.insert(
+                    link.as_str(),
+                    format!("{}/{1}/latest/{1}/{href}", config.base_url, pkg.name),
+                );
+                warn!(
+                    item = link,
+                    "failed to generate link; naively extracted from HTML as a last resort"
+                );
+            } else {
+                error!(item = link, "failed to generate link");
             }
 
             continue;
@@ -580,5 +597,41 @@ fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
         | ItemEnum::ExternType
         | ItemEnum::TraitAlias(_)
         | ItemEnum::TypeAlias(_) => Box::new(std::iter::empty()),
+    }
+}
+
+/// This does a naive extraction of the href= value of a link
+/// with the given markdown `link` content
+///
+/// This should only be used as a last resort, when it is impossible
+/// to figure out the link URL from rustdoc JSON!
+fn extract_rustdoc_link(link: &str, rustdoc_html: &str) -> Option<String> {
+    let link = link
+        .strip_prefix("`")
+        .and_then(|link| link.strip_suffix("`"))
+        .map(|link| format!("<code>{link}</code>"))
+        .unwrap_or_else(|| link.into());
+
+    let unknown_link_content_start = rustdoc_html.find(&link)?;
+
+    let link_start_token = "<a href=\"";
+    let unknown_link_start = rustdoc_html[..unknown_link_content_start].rfind(link_start_token)?;
+
+    let rustdoc_html = &rustdoc_html[unknown_link_start + link_start_token.len()..];
+
+    Some(rustdoc_html.chars().take_while(|ch| *ch != '"').collect())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn extract_rustdoc_link() {
+        assert_eq!(
+            super::extract_rustdoc_link(
+                "`SHAPE`",
+                r#"<p>facet provides reflection for Rust: it gives types a <a href="trait.Facet.html#associatedconstant.SHAPE" title="associated constant facet::Facet::SHAPE"><code>SHAPE</code></a> associated"#,
+            ).unwrap(),
+            "trait.Facet.html#associatedconstant.SHAPE"
+        );
     }
 }

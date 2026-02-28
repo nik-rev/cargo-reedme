@@ -65,7 +65,6 @@ fn main() -> Result<()> {
         input_workspace: cli.workspace,
         input_features: cli.features,
         read_file: |path| fs::read_to_string(path),
-        toolchain: std::env::var("RUST_TOOLCHAIN").unwrap_or("nightly".to_string()),
         ..Default::default()
     };
 

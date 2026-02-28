@@ -8,6 +8,7 @@ use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
 use fs_err as fs;
+use itertools::Itertools;
 
 use crate::config::Config;
 
@@ -27,6 +28,7 @@ pub struct World {
             ) -> Result<rustdoc_types::Crate>
             + Sync,
     >,
+    pub rustdoc_html_for_crate: fn(package_name: &str, toolchain: &str) -> Result<String>,
     /// Read the given file to a string
     pub read_file: fn(&camino::Utf8Path) -> std::io::Result<String>,
     /// Rust Toolchain
@@ -43,8 +45,34 @@ impl Default for World {
             rustdoc_json_for_crate: Box::new(move |pkg, metadata, config, toolchain| {
                 extract_rustdoc_json(pkg, metadata, toolchain, config)
             }),
+            rustdoc_html_for_crate: |package_name, toolchain| {
+                let output = std::process::Command::new(
+                    env::var("CARGO").unwrap_or_else(|_| "cargo".into()),
+                )
+                .env("RUST_TOOLCHAIN", toolchain)
+                .arg("rustdoc")
+                .arg("--package")
+                .arg(package_name)
+                .output()
+                .context("rustdoc error")?;
+
+                let mut path = String::from_utf8(output.stderr)
+                    .context("non-utf8 output")?
+                    .strip_suffix("\n")
+                    .context("invalid format")?
+                    .chars()
+                    .rev()
+                    .take_while(|ch| !ch.is_whitespace())
+                    .collect::<Vec<_>>();
+                path.reverse();
+                let path = path.into_iter().collect::<String>();
+
+                let path = std::path::PathBuf::from(path);
+
+                Ok(fs::read_to_string(path)?)
+            },
             read_file: |path| fs::read_to_string(path),
-            toolchain: "nightly".to_string(),
+            toolchain: std::env::var("RUST_TOOLCHAIN").unwrap_or("nightly".to_string()),
             args: std::env::args().skip(2).collect(),
         }
     }
