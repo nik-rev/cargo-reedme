@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In a few very rare cases (less than `0.1%`), it is impossible to figure out what a link should be just from the rustdoc JSON (due to a bug in rustdoc).
   In those cases, we will do the last-resort of computing rustdoc HTML and extracting the link from `index.html` file
 - Fixed invalid features being passed to packages in workspace
+- rustdoc flags paths not being recognized due to being relative
 
 ## [v0.4.1] - 2026-02-27
 

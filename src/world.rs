@@ -8,6 +8,7 @@ use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
 use fs_err as fs;
+use itertools::Itertools;
 
 use crate::config::Config;
 
@@ -94,24 +95,55 @@ pub fn extract_rustdoc_json(
         .context("node ID does not exist")?;
 
     let rustdoc_json_for_target = |target: &cargo_metadata::Target| {
+        let manifest_dir = pkg.manifest_path.parent().context("no manifest dir")?;
+
+        // Makes all referenced paths inside of CLI arguments absolute instead
+        // of relative to the cargo manifest directory.
+        //
+        // users can specify relative paths in config options such as
+        // `rustdoc-args`, such as `--html-in-header foobar.html`. Which will
+        // be relative to the Cargo.toml. BUT this will
+        // have odd errors and edge cases
+        //
+        // So we want to make that `foobar.html` into an absolute path so
+        // rustdoc won't be confused.
+        //
+        // But the issue is we have no idea which of the arguments are paths, flags etc
+        // so if this argument exists as an actual path on the file system it is in all
+        // likelihood a path
+        let make_paths_absolute = |input| {
+            shellwords::split(input)
+                .unwrap()
+                .into_iter()
+                .map(|word| {
+                    let absolute_path = manifest_dir.join(&word);
+                    if absolute_path.exists() {
+                        absolute_path.to_string()
+                    } else {
+                        word
+                    }
+                })
+                .join(" ")
+        };
+
         let builder = rustdoc_json::Builder::default()
             .toolchain(toolchain)
             .manifest_path(&pkg.manifest_path)
             .env(
                 "RUSTFLAGS",
-                format!(
+                make_paths_absolute(&format!(
                     "{} {}",
                     env::var("RUSTFLAGS").unwrap_or_default(),
                     config.rustc_args.join(" ")
-                ),
+                )),
             )
             .env(
                 "RUSTDOCFLAGS",
-                format!(
+                make_paths_absolute(&format!(
                     "{} {}",
                     env::var("RUSTDOCFLAGS").unwrap_or_default(),
                     config.rustdoc_args.join(" ")
-                ),
+                )),
             )
             .document_private_items(true)
             .no_default_features(true)
@@ -123,7 +155,6 @@ pub fn extract_rustdoc_json(
                     .iter()
                     .map(|feature| format!("{}/{feature}", pkg.name)),
             )
-            .package(&pkg.name)
             .package_target(convert_package_target(target));
         let rustdoc_json_path = builder.build().context("rustdoc error")?;
 

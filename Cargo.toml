@@ -40,6 +40,7 @@ microtemplate = "1.0.3"
 toml = "1.0.3"
 serde_with = "3.16.1"
 subdef = "0.1.4"
+shellwords = "1.1.0"
 
 [dev-dependencies]
 rust-playground-top-crates = { version = "=0.1.7", git = "https://github.com/rust-lang/rust-playground.git" }
