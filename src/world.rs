@@ -119,7 +119,12 @@ pub fn extract_rustdoc_json(
             .all_features(false)
             // NOTE: this already includes information about passed CLI arguments + config
             // (e.g. --no-default-features, --features, --all-features etc) so we disable those^^
-            .features(node.features.as_slice())
+            .features(
+                node.features
+                    .iter()
+                    .map(|feature| format!("{}/{feature}", pkg.name)),
+            )
+            .package(&pkg.name)
             .package_target(convert_package_target(target));
         let rustdoc_json_path = builder.build().context("rustdoc error")?;
 
