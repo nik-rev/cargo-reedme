@@ -59,6 +59,7 @@
 //! - [Cargo features](#cargo-features)
 //! - [Informational note](#informational-note)
 //! - [Config](#config)
+//! - [Incremented headings](#incremented-headings)
 //! - [Use programmatically from scripts](#use-programmatically-from-scripts)
 //!
 //! ## Generate `README.md` from documentation comments in `lib.rs`
@@ -257,6 +258,8 @@
 //!
 //! And if none of the above are defined, `cargo reedme` will use fields of the same names as defined in `metadata.docs.rs` (see docs.rs [metadata section](https://docs.rs/about/metadata))
 //!
+//! ### Default config
+//!
 //! The default config is this:
 //!
 //! ```toml
@@ -268,6 +271,45 @@
 //! ```ignore
 //! #![doc = include_str!("default_config.toml")]
 //! ```
+//!
+//! ## Incremented headings
+//!
+//! It's good practice to only have a single level 1 heading. rustdoc will decrement all of your settings in the output HTML files,
+//! so your level 1 headings become level 2 headings and so on.
+//!
+//! `cargo reedme` does the same. If your README file already has a level 1 heading, every heading will be incremented:
+//!
+//! ````rust,ignore
+//! //! # Usage
+//! //!
+//! //! ...
+//! //!
+//! //! # Examples
+//! //!
+//! //! ...
+//! ````
+//!
+//! The following `README.md` file:
+//!
+//! ````markdown
+//! # docstr
+//!
+//! <!-- cargo-reedme -->
+//! ````
+//!
+//! Will be updated to this, when running `cargo +nightly reedme`:
+//!
+//! ````markdown
+//! # docstr
+//!
+//! ## Usage
+//!
+//! ...
+//!
+//! ## Examples
+//!
+//! ...
+//! ````
 //!
 //! ## Use programmatically from scripts
 //!

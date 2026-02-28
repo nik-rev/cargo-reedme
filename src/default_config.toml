@@ -1,6 +1,9 @@
 #! This is the default configuration for `cargo-reedme`
 #!
-#! These fields can be overridden in `[package.metadata.cargo-reedme]` or `[workspace.metadata.cargo-reedme]`
+#! These fields can be overridden in:
+#!
+#! - `[package.metadata.cargo-reedme]` in package `Cargo.toml`
+#! - `[workspace.metadata.cargo-reedme]` in virtual manifest, workspace `Cargo.toml`
 
 # The base URL for every generated URL in the README
 #
@@ -45,13 +48,13 @@ increment-headings = true
 
 # Features to pass to Cargo
 #
-# If not specified, defaults to `metadata.docs.rs.features`
+# If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`
 #
 # features = []
 
 # Whether to pass `--all-features` to Cargo
 #
-# If not specified, defaults to `metadata.docs.rs.all-features`
+# If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`
 #
 # all-features = false
 
@@ -63,12 +66,12 @@ increment-headings = true
 
 # Additional `RUSTFLAGS` to set
 #
-# If not specified, defaults to `metadata.docs.rs.rustc-args`
+# If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`
 #
 # rustc-args = []
 
 # Additional `RUSTDOCFLAGS` to set
 #
-# If not specified, defaults to `metadata.docs.rs.rustdoc-args`
+# If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`
 #
 # rustdoc-args = []
