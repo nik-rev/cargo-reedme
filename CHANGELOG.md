@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `target = "heuristic"` won't anymore error if there are no binary targets and `lib.rs` is empty
+- `target = "heuristic"` won't error anymore if there are no binary targets and `lib.rs` is empty
 
 ### Fixed
 
