@@ -3,7 +3,7 @@
 use core::fmt;
 use std::{str::FromStr, sync::LazyLock};
 
-use eyre::{ContextCompat, Result, bail};
+use eyre::{ContextCompat, OptionExt, Result, bail};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
@@ -42,7 +42,7 @@ impl Target {
     pub fn select<'a>(
         &self,
         targets: &'a [cargo_metadata::Target],
-        is_target_empty: impl Fn(&'a cargo_metadata::Target) -> bool,
+        is_target_empty: impl Fn(&'a cargo_metadata::Target) -> Result<bool>,
     ) -> Result<&'a cargo_metadata::Target> {
         let get_library_target = || {
             targets
@@ -55,6 +55,7 @@ impl Target {
                         || target.is_staticlib()
                 })
                 .exactly_one()
+                .ok()
         };
 
         match self {
@@ -69,20 +70,21 @@ impl Target {
                 .filter(|target| target.is_bin())
                 .find(|target| target.name == *name)
                 .wrap_err_with(|| format!("binary target with the name `{name}` not found")),
-            Target::Lib => get_library_target()
-                .ok()
-                .wrap_err("expected a library target (lib.rs)"),
+            Target::Lib => get_library_target().wrap_err("expected a library target (lib.rs)"),
             Target::Heuristic => {
-                if let Ok(target) = get_library_target()
-                    && !is_target_empty(target)
+                let lib_target = get_library_target();
+
+                if let Some(target) = lib_target
+                    && !is_target_empty(target)?
                 {
+                    // lib.rs but it's non-empty
                     Ok(target)
                 } else if let Some(target) = targets.iter().find(|target| target.is_bin()) {
+                    // main.rs
                     Ok(target)
                 } else {
-                    bail!(
-                        "no binary target (main.rs) or library target (lib.rs) found with documentation comments"
-                    )
+                    // lib.rs but it's empty
+                    lib_target.ok_or_eyre("no library (lib.rs) or binary (main.rs) target found")
                 }
             }
         }

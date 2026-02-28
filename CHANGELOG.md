@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.4.1...HEAD
 
+### Changed
+
+- `target = "heuristic"` won't anymore error if there are no binary targets and `lib.rs` is empty
+
 ### Fixed
 
 - In a few very rare cases (less than `0.1%`), it is impossible to figure out what a link should be just from the rustdoc JSON (due to a bug in rustdoc).

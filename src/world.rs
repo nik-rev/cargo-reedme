@@ -148,25 +148,17 @@ pub fn extract_rustdoc_json(
     };
 
     let target = config.target.select(&pkg.targets, |target| {
-        let krate = rustdoc_json_for_target(target).unwrap();
+        let krate = rustdoc_json_for_target(target)?;
 
         let root = krate
             .index
             .get(&krate.root)
             .expect("rustdoc's root item is a valid item");
 
-        root.docs.as_ref().is_none_or(|docs| docs.trim().is_empty())
+        Ok(root.docs.as_ref().is_none_or(|docs| docs.trim().is_empty()))
     })?;
 
     rustdoc_json_for_target(target)
-}
-
-pub fn extract_package_target(
-    pkg: &cargo_metadata::Package,
-) -> Result<rustdoc_json::PackageTarget> {
-    let target = pkg.targets.first().context("no cargo target")?;
-    let package_target = convert_package_target(target);
-    Ok(package_target)
 }
 
 fn convert_package_target(target: &cargo_metadata::Target) -> rustdoc_json::PackageTarget {
