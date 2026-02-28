@@ -424,20 +424,6 @@ pub fn resolve(world: &World) -> Result<Output> {
                 Err(err) => return Err(err.into()),
             };
 
-            /// Returns whether the passed markdown has any h1 headings
-            fn has_h1_heading(content: &str) -> bool {
-                let mut parser = pulldown_cmark::Parser::new(content);
-                parser.any(|event| {
-                    matches!(
-                        event,
-                        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading {
-                            level: pulldown_cmark::HeadingLevel::H1,
-                            ..
-                        })
-                    )
-                })
-            }
-
             let (increment_headings, meta) = original_readme.as_ref().map_or(
                 (false, ReadmeContentsMeta::NewlyCreated),
                 |original_readme| match insert_into_readme::UsersReadmeParts::new(original_readme) {
@@ -482,6 +468,20 @@ pub fn resolve(world: &World) -> Result<Output> {
         version: VERSION,
         readmes,
         errors,
+    })
+}
+
+/// Returns whether the passed markdown has any h1 headings
+fn has_h1_heading(content: &str) -> bool {
+    let mut parser = pulldown_cmark::Parser::new(content);
+    parser.any(|event| {
+        matches!(
+            event,
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading {
+                level: pulldown_cmark::HeadingLevel::H1,
+                ..
+            })
+        )
     })
 }
 
