@@ -8,7 +8,6 @@ use eyre::Context as _;
 use eyre::ContextCompat as _;
 use eyre::Result;
 use fs_err as fs;
-use itertools::Itertools;
 
 use crate::config::Config;
 
