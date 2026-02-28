@@ -6,9 +6,10 @@ use std::{str::FromStr, sync::LazyLock};
 use eyre::{ContextCompat, OptionExt, Result, bail};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use subdef::subdef;
 
-#[derive(Default, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Config {
     pub base_url: String,
     pub note: String,
@@ -17,7 +18,9 @@ pub struct Config {
     pub features: Option<Vec<String>>,
     pub all_features: Option<bool>,
     pub no_default_features: Option<bool>,
+    #[serde(default)]
     pub rustc_args: Vec<String>,
+    #[serde(default)]
     pub rustdoc_args: Vec<String>,
 }
 
@@ -29,7 +32,9 @@ impl Config {
     }
 }
 
-#[derive(Default, Clone, serde_with::SerializeDisplay, serde_with::DeserializeFromStr)]
+#[derive(
+    Default, Clone, serde_with::SerializeDisplay, serde_with::DeserializeFromStr, PartialEq, Eq,
+)]
 pub enum Target {
     BinOnly,
     BinExact(String),
@@ -147,13 +152,15 @@ impl Config {
             increment_headings: config
                 .increment_headings
                 .unwrap_or_else(|| DEFAULT_CONFIG.increment_headings),
-            features: config.features,
-            all_features: config.all_features,
-            no_default_features: config.no_default_features,
+            features: config.cargo.features,
+            all_features: config.cargo.all_features,
+            no_default_features: config.cargo.no_default_features,
             rustc_args: config
+                .cargo
                 .rustc_args
                 .unwrap_or_else(|| DEFAULT_CONFIG.rustc_args.clone()),
             rustdoc_args: config
+                .cargo
                 .rustdoc_args
                 .unwrap_or_else(|| DEFAULT_CONFIG.rustdoc_args.clone()),
         }
@@ -161,34 +168,74 @@ impl Config {
 }
 
 /// This is the `[package.metadata.cargo-reedme]` and `[workspace.package.metadata.cargo-reedme]`
-#[derive(Serialize, Deserialize, Default, Clone)]
-#[serde(rename_all = "kebab-case")]
+#[subdef(
+    derive(Serialize, Deserialize, Default, Clone),
+    serde(rename_all = "kebab-case")
+)]
+// TODO: this fails to compile, requires changes to `subdef`
+//
+// #[serde(deny_unknown_fields)]
 struct ConfigToml {
     base_url: Option<String>,
     note: Option<String>,
     target: Option<Target>,
     increment_headings: Option<bool>,
-    features: Option<Vec<String>>,
-    all_features: Option<bool>,
-    no_default_features: Option<bool>,
-    rustc_args: Option<Vec<String>>,
-    rustdoc_args: Option<Vec<String>>,
+    // we want to re-use this for `[metadata.docs.rs]`
+    #[serde(flatten)]
+    cargo: [_; {
+        struct ConfigTomlRustdocShared {
+            features: Option<Vec<String>>,
+            all_features: Option<bool>,
+            no_default_features: Option<bool>,
+            rustc_args: Option<Vec<String>>,
+            rustdoc_args: Option<Vec<String>>,
+        }
+    }],
 }
 
 impl ConfigToml {
     /// Extracts configuration from the `[workspace.metadata]` or `[package.metadata]` sections in `Cargo.toml`
     fn from_cargo_metadata(metadata: serde_json::Value) -> Self {
-        #[derive(Serialize, Deserialize, Default)]
-        #[serde(rename_all = "kebab-case")]
+        #[subdef(
+            derive(Serialize, Deserialize, Default),
+            serde(rename_all = "kebab-case")
+        )]
         struct PackageMetadata {
             cargo_reedme: Option<ConfigToml>,
+            docs: [Option<_>; {
+                struct DocsRs {
+                    rs: Option<ConfigTomlRustdocShared>,
+                }
+            }],
         }
 
-        serde_json::from_value::<Option<PackageMetadata>>(metadata.clone())
+        let this = serde_json::from_value::<Option<PackageMetadata>>(metadata.clone())
             .unwrap_or_default()
-            .unwrap_or_default()
-            .cargo_reedme
-            .unwrap_or_default()
+            .unwrap_or_default();
+
+        let mut config = this.cargo_reedme.unwrap_or_default();
+
+        let docs_rs_config = this.docs.unwrap_or_default().rs.unwrap_or_default();
+
+        // forward config from docs.rs config if it makes sense to do so
+
+        macro_rules! forward {
+            ($field:ident) => {
+                if config.cargo.$field.is_none()
+                    && let Some($field) = docs_rs_config.$field
+                {
+                    config.cargo.$field = Some($field);
+                }
+            };
+        }
+
+        forward!(features);
+        forward!(all_features);
+        forward!(no_default_features);
+        forward!(rustc_args);
+        forward!(rustdoc_args);
+
+        config
     }
 
     /// Merges contents of `[package.metadata]` with `[workspace.metadata]`,
@@ -207,19 +254,137 @@ impl ConfigToml {
             self.increment_headings = workspace_config.increment_headings;
         }
 
-        if self.features.is_none() {
-            self.features = workspace_config.features;
+        if self.cargo.features.is_none() {
+            self.cargo.features = workspace_config.cargo.features;
         }
-        self.all_features = self.all_features.or(workspace_config.all_features);
-        self.no_default_features = self
+        self.cargo.all_features = self
+            .cargo
+            .all_features
+            .or(workspace_config.cargo.all_features);
+        self.cargo.no_default_features = self
+            .cargo
             .no_default_features
-            .or(workspace_config.no_default_features);
+            .or(workspace_config.cargo.no_default_features);
 
-        if self.rustc_args.is_none() {
-            self.rustc_args = workspace_config.rustc_args;
+        if self.cargo.rustc_args.is_none() {
+            self.cargo.rustc_args = workspace_config.cargo.rustc_args;
         }
-        if self.rustdoc_args.is_none() {
-            self.rustdoc_args = workspace_config.rustdoc_args;
+        if self.cargo.rustdoc_args.is_none() {
+            self.cargo.rustdoc_args = workspace_config.cargo.rustdoc_args;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert2::assert;
+    use docstr::docstr;
+    use serde_json::Value;
+
+    struct Case {
+        docs_rs: &'static str,
+        package: &'static str,
+        workspace: Option<&'static str>,
+        expected: &'static str,
+    }
+
+    fn test(case: Case) {
+        let make_meta = |reedme: &str, docs: &str| -> Value {
+            let toml = docstr!(format!
+                /// [cargo-reedme]
+                /// {reedme}
+                ///
+                /// [docs.rs]
+                /// {docs}
+            );
+            let v: toml::Value =
+                toml::from_str(&toml).unwrap_or(toml::Value::Table(Default::default()));
+            serde_json::to_value(v).unwrap()
+        };
+
+        let workspace_meta = case
+            .workspace
+            .map(|w| make_meta(w, ""))
+            .unwrap_or_else(|| serde_json::json!({}));
+
+        let package_meta = make_meta(case.package, case.docs_rs);
+
+        let expected_config: Config = {
+            let mut config: toml::Table = toml::from_str(DEFAULT_CONFIG_STR).unwrap();
+            let expected_config_override: toml::Table = toml::from_str(case.expected).unwrap();
+
+            for (k, v) in expected_config_override {
+                config.insert(k, v);
+            }
+
+            toml::from_str(&toml::to_string(&config).unwrap()).unwrap()
+        };
+
+        let actual_config = Config::new(workspace_meta, package_meta);
+
+        assert!(expected_config == actual_config);
+    }
+
+    #[test]
+    fn workspace_inheritance() {
+        test(Case {
+            docs_rs: "",
+            package: "note = 'Package Note'",
+            workspace: Some("base-url = 'https://workspace.io'"),
+            expected: docstr!(
+                /// base-url = "https://workspace.io"
+                /// note = "Package Note"
+            ),
+        });
+    }
+
+    #[test]
+    fn docs_rs_fallback() {
+        test(Case {
+            docs_rs: "rustdoc-args = ['--cfg', 'docsrs']",
+            package: "base-url = 'https://fixed.com'",
+            workspace: None,
+            expected: docstr!(
+                /// base-url = "https://fixed.com"
+                /// rustdoc-args = ["--cfg", "docsrs"]
+            ),
+        });
+    }
+
+    #[test]
+    fn package_priority_over_docs_rs() {
+        test(Case {
+            docs_rs: "all-features = true",
+            package: "all-features = false",
+            workspace: None,
+            expected: docstr!(
+                /// all-features = false
+            ),
+        });
+    }
+
+    #[test]
+    fn docs_rs_priority_over_workspace() {
+        test(Case {
+            docs_rs: "rustc-args = ['--target-cpu=native']",
+            package: "",
+            workspace: Some("rustc-args = ['--generic']"),
+            expected: docstr!(
+                /// rustc-args = ["--target-cpu=native"]
+            ),
+        });
+    }
+
+    #[test]
+    fn target_enum_deserialization() {
+        test(Case {
+            docs_rs: "",
+            package: "target = 'bin:server-app'",
+            workspace: None,
+            expected: docstr!(
+                /// target = "bin:server-app"
+            ),
+        });
     }
 }

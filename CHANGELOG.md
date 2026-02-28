@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `target = "heuristic"` won't error anymore if there are no binary targets and `lib.rs` is empty
+- Config values will now inherit from `metadata.docs.rs` if they are defined there
 
 ### Fixed
 

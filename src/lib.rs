@@ -237,7 +237,7 @@
 //!
 //! ## Config
 //!
-//! You can configure the behavior of `cargo +nightly reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
+//! You can configure the behavior of `cargo reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 //!
 //! ```toml
 //! # project/crates/foo_bar/Cargo.toml
@@ -254,6 +254,8 @@
 //! [workspace.metadata.cargo-reedme]
 //! # ... your settings go here ...
 //! ```
+//!
+//! And if none of the above are defined, `cargo reedme` will use fields of the same names as defined in `metadata.docs.rs` (see docs.rs [metadata section](https://docs.rs/about/metadata))
 //!
 //! The default config is this:
 //!

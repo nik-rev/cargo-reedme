@@ -44,16 +44,31 @@ target = "heuristic"
 increment-headings = true
 
 # Features to pass to Cargo
-features = []
+#
+# If not specified, defaults to `metadata.docs.rs.features`
+#
+# features = []
 
 # Whether to pass `--all-features` to Cargo
-all-features = false
+#
+# If not specified, defaults to `metadata.docs.rs.all-features`
+#
+# all-features = false
 
 # Whether to pass `--no-default-features` to Cargo
-no-default-features = false
+#
+# If not specified, defaults to `metadata.docs.rs.no-default-features`
+#
+# no-default-features = false
 
 # Additional `RUSTFLAGS` to set
-rustc-args = []
+#
+# If not specified, defaults to `metadata.docs.rs.rustc-args`
+#
+# rustc-args = []
 
 # Additional `RUSTDOCFLAGS` to set
-rustdoc-args = []
+#
+# If not specified, defaults to `metadata.docs.rs.rustdoc-args`
+#
+# rustdoc-args = []
