@@ -19,266 +19,266 @@ cargo-reedme: info-end -->
 [![docs.rs](https://img.shields.io/docsrs/cargo-reedme?style=flat-square&logo=docs.rs)](https://docs.rs/cargo-reedme)
 ![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)
 ![msrv](https://img.shields.io/badge/msrv-1.93-blue?style=flat-square&logo=rust)
- [![github](https://img.shields.io/github/stars/nik-rev/cargo-reedme)](https://github.com/nik-rev/cargo-reedme)
+[![github](https://img.shields.io/github/stars/nik-rev/cargo-reedme)](https://github.com/nik-rev/cargo-reedme)
 
- Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
+Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 
- - [Example](#example)
- - [Installation](#installation)
- - [Features](#features)
+- [Example](#example)
+- [Installation](#installation)
+- [Features](#features)
 
- ## Example
+## Example
 
- The following documentation in `lib.rs`:
+The following documentation in `lib.rs`:
 
 This prints all prime numbers, using [`println!`](https://doc.rust-lang.org/stable/std/macro.println.html):
 
- ````rust
- //! This prints all prime numbers, using [`println!`]:
- //!
- //! ```
- //! # fn main() {
- //! for i in 2.. {
- //!     if is_prime(i) {
- //!         println!("{i}");
- //!     }
- //! }
- //! # }
- //! ```
- ````
+````rust
+//! This prints all prime numbers, using [`println!`]:
+//!
+//! ```
+//! # fn main() {
+//! for i in 2.. {
+//!     if is_prime(i) {
+//!         println!("{i}");
+//!     }
+//! }
+//! # }
+//! ```
+````
 
- Generates the following `README.md` when running `cargo +nightly reedme`:
+Generates the following `README.md` when running `cargo +nightly reedme`:
 
- ````markdown
- This prints all prime numbers:
+````markdown
+This prints all prime numbers, using [`println!`](https://doc.rust-lang.org/stable/std/macro.println.html):
 
- ```rust
- for i in 2.. {
-     if is_prime(i) {
-         println!("{i}");
-     }
- }
- ```
- ````
+```rust
+for i in 2.. {
+    if is_prime(i) {
+        println!("{i}");
+    }
+}
+```
+````
 
- ## Installation
+## Installation
 
- ```sh
- cargo install cargo-reedme
- ```
+```sh
+cargo install cargo-reedme
+```
 
- ## Features
+## Features
 
- - [Generate `README.md` from documentation comments in `lib.rs`](#generate-readmemd-from-documentation-comments-in-librs)
- - [Intra-doc link resolution](#intra-doc-link-resolution)
- - [Code blocks transformation](#code-blocks-transformation)
- - [Macro expansion](#macro-expansion)
- - [Check mode](#check-mode)
- - [Workspace support](#workspace-support)
- - [Cargo features](#cargo-features)
- - [Informational note](#informational-note)
- - [Config](#config)
- - [Use programmatically from scripts](#use-programmatically-from-scripts)
+- [Generate `README.md` from documentation comments in `lib.rs`](#generate-readmemd-from-documentation-comments-in-librs)
+- [Intra-doc link resolution](#intra-doc-link-resolution)
+- [Code blocks transformation](#code-blocks-transformation)
+- [Macro expansion](#macro-expansion)
+- [Check mode](#check-mode)
+- [Workspace support](#workspace-support)
+- [Cargo features](#cargo-features)
+- [Informational note](#informational-note)
+- [Config](#config)
+- [Use programmatically from scripts](#use-programmatically-from-scripts)
 
- ### Generate `README.md` from documentation comments in `lib.rs`
+### Generate `README.md` from documentation comments in `lib.rs`
 
- Running `cargo +nightly reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
+Running `cargo +nightly reedme` will take your doc comments and generate a README from them. This `src/lib.rs`:
 
- ```rust
- //! Hello, world!
- ```
+```rust
+//! Hello, world!
+```
 
- Generates the following `README.md`:
+Generates the following `README.md`:
 
- ```markdown
- <!-- cargo-reedme: start -->
+```markdown
+<!-- cargo-reedme: start -->
 
- Hello, world!
+Hello, world!
 
- <!-- cargo-reedme: end -->
- ```
+<!-- cargo-reedme: end -->
+```
 
- If the `README.md` file already exists, it must have a `<!-- cargo-reedme -->` somewhere inside of it. If the `README.md` contains the following:
+If the `README.md` file already exists, it must have a `<!-- cargo-reedme -->` somewhere inside of it. If the `README.md` contains the following:
 
- ```markdown
- # my_crate
+```markdown
+# my_crate
 
- <!-- cargo-reedme -->
- ```
+<!-- cargo-reedme -->
+```
 
- Running `cargo +nightly reedme` will replace that `<!-- cargo-reedme -->` with documentation from `lib.rs`:
+Running `cargo +nightly reedme` will replace that `<!-- cargo-reedme -->` with documentation from `lib.rs`:
 
- ```markdown
- # my_crate
+```markdown
+# my_crate
 
- <!-- cargo-reedme: start -->
+<!-- cargo-reedme: start -->
 
- Hello, world!
+Hello, world!
 
- <!-- cargo-reedme: end -->
- ```
+<!-- cargo-reedme: end -->
+```
 
- Further invocations of `cargo +nightly reedme` update the inserted region
+Further invocations of `cargo +nightly reedme` update the inserted region
 
- ### Intra-doc link resolution
+### Intra-doc link resolution
 
- Intra-doc links will be transformed into absolute URLs:
+Intra-doc links will be transformed into absolute URLs:
 
- ```rust
- //! This data structure is [`serde_json::Value`](Value).
- struct Value;
- ```
+```rust
+//! This data structure is [`serde_json::Value`](Value).
+struct Value;
+```
 
- The above generate the following `README.md`:
+The above generate the following `README.md`:
 
- ```markdown
- This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
- ```
+```markdown
+This data structure is [`serde_json::Value`](https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html).
+```
 
- ### Code blocks transformation
+### Code blocks transformation
 
- Code blocks will have `rust` language added, and hidden lines (lines starting with `#`) will be removed:
+Code blocks will have `rust` language added, and hidden lines (lines starting with `#`) will be removed:
 
- ````rust
- //! An example program:
- //!
- //! ```
- //! # fn main() {
- //! // "hello world" in Rust
- //! println!("Hello, world!");
- //! # }
- //! ```
- ````
+````rust
+//! An example program:
+//!
+//! ```
+//! # fn main() {
+//! // "hello world" in Rust
+//! println!("Hello, world!");
+//! # }
+//! ```
+````
 
- The above generates the following `README.md`:
+The above generates the following `README.md`:
 
- ````markdown
- An example program:
+````markdown
+An example program:
 
- ```rust
- // "hello world" in Rust
- println!("Hello, world!");
- ```
- ````
+```rust
+// "hello world" in Rust
+println!("Hello, world!");
+```
+````
 
- ### Macro expansion
+### Macro expansion
 
- Macros in doc comments get properly expanded:
+Macros in doc comments get properly expanded:
 
- ````rust
- //! ```toml
- //! [dependencies]
- #![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
- //! ```
- ````
+````rust
+//! ```toml
+//! [dependencies]
+#![doc = concat!("derive_aliases = '", env!("CARGO_PKG_VERSION"), "'")]
+//! ```
+````
 
- The above generates the following `README.md`:
+The above generates the following `README.md`:
 
- ````markdown
- ```toml
- [dependencies]
- derive_aliases = '0.4'
- ```
- ````
+````markdown
+```toml
+[dependencies]
+derive_aliases = '0.4'
+```
+````
 
- Notice that the `concat!` and inner `env!` macro was expanded appropriately.
+Notice that the `concat!` and inner `env!` macro was expanded appropriately.
 
- ### Check mode
+### Check mode
 
- Run `cargo +nightly reedme` as part of your CI pipeline!
+Run `cargo +nightly reedme` as part of your CI pipeline!
 
- The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
+The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
 
- An example workflow that runs `cargo +nightly reedme --check` on every commit and PR:
+An example workflow that runs `cargo +nightly reedme --check` on every commit and PR:
 
- ```yaml
- # .github/workflows/cargo-reedme.yaml
- name: cargo-reedme
- on:
-   pull_request:
-   push:
-     branches:
-       - main
+```yaml
+# .github/workflows/cargo-reedme.yaml
+name: cargo-reedme
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
- jobs:
-   cargo-reedme:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v6
+jobs:
+  cargo-reedme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-       - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-       - run: cargo install --locked cargo-reedme
+      - run: cargo install --locked cargo-reedme
 
-       - run: cargo +nightly reedme --check
- ```
+      - run: cargo +nightly reedme --check
+```
 
- On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
+On failure, the program exits with a non-zero exit code and prints a colorful diff between the **expected** and **actual** `README.md` files
 
- ### Workspace support
+### Workspace support
 
- Generate `README.md`s for all crates in your workspace with a single command!
+Generate `README.md`s for all crates in your workspace with a single command!
 
- Supports `--workspace`, `--exclude`, and `--package`
+Supports `--workspace`, `--exclude`, and `--package`
 
- ### Cargo features
+### Cargo features
 
- Supports `--all-features`, `--features`, and `--no-default-features`
+Supports `--all-features`, `--features`, and `--no-default-features`
 
- ### Informational note
+### Informational note
 
- When `cargo +nightly reedme` generates your `README.md` file, it will insert a comment that explains how this section was generated:
+When `cargo +nightly reedme` generates your `README.md` file, it will insert a comment that explains how this section was generated:
 
- ```markdown
- # my_crate
+```markdown
+# my_crate
 
- <!-- cargo-reedme: start -->
+<!-- cargo-reedme: start -->
 
- <!-- cargo-reedme: info-start
+<!-- cargo-reedme: info-start
 
-     Do not edit this region by hand
-     ===============================
+    Do not edit this region by hand
+    ===============================
 
-     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
+    This region was generated from Rust documentation comments by `cargo-reedme` using this command:
 
-         cargo reedme
+        cargo reedme
 
-     for more info: https://github.com/nik-rev/cargo-reedme
+    for more info: https://github.com/nik-rev/cargo-reedme
 
- cargo-reedme: info-end -->
+cargo-reedme: info-end -->
 
- Your documentation
+Your documentation
 
- <!-- cargo-reedme: end -->
- ```
+<!-- cargo-reedme: end -->
+```
 
- This note can be customized via the `note` field in `metadata` table in `Cargo.toml`
+This note can be customized via the `note` field in `metadata` table in `Cargo.toml`
 
- ### Config
+### Config
 
- You can configure the behavior of `cargo reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
+You can configure the behavior of `cargo reedme` via the crate-level `[package.metadata]` table in `Cargo.toml`:
 
- ```toml
- # project/crates/foo_bar/Cargo.toml
+```toml
+# project/crates/foo_bar/Cargo.toml
 
- [package.metadata.cargo-reedme]
- # ... your settings go here ...
- ```
+[package.metadata.cargo-reedme]
+# ... your settings go here ...
+```
 
- …or the workspace-level `[workspace.metadata]` table
+…or the workspace-level `[workspace.metadata]` table
 
- ```toml
- # project/Cargo.toml
+```toml
+# project/Cargo.toml
 
- [workspace.metadata.cargo-reedme]
- # ... your settings go here ...
- ```
+[workspace.metadata.cargo-reedme]
+# ... your settings go here ...
+```
 
- And if none of the above are defined, `cargo reedme` will use fields of the same names as defined in `metadata.docs.rs` (see docs.rs [metadata section](https://docs.rs/about/metadata))
+And if none of the above are defined, `cargo reedme` will use fields of the same names as defined in `metadata.docs.rs` (see docs.rs [metadata section](https://docs.rs/about/metadata))
 
- The default config is this:
+The default config is this:
 
- ```toml
+```toml
 #! This is the default configuration for `cargo-reedme`
 #!
 #! These fields can be overridden in `[package.metadata.cargo-reedme]` or `[workspace.metadata.cargo-reedme]`
@@ -353,33 +353,33 @@ increment-headings = true
 # If not specified, defaults to `metadata.docs.rs.rustdoc-args`
 #
 # rustdoc-args = []
- ```
+```
 
- Fun fact: This README itself is generated by `cargo +nightly reedme`. The above TOML is added from the [`default_config.toml`](https://github.com/nik-rev/cargo-reedme/blob/main/src/default_config.toml) file like this:
+Fun fact: This README itself is generated by `cargo +nightly reedme`. The above TOML is added from the [`default_config.toml`](https://github.com/nik-rev/cargo-reedme/blob/main/src/default_config.toml) file like this:
 
- ```rust
- #![doc = include_str!("default_config.toml")]
- ```
+```rust
+#![doc = include_str!("default_config.toml")]
+```
 
- ### Use programmatically from scripts
+### Use programmatically from scripts
 
- The `--json` flag can be used to have `cargo +nightly reedme` do all computation but not write any files, so you can
- do with that data as you please.
+The `--json` flag can be used to have `cargo +nightly reedme` do all computation but not write any files, so you can
+do with that data as you please.
 
- You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/0.5.0/cargo_reedme/fn.resolve.html)
- which does no IO. It has the following signature:
+You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/0.5.1/cargo_reedme/fn.resolve.html)
+which does no IO. It has the following signature:
 
- ```rust
- pub fn resolve(world: &World) -> Result<Output>
- ```
+```rust
+pub fn resolve(world: &World) -> Result<Output>
+```
 
- You can take a look at `main.rs` to see how this function is called
+You can take a look at `main.rs` to see how this function is called
 
- ## Credits
+## Credits
 
- This project was inspired by:
+This project was inspired by:
 
- - [`cargo-readme`](https://github.com/webern/cargo-readme)
- - [`cargo-rdme`](https://github.com/orium/cargo-rdme)
+- [`cargo-readme`](https://github.com/webern/cargo-readme)
+- [`cargo-rdme`](https://github.com/orium/cargo-rdme)
 
 <!-- cargo-reedme: end -->
