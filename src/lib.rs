@@ -14,8 +14,10 @@
 //!
 //! The following documentation in `lib.rs`:
 //!
+//! This prints all prime numbers, using [`println!`]:
+//!
 //! ````rust
-//! //! This prints all prime numbers:
+//! //! This prints all prime numbers, using [`println!`]:
 //! //!
 //! //! ```
 //! //! # fn main() {
@@ -31,7 +33,7 @@
 //! Generates the following `README.md` when running `cargo +nightly reedme`:
 //!
 //! ````markdown
-//! This prints all prime numbers:
+//! This prints all prime numbers, using [`println!`](https://doc.rust-lang.org/stable/std/macro.println.html):
 //!
 //! ```rust
 //! for i in 2.. {
