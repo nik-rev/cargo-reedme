@@ -14,8 +14,6 @@
 //!
 //! The following documentation in `lib.rs`:
 //!
-//! This prints all prime numbers, using [`println!`]:
-//!
 //! ````rust
 //! //! This prints all prime numbers, using [`println!`]:
 //! //!

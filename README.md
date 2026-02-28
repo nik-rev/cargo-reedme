@@ -31,8 +31,6 @@ Generate `README.md` from documentation comments in `lib.rs` or `main.rs`
 
 The following documentation in `lib.rs`:
 
-This prints all prime numbers, using [`println!`](https://doc.rust-lang.org/stable/std/macro.println.html):
-
 ````rust
 //! This prints all prime numbers, using [`println!`]:
 //!
