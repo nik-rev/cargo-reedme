@@ -207,7 +207,7 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - run: cargo install --locked cargo-reedme@0.6.0
+      - run: cargo install --locked cargo-reedme@0.6.1
 
       - run: cargo +nightly reedme --check
 ```

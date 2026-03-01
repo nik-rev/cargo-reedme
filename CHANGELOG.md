@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.6.1...HEAD
+
+## [v0.6.1] - 2026-03-01
+
+[v0.6.1]: https://github.com/nik-rev/cargo-reedme/compare/v0.6.0...v0.6.1
 
 - Documentation improvements
 
