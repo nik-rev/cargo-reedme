@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.6.0...HEAD
+
+## [v0.6.0] - 2026-03-01
+
+[v0.6.0]: https://github.com/nik-rev/cargo-reedme/compare/v0.5.2...v0.6.0
 
 - Instead of using the crate's version when generating README links, uses `"latest"` version
 

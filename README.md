@@ -9,7 +9,7 @@
 
     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
 
-        cargo +nightly reedme
+        cargo reedme
 
     for more info: https://github.com/nik-rev/cargo-reedme
 
@@ -423,7 +423,7 @@ Will be updated to this, when running `cargo +nightly reedme`:
 The `--json` flag can be used to have `cargo +nightly reedme` do all computation but not write any files, so you can
 do with that data as you please.
 
-You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/latest/cargo_reedme/fn.resolve.html)
+You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/0.6.0/cargo_reedme/fn.resolve.html)
 which does no IO. It has the following signature:
 
 ```rust

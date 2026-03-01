@@ -1,6 +1,6 @@
 [package]
 name = "cargo-reedme"
-version = "0.5.2"
+version = "0.6.0"
 edition = "2024"
 description = "Generate README.md from doc comments in lib.rs"
 rust-version = "1.93"
