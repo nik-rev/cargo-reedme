@@ -12,7 +12,7 @@ fn base_url() -> Result<()> {
             /// fn x() {}
         )),
         generated: &docstr!(format!
-            /// [x](https://example.com/test_case/0.0.0/test_case/fn.x.html)
+            /// [x](https://example.com/test_case/latest/test_case/fn.x.html)
         ),
         ..
     })?;

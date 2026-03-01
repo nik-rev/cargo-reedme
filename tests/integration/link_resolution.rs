@@ -5,7 +5,7 @@ fn test_link(link: &str, item: &str, result: &str) -> Result<()> {
     test_link_full(
         link,
         item,
-        &format!("https://docs.rs/test_case/0.0.0/test_case/{result}"),
+        &format!("https://docs.rs/test_case/latest/test_case/{result}"),
     )
 }
 

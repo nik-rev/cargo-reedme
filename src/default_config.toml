@@ -46,6 +46,20 @@ target = "heuristic"
 # that already has a level 1 heading before the inserted region
 increment-headings = true
 
+# If the "latest" version should be used when generating links, or the exact version
+#
+# - `true`: in the URL, "latest" will always be set as the version
+#
+#   Example generated URL: https://docs.rs/serde_json/latest/serde_json/enum.Value.html
+#
+# - `false`: in the URL, the crate's current version will be set
+#
+#   Note that because docs.rs can take a while to build your crate's version - it means shortly after
+#   releases, the links in your crate's documentation will be broken - until docs.rs finishes building your crate
+#
+#   Example generated URL: https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html
+use-latest-version = true
+
 # Features to pass to Cargo
 #
 # If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`

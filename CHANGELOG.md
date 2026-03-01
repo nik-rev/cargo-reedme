@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/nik-rev/cargo-reedme/compare/v0.5.2...HEAD
 
+- Instead of using the crate's version when generating README links, uses `"latest"` version
+
+  **Before**: <https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html>
+
+  **After**: <https://docs.rs/serde_json/latest/serde_json/enum.Value.html>
+
+  To revert to the old behavior, you can specify `use-latest-version = false` in the config
+
 ## [v0.5.2] - 2026-02-28
 
 [v0.5.2]: https://github.com/nik-rev/cargo-reedme/compare/v0.5.1...v0.5.2

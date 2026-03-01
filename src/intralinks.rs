@@ -34,7 +34,7 @@
 use core::fmt;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
-use cargo_metadata::{Package, semver::Version};
+use cargo_metadata::Package;
 use eyre::Context;
 use itertools::Itertools;
 use rustdoc_types::{
@@ -80,6 +80,12 @@ pub fn create_links<'a>(
 
     let mut rustdoc_html = None;
 
+    let version = if config.use_latest_version {
+        "latest".into()
+    } else {
+        pkg.version.to_string()
+    };
+
     for (link, item_id) in &root.links {
         let Some(item_info) = items_info.get(item_id) else {
             // Note: Only actually compute rustdoc HTML if we have a broken link
@@ -117,7 +123,7 @@ pub fn create_links<'a>(
                 &krate.external_crates,
                 &config.base_url,
                 &pkg.name,
-                &pkg.version,
+                &version,
             )
         })
         .to_string();
@@ -351,7 +357,7 @@ impl<'a> ItemInfo<'a> {
         external_crates: &HashMap<u32, ExternalCrate>,
         base_url: &str,
         package_name: &str,
-        package_version: &Version,
+        package_version: &str,
     ) -> fmt::Result {
         if self.is_from_current_crate() {
             f.write_fmt(format_args!("{base_url}/{package_name}/{package_version}/"))?;

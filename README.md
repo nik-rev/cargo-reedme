@@ -9,7 +9,7 @@
 
     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
 
-        cargo reedme
+        cargo +nightly reedme
 
     for more info: https://github.com/nik-rev/cargo-reedme
 
@@ -328,6 +328,20 @@ target = "heuristic"
 # that already has a level 1 heading before the inserted region
 increment-headings = true
 
+# If the "latest" version should be used when generating links, or the exact version
+#
+# - `true`: in the URL, "latest" will always be set as the version
+#
+#   Example generated URL: https://docs.rs/serde_json/latest/serde_json/enum.Value.html
+#
+# - `false`: in the URL, the crate's current version will be set
+#
+#   Note that because docs.rs can take a while to build your crate's version - it means shortly after
+#   releases, the links in your crate's documentation will be broken - until docs.rs finishes building your crate
+#
+#   Example generated URL: https://docs.rs/serde_json/1.0.149/serde_json/enum.Value.html
+use-latest-version = true
+
 # Features to pass to Cargo
 #
 # If not specified, defaults to the value of `metadata.docs.rs.rustdoc-args` in `Cargo.toml`
@@ -409,7 +423,7 @@ Will be updated to this, when running `cargo +nightly reedme`:
 The `--json` flag can be used to have `cargo +nightly reedme` do all computation but not write any files, so you can
 do with that data as you please.
 
-You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/0.5.2/cargo_reedme/fn.resolve.html)
+You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/latest/cargo_reedme/fn.resolve.html)
 which does no IO. It has the following signature:
 
 ```rust

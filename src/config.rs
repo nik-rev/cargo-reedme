@@ -16,6 +16,7 @@ pub struct Config {
     pub target: Target,
     pub increment_headings: bool,
     pub features: Option<Vec<String>>,
+    pub use_latest_version: bool,
     pub all_features: Option<bool>,
     pub no_default_features: Option<bool>,
     #[serde(default)]
@@ -155,6 +156,9 @@ impl Config {
             features: config.cargo.features,
             all_features: config.cargo.all_features,
             no_default_features: config.cargo.no_default_features,
+            use_latest_version: config
+                .use_latest_version
+                .unwrap_or_else(|| DEFAULT_CONFIG.use_latest_version),
             rustc_args: config
                 .cargo
                 .rustc_args
@@ -180,6 +184,7 @@ struct ConfigToml {
     note: Option<String>,
     target: Option<Target>,
     increment_headings: Option<bool>,
+    use_latest_version: Option<bool>,
     // we want to re-use this for `[metadata.docs.rs]`
     #[serde(flatten)]
     cargo: [_; {
@@ -252,6 +257,9 @@ impl ConfigToml {
         }
         if self.increment_headings.is_none() {
             self.increment_headings = workspace_config.increment_headings;
+        }
+        if self.use_latest_version.is_none() {
+            self.use_latest_version = workspace_config.use_latest_version;
         }
 
         if self.cargo.features.is_none() {
