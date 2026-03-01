@@ -9,7 +9,7 @@
 
     This region was generated from Rust documentation comments by `cargo-reedme` using this command:
 
-        cargo reedme
+        cargo +nightly reedme
 
     for more info: https://github.com/nik-rev/cargo-reedme
 
@@ -184,11 +184,11 @@ Notice that the `concat!` and inner `env!` macro was expanded appropriately.
 
 ### Check mode
 
-Run `cargo +nightly reedme` as part of your CI pipeline!
+Run `cargo reedme` as part of your CI pipeline!
 
 The `--check` flag is used to make sure PRs keep the `README.md` up to date with `lib.rs` doc comments.
 
-An example workflow that runs `cargo +nightly reedme --check` on every commit and PR:
+An example workflow that runs `cargo reedme --check` on every commit and PR:
 
 ```yaml
 # .github/workflows/cargo-reedme.yaml
@@ -207,7 +207,7 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - run: cargo install --locked cargo-reedme
+      - run: cargo install --locked cargo-reedme@0.6.0
 
       - run: cargo +nightly reedme --check
 ```
@@ -423,7 +423,7 @@ Will be updated to this, when running `cargo +nightly reedme`:
 The `--json` flag can be used to have `cargo +nightly reedme` do all computation but not write any files, so you can
 do with that data as you please.
 
-You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/0.6.0/cargo_reedme/fn.resolve.html)
+You can also use `cargo reedme` as a crate. 95% of the `cargo reedme`’s logic lives in a single, pure function [`cargo_reedme::resolve`](https://docs.rs/cargo-reedme/latest/cargo_reedme/fn.resolve.html)
 which does no IO. It has the following signature:
 
 ```rust
