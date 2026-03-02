@@ -4,14 +4,13 @@
 use std::io::Write as _;
 
 use cargo_reedme::World;
+use clap::Parser;
 use docstr::docstr;
 use eyre::Context as _;
 use eyre::Result;
 use eyre::bail;
 use fs_err as fs;
 use rayon::prelude::*;
-
-use clap::Parser;
 
 mod diff_file;
 
@@ -106,20 +105,22 @@ fn main() -> Result<()> {
 
             Vec::new()
         }
-        Action::WriteFiles => output
-            .readmes
-            .par_iter()
-            .map(|readme| -> Result<()> {
-                if let Err(err) = fs::write(&readme.path, read_readme_file(&world, readme)?)
-                    .context("failed to write `README.md` file")
-                {
-                    println!("{err}");
-                }
+        Action::WriteFiles => {
+            output
+                .readmes
+                .par_iter()
+                .map(|readme| -> Result<()> {
+                    if let Err(err) = fs::write(&readme.path, read_readme_file(&world, readme)?)
+                        .context("failed to write `README.md` file")
+                    {
+                        println!("{err}");
+                    }
 
-                Ok(())
-            })
-            .filter_map(|res| res.err())
-            .collect(),
+                    Ok(())
+                })
+                .filter_map(|res| res.err())
+                .collect()
+        }
         Action::RunCheck => {
             let mut has_diff_any = false;
 

@@ -32,18 +32,35 @@
 //! SOFTWARE.
 
 use core::fmt;
-use std::{borrow::Cow, collections::HashMap, fmt::Display};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::fmt::Display;
 
 use cargo_metadata::Package;
 use eyre::Context;
 use itertools::Itertools;
-use rustdoc_types::{
-    Crate, Enum, ExternalCrate, Id, Impl, Item, ItemEnum, ItemSummary, MacroKind, Primitive,
-    ProcMacro, Struct, StructKind, Trait, Type, Union,
-};
-use tracing::{error, trace, warn};
+use rustdoc_types::Crate;
+use rustdoc_types::Enum;
+use rustdoc_types::ExternalCrate;
+use rustdoc_types::Id;
+use rustdoc_types::Impl;
+use rustdoc_types::Item;
+use rustdoc_types::ItemEnum;
+use rustdoc_types::ItemSummary;
+use rustdoc_types::MacroKind;
+use rustdoc_types::Primitive;
+use rustdoc_types::ProcMacro;
+use rustdoc_types::Struct;
+use rustdoc_types::StructKind;
+use rustdoc_types::Trait;
+use rustdoc_types::Type;
+use rustdoc_types::Union;
+use tracing::error;
+use tracing::trace;
+use tracing::warn;
 
-use crate::{Config, World};
+use crate::Config;
+use crate::World;
 
 /// This maps link contents to link URLs.
 ///
@@ -240,11 +257,13 @@ impl ItemKind {
             rustdoc_types::ItemKind::Union => ItemKind::Union,
             rustdoc_types::ItemKind::Enum => ItemKind::Enum,
             rustdoc_types::ItemKind::Variant => ItemKind::Variant,
-            rustdoc_types::ItemKind::Function => match item_context {
-                Some(ItemParent::Impl) => ItemKind::Method,
-                Some(ItemParent::Trait) => ItemKind::TyMethod,
-                None => ItemKind::Function,
-            },
+            rustdoc_types::ItemKind::Function => {
+                match item_context {
+                    Some(ItemParent::Impl) => ItemKind::Method,
+                    Some(ItemParent::Trait) => ItemKind::TyMethod,
+                    None => ItemKind::Function,
+                }
+            }
             rustdoc_types::ItemKind::TypeAlias => ItemKind::TypeAlias,
             rustdoc_types::ItemKind::Constant => ItemKind::Constant,
             rustdoc_types::ItemKind::Trait => ItemKind::Trait,
@@ -273,11 +292,13 @@ impl ItemKind {
             ItemEnum::StructField(_) => ItemKind::StructField,
             ItemEnum::Enum(_) => ItemKind::Enum,
             ItemEnum::Variant(_) => ItemKind::Variant,
-            ItemEnum::Function(_) => match item_parent {
-                Some(ItemParent::Impl) => ItemKind::Method,
-                Some(ItemParent::Trait) => ItemKind::TyMethod,
-                None => ItemKind::Function,
-            },
+            ItemEnum::Function(_) => {
+                match item_parent {
+                    Some(ItemParent::Impl) => ItemKind::Method,
+                    Some(ItemParent::Trait) => ItemKind::TyMethod,
+                    None => ItemKind::Function,
+                }
+            }
             ItemEnum::Trait(_) => ItemKind::Trait,
             ItemEnum::TraitAlias(_) => ItemKind::TraitAlias,
             ItemEnum::Impl(_) => ItemKind::Impl,
@@ -538,20 +559,22 @@ fn transitive_items<'a>(
         let parent_path: &ItemPath<'a> = &item_info.path;
         let item_info = match krate.paths.get(&item_id) {
             Some(item_summary) => Some(ItemInfo::new(item_summary, item_parent_kind, item_parent)),
-            None => krate.index.get(&item_id).map(|item| {
-                let path = match item.name.as_ref() {
-                    None => parent_path.clone(),
-                    Some(name) => parent_path.add(name.clone()),
-                };
-                let item_kind = ItemKind::of_item(item, item_parent);
+            None => {
+                krate.index.get(&item_id).map(|item| {
+                    let path = match item.name.as_ref() {
+                        None => parent_path.clone(),
+                        Some(name) => parent_path.add(name.clone()),
+                    };
+                    let item_kind = ItemKind::of_item(item, item_parent);
 
-                ItemInfo {
-                    crate_id: item.crate_id,
-                    path,
-                    kind: item_kind,
-                    parent_kind: item_parent_kind,
-                }
-            }),
+                    ItemInfo {
+                        crate_id: item.crate_id,
+                        path,
+                        kind: item_kind,
+                        parent_kind: item_parent_kind,
+                    }
+                })
+            }
         };
 
         if let Some(inner_item_info) = item_info {
@@ -575,10 +598,12 @@ fn child_item_ids<'a>(item: &'a Item) -> Box<dyn Iterator<Item = Id> + 'a> {
             for_,
             items: item_ids,
             ..
-        }) => match for_ {
-            Type::ResolvedPath(_) => Box::new(item_ids.iter().copied()),
-            _ => Box::new(std::iter::empty()),
-        },
+        }) => {
+            match for_ {
+                Type::ResolvedPath(_) => Box::new(item_ids.iter().copied()),
+                _ => Box::new(std::iter::empty()),
+            }
+        }
         ItemEnum::Union(Union { fields, impls, .. }) => {
             Box::new(fields.iter().chain(impls.iter()).copied())
         }

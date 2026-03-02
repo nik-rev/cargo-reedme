@@ -4,9 +4,11 @@ use std::ops::Range;
 
 use docstr::docstr;
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
-use crate::{World, config::Config};
+use crate::World;
+use crate::config::Config;
 
 /// Represents contents of the new README file
 #[derive(Serialize, Deserialize)]
@@ -93,13 +95,10 @@ impl ReadmeFile {
             toolchain: &'a str,
         }
 
-        let note = microtemplate::render(
-            &config.note,
-            Substitute {
-                args: &world.args.iter().join(" "),
-                toolchain: &world.toolchain,
-            },
-        );
+        let note = microtemplate::render(&config.note, Substitute {
+            args: &world.args.iter().join(" "),
+            toolchain: &world.toolchain,
+        });
 
         // indent every line so it stands out more
         //

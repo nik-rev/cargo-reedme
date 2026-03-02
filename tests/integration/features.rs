@@ -1,4 +1,5 @@
-use std::{collections::HashMap, iter};
+use std::collections::HashMap;
+use std::iter;
 
 use itertools::Itertools;
 

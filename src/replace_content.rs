@@ -3,7 +3,8 @@
 use std::ops::Range;
 
 use pulldown_cmark::CowStr;
-use tracing::{info, trace};
+use tracing::info;
+use tracing::trace;
 
 /// Replace a part of the string with something else
 #[derive(Debug)]

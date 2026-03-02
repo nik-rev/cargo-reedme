@@ -334,14 +334,15 @@
 
 use camino::Utf8PathBuf;
 use cargo_metadata::Package;
+use eyre::Context as _;
+use eyre::ContextCompat as _;
+use eyre::Result;
+use serde::Deserialize;
+use serde::Serialize;
 
-use serde::{Deserialize, Serialize};
-
-use crate::{
-    config::Config,
-    insert_into_readme::{ReadmeContentsMeta, ReadmeFile},
-};
-use eyre::{Context as _, ContextCompat as _, Result};
+use crate::config::Config;
+use crate::insert_into_readme::ReadmeContentsMeta;
+use crate::insert_into_readme::ReadmeFile;
 
 pub mod world;
 
@@ -426,12 +427,16 @@ pub fn resolve(world: &World) -> Result<Output> {
 
             let (increment_headings, meta) = original_readme.as_ref().map_or(
                 (false, ReadmeContentsMeta::NewlyCreated),
-                |original_readme| match insert_into_readme::UsersReadmeParts::new(original_readme) {
-                    Some(ok) => (
-                        has_h1_heading(&ok.before),
-                        ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
-                    ),
-                    None => (false, ReadmeContentsMeta::ErrorMarkerMissing),
+                |original_readme| {
+                    match insert_into_readme::UsersReadmeParts::new(original_readme) {
+                        Some(ok) => {
+                            (
+                                has_h1_heading(&ok.before),
+                                ReadmeContentsMeta::InsertedIntoUsersReadme(ok),
+                            )
+                        }
+                        None => (false, ReadmeContentsMeta::ErrorMarkerMissing),
+                    }
                 },
             );
 

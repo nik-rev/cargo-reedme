@@ -10,10 +10,9 @@ extern crate auto_default;
 
 use std::process::Command;
 
-use assert_fs::{
-    TempDir,
-    prelude::{FileWriteStr, PathChild},
-};
+use assert_fs::TempDir;
+use assert_fs::prelude::FileWriteStr;
+use assert_fs::prelude::PathChild;
 use assert2::assert;
 use docstr::docstr;
 use eyre::Result;

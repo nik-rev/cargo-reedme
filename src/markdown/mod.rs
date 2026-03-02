@@ -3,10 +3,13 @@
 use std::borrow::Cow;
 
 use itertools::Itertools;
-use pulldown_cmark::{CowStr, LinkType, Options};
+use pulldown_cmark::CowStr;
+use pulldown_cmark::LinkType;
+use pulldown_cmark::Options;
 use rangemap::RangeSet;
 
-use crate::{intralinks::Links, replace_content::ReplaceContent};
+use crate::intralinks::Links;
+use crate::replace_content::ReplaceContent;
 
 mod locate;
 
@@ -38,207 +41,210 @@ pub fn resolve_markdown(markdown: &str, links: Links<'_>, increment_headings: bo
         }),
     )
     .into_offset_iter()
-    .filter_map(|(event, span)| match event {
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading { level, .. })
-            if increment_headings && level != pulldown_cmark::HeadingLevel::H6 =>
-        {
-            Some(ReplaceContent {
-                range: span.clone(),
-                content: format!("#{}", &markdown[span.clone()]).into(),
-            })
-        }
-        // Code blocks are transformed to use Rust language, and
-        // hidden lines are removed
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
-            code_block_ranges.insert(span.clone());
+    .filter_map(|(event, span)| {
+        match event {
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::Heading { level, .. })
+                if increment_headings && level != pulldown_cmark::HeadingLevel::H6 =>
+            {
+                Some(ReplaceContent {
+                    range: span.clone(),
+                    content: format!("#{}", &markdown[span.clone()]).into(),
+                })
+            }
+            // Code blocks are transformed to use Rust language, and
+            // hidden lines are removed
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::CodeBlock(code_block_kind)) => {
+                code_block_ranges.insert(span.clone());
 
-            // Only consider code blocks that contain Rust from here on out
-            match code_block_kind {
-                // Indented code blocks are ignored, for now
-                pulldown_cmark::CodeBlockKind::Indented => return None,
-                // Fenced code blocks: ```rust
-                pulldown_cmark::CodeBlockKind::Fenced(tags) => {
-                    if !is_rust_code_block(&tags) {
-                        return None;
+                // Only consider code blocks that contain Rust from here on out
+                match code_block_kind {
+                    // Indented code blocks are ignored, for now
+                    pulldown_cmark::CodeBlockKind::Indented => return None,
+                    // Fenced code blocks: ```rust
+                    pulldown_cmark::CodeBlockKind::Fenced(tags) => {
+                        if !is_rust_code_block(&tags) {
+                            return None;
+                        }
                     }
                 }
-            }
 
-            // How many backticks this code block has
-            //
-            // At least - and usually 3, sometimes 4+ if this code block has nested code blocks
-            let backtick_count = markdown[span.clone()]
-                .chars()
-                .take_while(|ch| *ch == '`')
-                .count();
+                // How many backticks this code block has
+                //
+                // At least - and usually 3, sometimes 4+ if this code block has nested code blocks
+                let backtick_count = markdown[span.clone()]
+                    .chars()
+                    .take_while(|ch| *ch == '`')
+                    .count();
 
-            // The code fence itself: ```
-            let code_fence = "`".repeat(backtick_count);
+                // The code fence itself: ```
+                let code_fence = "`".repeat(backtick_count);
 
-            let code_block_lines = markdown[span.clone()].lines().collect_vec();
+                let code_block_lines = markdown[span.clone()].lines().collect_vec();
 
-            // Remove the first line (```compile_error) and last line (```) of the code blocks,
-            // both of which are the code fences
-            //
-            // ```compile_error
-            // code
-            // ```
-            //
-            // We are left with just:
-            //
-            // code
-            let code_block_content_lines =
-                &code_block_lines[1..code_block_lines.len().saturating_sub(1)];
+                // Remove the first line (```compile_error) and last line (```) of the code blocks,
+                // both of which are the code fences
+                //
+                // ```compile_error
+                // code
+                // ```
+                //
+                // We are left with just:
+                //
+                // code
+                let code_block_content_lines =
+                    &code_block_lines[1..code_block_lines.len().saturating_sub(1)];
 
-            // The finishing code block may be indented:
-            //
-            // - this is a list
-            //
-            //   ```
-            //   this code block is in a list
-            //   ```
-            // ^^
-            //
-            // It is this indentation (marked by ^^) that this variable stores,
-            // we will need it when we re-insert the code block
-            let last_line_indentation = code_block_lines[code_block_lines.len().saturating_sub(1)]
+                // The finishing code block may be indented:
+                //
+                // - this is a list
+                //
+                //   ```
+                //   this code block is in a list
+                //   ```
+                // ^^
+                //
+                // It is this indentation (marked by ^^) that this variable stores,
+                // we will need it when we re-insert the code block
+                let last_line_indentation = code_block_lines
+                    [code_block_lines.len().saturating_sub(1)]
                 .chars()
                 .take_while(|ch| ch.is_whitespace())
                 .collect::<String>();
 
-            // Remove all commented lines - lines that start with a `#`
-            //
-            // ```
-            // # a
-            // b
-            // ```
-            //
-            // Becomes:
-            //
-            // ```rust
-            // b
-            // ```
-            let code_block_content = code_block_content_lines
-                .iter()
-                .filter_map(|line| {
-                    // Lines starting with `##` are not comments, that is a way to intentionally start a
-                    // line with `#`.  See https://github.com/rust-lang/rust/pull/41785.
-                    if line.starts_with("##") {
-                        Some(Cow::Owned(format!("#{}", &line[1..])))
-                    }
-                    // Line is commented and will be removed
-                    else if line.trim_start().starts_with("# ") || line.trim() == "#" {
-                        None
-                    } else {
-                        Some((*line).into())
-                    }
-                })
-                .join("\n");
+                // Remove all commented lines - lines that start with a `#`
+                //
+                // ```
+                // # a
+                // b
+                // ```
+                //
+                // Becomes:
+                //
+                // ```rust
+                // b
+                // ```
+                let code_block_content = code_block_content_lines
+                    .iter()
+                    .filter_map(|line| {
+                        // Lines starting with `##` are not comments, that is a way to intentionally start a
+                        // line with `#`.  See https://github.com/rust-lang/rust/pull/41785.
+                        if line.starts_with("##") {
+                            Some(Cow::Owned(format!("#{}", &line[1..])))
+                        }
+                        // Line is commented and will be removed
+                        else if line.trim_start().starts_with("# ") || line.trim() == "#" {
+                            None
+                        } else {
+                            Some((*line).into())
+                        }
+                    })
+                    .join("\n");
 
-            Some(ReplaceContent {
+                Some(ReplaceContent {
                 range: span,
                 content: format!(
                     "{code_fence}rust\n{code_block_content}\n{last_line_indentation}{code_fence}"
                 )
                 .into(),
             })
+            }
+            // This was a broken link, but we fixed it with our broken link callback
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+                link_type,
+                dest_url,
+                title,
+                id,
+            }) if matches!(
+                link_type,
+                LinkType::ShortcutUnknown | LinkType::CollapsedUnknown | LinkType::ReferenceUnknown
+            ) =>
+            {
+                debug_assert!(title.is_empty(), "we never insert a title");
+
+                let end = if matches!(link_type, LinkType::CollapsedUnknown) {
+                    // add +2 to also replace the [] at the end. without this,
+                    // we will generate "[foo](bar)[]" for "[foo][]" if [foo] links to "bar"
+                    span.clone().end + 2
+                } else {
+                    span.clone().end
+                };
+
+                Some(ReplaceContent {
+                    range: span.clone().start..end,
+                    content: format!("[{link_content}]({dest_url})", link_content = id).into(),
+                })
+            }
+            // Reference links:
+            //
+            // [link][somewhere]
+            //
+            // [somewhere]: foo
+            //
+            //
+            // Shortcut links:
+            //
+            // [link]
+            //
+            // [link]: foo
+            //
+            //
+            // Process:
+            //
+            // Since we want to output markdown that is as similar to the original input
+            // as possible, all we want to do is replace those "foo" links with the correct
+            // links obtained from the "links" map.
+            //
+            // That is tricky, because `pulldown_cmark` does not generate any events
+            // for those reference definitions. Their existence is simply erased.
+            //
+            // So what we do is mostly a hack. We remember every reference ID and its URL,
+            // then we do a 2nd search over the entire input to find all reference links.
+            //
+            // Reference links that have an entry in the map will be replaced
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+                link_type: LinkType::Reference | LinkType::Shortcut,
+                dest_url,
+                title: _,
+                id,
+            }) if !id.is_empty() => {
+                reference_definitions.push((dest_url, id));
+                None
+            }
+            // Re-write inline links: [text](destination "title")
+            //
+            // This is tricky because we need to find the "destination"
+            // and replace it with the correct link, so we edit the user's
+            // input as little as possible.
+            //
+            // To do this we need to manually parse from the end of the link
+            // until the destination. The title is the one that's hardest, it can
+            // contain quotes and parentheses.
+            pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
+                link_type: LinkType::Inline,
+                dest_url,
+                ..
+            }) => {
+                // [text](destination "title")
+                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                let markdown_link = &markdown[span.clone()];
+
+                let Some(destination_range) = locate::inline_link_destination(markdown_link) else {
+                    // Link destination parsing failed for one reason or another
+                    return None;
+                };
+
+                let new_destination = links.get(&*dest_url)?;
+
+                let destination_range =
+                    span.start + destination_range.start..span.start + destination_range.end;
+
+                Some(ReplaceContent {
+                    range: destination_range,
+                    content: new_destination.to_string().into(),
+                })
+            }
+            _ => None,
         }
-        // This was a broken link, but we fixed it with our broken link callback
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-            link_type,
-            dest_url,
-            title,
-            id,
-        }) if matches!(
-            link_type,
-            LinkType::ShortcutUnknown | LinkType::CollapsedUnknown | LinkType::ReferenceUnknown
-        ) =>
-        {
-            debug_assert!(title.is_empty(), "we never insert a title");
-
-            let end = if matches!(link_type, LinkType::CollapsedUnknown) {
-                // add +2 to also replace the [] at the end. without this,
-                // we will generate "[foo](bar)[]" for "[foo][]" if [foo] links to "bar"
-                span.clone().end + 2
-            } else {
-                span.clone().end
-            };
-
-            Some(ReplaceContent {
-                range: span.clone().start..end,
-                content: format!("[{link_content}]({dest_url})", link_content = id).into(),
-            })
-        }
-        // Reference links:
-        //
-        // [link][somewhere]
-        //
-        // [somewhere]: foo
-        //
-        //
-        // Shortcut links:
-        //
-        // [link]
-        //
-        // [link]: foo
-        //
-        //
-        // Process:
-        //
-        // Since we want to output markdown that is as similar to the original input
-        // as possible, all we want to do is replace those "foo" links with the correct
-        // links obtained from the "links" map.
-        //
-        // That is tricky, because `pulldown_cmark` does not generate any events
-        // for those reference definitions. Their existence is simply erased.
-        //
-        // So what we do is mostly a hack. We remember every reference ID and its URL,
-        // then we do a 2nd search over the entire input to find all reference links.
-        //
-        // Reference links that have an entry in the map will be replaced
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-            link_type: LinkType::Reference | LinkType::Shortcut,
-            dest_url,
-            title: _,
-            id,
-        }) if !id.is_empty() => {
-            reference_definitions.push((dest_url, id));
-            None
-        }
-        // Re-write inline links: [text](destination "title")
-        //
-        // This is tricky because we need to find the "destination"
-        // and replace it with the correct link, so we edit the user's
-        // input as little as possible.
-        //
-        // To do this we need to manually parse from the end of the link
-        // until the destination. The title is the one that's hardest, it can
-        // contain quotes and parentheses.
-        pulldown_cmark::Event::Start(pulldown_cmark::Tag::Link {
-            link_type: LinkType::Inline,
-            dest_url,
-            ..
-        }) => {
-            // [text](destination "title")
-            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            let markdown_link = &markdown[span.clone()];
-
-            let Some(destination_range) = locate::inline_link_destination(markdown_link) else {
-                // Link destination parsing failed for one reason or another
-                return None;
-            };
-
-            let new_destination = links.get(&*dest_url)?;
-
-            let destination_range =
-                span.start + destination_range.start..span.start + destination_range.end;
-
-            Some(ReplaceContent {
-                range: destination_range,
-                content: new_destination.to_string().into(),
-            })
-        }
-        _ => None,
     });
 
     let markdown = ReplaceContent::replace_all(markdown.to_string(), replacements);

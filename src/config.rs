@@ -1,11 +1,16 @@
 //! Handles configuration in the `Cargo.toml` `[workspace.metadata]` and `[package.metadata]` sections
 
 use core::fmt;
-use std::{str::FromStr, sync::LazyLock};
+use std::str::FromStr;
+use std::sync::LazyLock;
 
-use eyre::{ContextCompat, OptionExt, Result, bail};
+use eyre::ContextCompat;
+use eyre::OptionExt;
+use eyre::Result;
+use eyre::bail;
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use subdef::subdef;
 
 #[derive(Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -65,17 +70,21 @@ impl Target {
         };
 
         match self {
-            Target::BinOnly => targets
-                .iter()
-                .filter(|target| target.is_bin())
-                .exactly_one()
-                .ok()
-                .wrap_err("expected exactly 1 binary target (main.rs)"),
-            Target::BinExact(name) => targets
-                .iter()
-                .filter(|target| target.is_bin())
-                .find(|target| target.name == *name)
-                .wrap_err_with(|| format!("binary target with the name `{name}` not found")),
+            Target::BinOnly => {
+                targets
+                    .iter()
+                    .filter(|target| target.is_bin())
+                    .exactly_one()
+                    .ok()
+                    .wrap_err("expected exactly 1 binary target (main.rs)")
+            }
+            Target::BinExact(name) => {
+                targets
+                    .iter()
+                    .filter(|target| target.is_bin())
+                    .find(|target| target.name == *name)
+                    .wrap_err_with(|| format!("binary target with the name `{name}` not found"))
+            }
             Target::Lib => get_library_target().wrap_err("expected a library target (lib.rs)"),
             Target::Heuristic => {
                 let lib_target = get_library_target();
@@ -285,10 +294,11 @@ impl ConfigToml {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use assert2::assert;
     use docstr::docstr;
     use serde_json::Value;
+
+    use super::*;
 
     struct Case {
         docs_rs: &'static str,
