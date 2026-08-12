@@ -508,7 +508,21 @@ struct ItemPath<'a> {
 fn collect_all_items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
     let mut items_info: HashMap<Id, ItemInfo<'_>> = HashMap::with_capacity(krate.index.len());
 
-    for (&item_id, item_summary) in &krate.paths {
+    // `krate.paths` has an entry for every path-addressable item, including
+    // methods (their `ItemSummary::kind` is indistinguishable from a
+    // free function). Process non-function entries first, so that structs,
+    // enums, traits, etc. get fully traversed - via `transitive_items` -
+    // before we look at any path entry that is a `Function`. That way, a
+    // path entry that is actually a method has already been recorded with
+    // the correct `ItemKind::Method`/`ItemKind::TyMethod` (learned from
+    // its real impl/trait parent) by the time we'd otherwise insert it
+    // as a context-free, and wrongly kinded, top-level function.
+    let (function_paths, other_paths): (Vec<_>, Vec<_>) = krate
+        .paths
+        .iter()
+        .partition(|(_, item_summary)| item_summary.kind == rustdoc_types::ItemKind::Function);
+
+    for (&item_id, item_summary) in other_paths.into_iter().chain(function_paths) {
         let item_info = ItemInfo::new(item_summary, None, None);
 
         transitive_items(item_id, &item_info, None, krate, &mut items_info);
