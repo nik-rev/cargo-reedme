@@ -21,7 +21,7 @@ rustdoc-json = "0.9.8"
 fs-err = "3.2.2"
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
-rustdoc-types = "0.57.0"
+rustdoc-types = "0.61.0"
 pulldown-cmark = "0.13.0"
 itertools = "0.14.0"
 tracing = "0.1.44"
