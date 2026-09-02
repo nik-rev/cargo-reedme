@@ -210,8 +210,7 @@ fn foreign_crate_method() -> Result<()> {
         lib_rs: Some(&docstr!(format!
             /// //! [`Vec::push`](std::vec::Vec::push)
         )),
-        generated:
-            "[`Vec::push`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html#method.push)",
+        generated: "[`Vec::push`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html#method.push)",
         ..
     })?;
     Ok(())
