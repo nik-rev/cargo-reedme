@@ -201,6 +201,35 @@ fn link_nested_item() -> Result<()> {
 }
 
 #[test]
+fn foreign_crate_method() -> Result<()> {
+    // Items from foreign crates are only described by their `paths` summary, where
+    // methods appear as plain functions with their parent type as the second-to-last
+    // path segment. Regression test: the URL must point to the parent type's page with
+    // a `#method.` anchor, not be constructed as a free function URL.
+    test(Case {
+        lib_rs: Some(&docstr!(format!
+            /// //! [`Vec::push`](std::vec::Vec::push)
+        )),
+        generated:
+            "[`Vec::push`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html#method.push)",
+        ..
+    })?;
+    Ok(())
+}
+
+#[test]
+fn foreign_crate_trait_method() -> Result<()> {
+    test(Case {
+        lib_rs: Some(&docstr!(format!
+            /// //! [`Error::description`](std::error::Error::description)
+        )),
+        generated: "[`Error::description`](https://doc.rust-lang.org/stable/core/error/trait.Error.html#tymethod.description)",
+        ..
+    })?;
+    Ok(())
+}
+
+#[test]
 fn primitive_link() -> Result<()> {
     test_link_full(
         "[u32]",

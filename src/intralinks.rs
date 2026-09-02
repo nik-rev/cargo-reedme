@@ -508,13 +508,54 @@ struct ItemPath<'a> {
 fn collect_all_items_info(krate: &Crate) -> HashMap<Id, ItemInfo<'_>> {
     let mut items_info: HashMap<Id, ItemInfo<'_>> = HashMap::with_capacity(krate.index.len());
 
+    // Items that come from external crates are not present in the crate index, so the
+    // only information available about them is their `paths` summary. In that summary
+    // a method is described as a plain function whose parent type is the second-to-last
+    // path segment (e.g. `"tokio::runtime::Builder::on_after_task_poll"` has the path
+    // `["tokio", "runtime", "builder", "Builder", "on_after_task_poll"]` with kind
+    // `Function`). If we don't correct this, we generate URLs like
+    // `.../builder/Builder/fn.on_after_task_poll.html` instead of the correct
+    // `.../builder/struct.Builder.html#method.on_after_task_poll`.
+    //
+    // So, build a map from an item's path to its kind to detect when the parent of a
+    // function is a type, which means that the function is actually a method.
+    let path_kinds: HashMap<&[String], rustdoc_types::ItemKind> = krate
+        .paths
+        .values()
+        .map(|item_summary| (item_summary.path.as_slice(), item_summary.kind))
+        .collect();
+
     for (&item_id, item_summary) in &krate.paths {
-        let item_info = ItemInfo::new(item_summary, None, None);
+        let method_parent_info = (item_summary.kind == rustdoc_types::ItemKind::Function
+            && item_summary.path.len() >= 2)
+            .then(|| &item_summary.path[..item_summary.path.len() - 1])
+            .and_then(|parent_path| path_kinds.get(parent_path))
+            .and_then(|&parent_kind| type_item_parent_info(parent_kind));
+
+        let item_info = match method_parent_info {
+            Some((parent_kind, item_parent)) => {
+                ItemInfo::new(item_summary, Some(parent_kind), Some(item_parent))
+            }
+            None => ItemInfo::new(item_summary, None, None),
+        };
 
         transitive_items(item_id, &item_info, None, krate, &mut items_info);
     }
 
     items_info
+}
+
+/// If the given kind is a type that can have methods (a struct, enum, union or trait),
+/// this returns the kind of that type along with the [`ItemParent`] context it provides
+/// to its methods.
+fn type_item_parent_info(kind: rustdoc_types::ItemKind) -> Option<(ItemKind, ItemParent)> {
+    match kind {
+        rustdoc_types::ItemKind::Struct => Some((ItemKind::Struct, ItemParent::Impl)),
+        rustdoc_types::ItemKind::Enum => Some((ItemKind::Enum, ItemParent::Impl)),
+        rustdoc_types::ItemKind::Union => Some((ItemKind::Union, ItemParent::Impl)),
+        rustdoc_types::ItemKind::Trait => Some((ItemKind::Trait, ItemParent::Trait)),
+        _ => None,
+    }
 }
 
 fn transitive_items<'a>(
@@ -532,6 +573,16 @@ fn transitive_items<'a>(
                     && existing_item_info.parent_kind.is_none()
                 {
                     existing_item_info.parent_kind = Some(parent_kind);
+                }
+                // When this item was reached through its parent (an impl block or a
+                // trait), `item_info.kind` was computed with that parent context, which
+                // makes it more accurate than the kind of the entry inserted by the
+                // initial `paths` pass: methods would otherwise be treated as free
+                // functions, generating broken URLs like `...fn.method_name.html` or
+                // `...trait.Trait.htmlfn.method_name.html` instead of
+                // `...#method.method_name` / `...#tymethod.method_name`.
+                if item_parent.is_some() {
+                    existing_item_info.kind = item_info.kind;
                 }
             })
             .or_insert_with(|| item_info.clone());
